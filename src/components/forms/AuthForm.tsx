@@ -122,10 +122,19 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         {/* Demo Account */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800 mb-2">Demo Account:</p>
-          <p className="text-xs text-blue-600">
-            Email: demo@busymoms.app<br />
-            Password: demo123
-          </p>
+          <div className="text-xs text-blue-600 mb-3">
+            <p>Email: demo@busymoms.app</p>
+            <p>Password: demo123</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setFormData({ ...formData, email: 'demo@busymoms.app', password: 'demo123' });
+            }}
+            className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+          >
+            Use Demo Credentials
+          </button>
         </div>
 
         {/* Demo Bypass Button */}
