@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink } from 'lucide-react';
+import { ShoppingForm } from './forms/ShoppingForm';
+import { ShoppingItem } from '../lib/supabase';
 
 export function Shopping() {
   const [activeTab, setActiveTab] = useState('list');
+  const [showShoppingForm, setShowShoppingForm] = useState(false);
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
 
-  const shoppingList = [
-    { id: 1, item: 'Milk', category: 'Dairy', completed: false, urgent: true },
-    { id: 2, item: 'Bananas', category: 'Produce', completed: false, urgent: false },
-    { id: 3, item: 'Huggies Diapers', category: 'Baby', completed: true, urgent: false },
-    { id: 4, item: 'Bread', category: 'Bakery', completed: false, urgent: false },
-    { id: 5, item: 'Chicken Breast', category: 'Meat', completed: false, urgent: true }
-  ];
+  const handleItemCreated = (newItem: ShoppingItem) => {
+    setShoppingList(prev => [...prev, newItem]);
+  };
+
+  const toggleItemCompleted = (itemId: string) => {
+    setShoppingList(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { ...item, completed: !item.completed }
+          : item
+      )
+    );
+  };
 
   const giftSuggestions = [
     {
@@ -43,7 +53,10 @@ export function Shopping() {
             <p className="text-gray-600">Smart lists and suggestions</p>
           </div>
           <button className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors">
-            <Plus className="w-5 h-5" />
+            <Plus 
+              className="w-5 h-5" 
+              onClick={() => setShowShoppingForm(true)}
+            />
           </button>
         </div>
 
@@ -100,6 +113,7 @@ export function Shopping() {
                     <input
                       type="checkbox"
                       checked={item.completed}
+                      onChange={() => toggleItemCompleted(item.id)}
                       className="w-5 h-5 text-green-500 rounded focus:ring-green-500"
                     />
                     <div className="flex-1">
@@ -107,7 +121,7 @@ export function Shopping() {
                         {item.item}
                       </h3>
                       <p className={`text-sm ${item.completed ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {item.category}
+                        {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
                       </p>
                     </div>
                     {item.urgent && !item.completed && (
@@ -121,7 +135,9 @@ export function Shopping() {
             </div>
 
             <button className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-green-400 hover:text-green-600 transition-all">
-              + Add Item
+              <span onClick={() => setShowShoppingForm(true)}>
+                + Add Item
+              </span>
             </button>
           </div>
         )}
@@ -213,6 +229,12 @@ export function Shopping() {
           </div>
         )}
       </div>
+
+      <ShoppingForm
+        isOpen={showShoppingForm}
+        onClose={() => setShowShoppingForm(false)}
+        onItemCreated={handleItemCreated}
+      />
     </div>
   );
 }

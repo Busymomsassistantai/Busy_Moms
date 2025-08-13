@@ -1,59 +1,16 @@
 import React, { useState } from 'react';
 import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle } from 'lucide-react';
+import { ContactForm } from './forms/ContactForm';
+import { Contact } from '../lib/supabase';
 
 export function Contacts() {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
-  const contacts = [
-    {
-      id: 1,
-      name: 'Maria Rodriguez',
-      role: 'Babysitter',
-      phone: '(555) 123-4567',
-      rating: 4.9,
-      notes: 'Kids love her mac & cheese. Always arrives early. Great with bedtime routine.',
-      verified: true,
-      category: 'babysitter',
-      available: true,
-      lastContact: '2 days ago'
-    },
-    {
-      id: 2,
-      name: 'Coach Johnson',
-      role: 'Soccer Coach',
-      phone: '(555) 234-5678',
-      rating: 4.7,
-      notes: 'Emma\'s soccer coach. Very encouraging and patient with kids.',
-      verified: false,
-      category: 'coach',
-      available: true,
-      lastContact: '1 week ago'
-    },
-    {
-      id: 3,
-      name: 'Dr. Sarah Smith',
-      role: 'Pediatrician',
-      phone: '(555) 345-6789',
-      rating: 4.8,
-      notes: 'Great with kids. Office hours Mon-Fri 9-5. Accepts our insurance.',
-      verified: true,
-      category: 'doctor',
-      available: false,
-      lastContact: '3 weeks ago'
-    },
-    {
-      id: 4,
-      name: 'Jennifer Kim',
-      role: 'Math Tutor',
-      phone: '(555) 456-7890',
-      rating: 5.0,
-      notes: 'Excellent at explaining concepts. Tom\'s grades improved significantly.',
-      verified: true,
-      category: 'tutor',
-      available: true,
-      lastContact: '5 days ago'
-    }
-  ];
+  const handleContactCreated = (newContact: Contact) => {
+    setContacts(prev => [...prev, newContact]);
+  };
 
   const categories = [
     { id: 'all', label: 'All Contacts', count: contacts.length },
@@ -77,7 +34,10 @@ export function Contacts() {
             <p className="text-gray-600">Your trusted network</p>
           </div>
           <button className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors">
-            <Plus className="w-5 h-5" />
+            <Plus 
+              className="w-5 h-5" 
+              onClick={() => setShowContactForm(true)}
+            />
           </button>
         </div>
 
@@ -151,16 +111,16 @@ export function Contacts() {
                   <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span>{contact.rating}</span>
+                      <span>{contact.rating || 0}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="w-4 h-4" />
-                      <span>Last contact: {contact.lastContact}</span>
+                      <span>Last contact: {contact.last_contact || 'Never'}</span>
                     </div>
                   </div>
                   
                   <p className="text-sm text-gray-700 mb-3 line-clamp-2">
-                    {contact.notes}
+                    {contact.notes || 'No notes available'}
                   </p>
                   
                   <div className="flex items-center space-x-2">
@@ -203,6 +163,12 @@ export function Contacts() {
           </div>
         )}
       </div>
+
+      <ContactForm
+        isOpen={showContactForm}
+        onClose={() => setShowContactForm(false)}
+        onContactCreated={handleContactCreated}
+      />
     </div>
   );
 }

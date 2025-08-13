@@ -1,39 +1,45 @@
 import React, { useState } from 'react';
 import { Plus, MapPin, Clock, Users, MessageCircle, Gift } from 'lucide-react';
+import { EventForm } from './forms/EventForm';
+import { Event } from '../lib/supabase';
 
 export function Calendar() {
   const [selectedDate, setSelectedDate] = useState(15);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
 
-  const events = [
-    {
-      id: 1,
-      title: 'Emma\'s Soccer Practice',
-      time: '9:00 AM - 10:30 AM',
-      location: 'Riverside Park',
-      type: 'sports',
-      color: 'bg-blue-100 text-blue-800 border-blue-200',
-      participants: ['Emma']
-    },
-    {
-      id: 2,
-      title: 'Jessica\'s Birthday Party',
-      time: '4:00 PM - 6:00 PM',
-      location: 'Community Center',
-      type: 'party',
-      color: 'bg-pink-100 text-pink-800 border-pink-200',
-      participants: ['Emma', 'Tom'],
-      actions: ['Buy Gift', 'RSVP']
-    },
-    {
-      id: 3,
-      title: 'Parent-Teacher Conference',
-      time: '2:00 PM - 2:30 PM',
-      location: 'Lincoln Elementary',
-      type: 'meeting',
-      color: 'bg-purple-100 text-purple-800 border-purple-200',
-      participants: ['Tom']
+  const getEventColor = (type: string) => {
+    const colors = {
+      sports: 'bg-blue-100 text-blue-800 border-blue-200',
+      party: 'bg-pink-100 text-pink-800 border-pink-200',
+      meeting: 'bg-purple-100 text-purple-800 border-purple-200',
+      medical: 'bg-red-100 text-red-800 border-red-200',
+      school: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      family: 'bg-green-100 text-green-800 border-green-200',
+      other: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    return colors[type as keyof typeof colors] || colors.other;
+  };
+
+  const formatTime = (startTime?: string, endTime?: string) => {
+    if (!startTime) return '';
+    const start = new Date(`2000-01-01T${startTime}`).toLocaleTimeString([], { 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    });
+    if (endTime) {
+      const end = new Date(`2000-01-01T${endTime}`).toLocaleTimeString([], { 
+        hour: 'numeric', 
+        minute: '2-digit' 
+      });
+      return `${start} - ${end}`;
     }
-  ];
+    return start;
+  };
+
+  const handleEventCreated = (newEvent: Event) => {
+    setEvents(prev => [...prev, newEvent]);
+  };
 
   const getDaysInMonth = () => {
     const days = [];
@@ -53,7 +59,10 @@ export function Calendar() {
             <p className="text-gray-600">March 2025</p>
           </div>
           <button className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors">
-            <Plus className="w-5 h-5" />
+            <Plus 
+              className="w-5 h-5" 
+              onClick={() => setShowEventForm(true)}
+            />
           </button>
         </div>
 
@@ -93,7 +102,7 @@ export function Calendar() {
             {events.map((event) => (
               <div
                 key={event.id}
-                className={`p-4 rounded-xl border-2 ${event.color} hover:shadow-md transition-all cursor-pointer`}
+                className={`p-4 rounded-xl border-2 ${getEventColor(event.event_type || 'other')} hover:shadow-md transition-all cursor-pointer`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -101,7 +110,7 @@ export function Calendar() {
                     <div className="flex items-center space-x-3 text-sm opacity-75 mb-2">
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
-                        <span>{event.time}</span>
+                        <span>{formatTime(event.start_time, event.end_time)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <MapPin className="w-4 h-4" />
@@ -110,14 +119,14 @@ export function Calendar() {
                     </div>
                     <div className="flex items-center space-x-1 text-sm opacity-75">
                       <Users className="w-4 h-4" />
-                      <span>{event.participants.join(', ')}</span>
+                      <span>{event.participants?.join(', ') || 'No participants'}</span>
                     </div>
                   </div>
                 </div>
 
-                {event.actions && (
+                {event.rsvp_required && (
                   <div className="flex space-x-2 mt-3">
-                    {event.actions.map((action) => (
+                    {['Buy Gift', 'RSVP'].map((action) => (
                       <button
                         key={action}
                         className="flex items-center space-x-1 px-3 py-1 bg-white bg-opacity-50 rounded-full text-sm font-medium hover:bg-opacity-75 transition-colors"
@@ -155,6 +164,12 @@ export function Calendar() {
           </div>
         </div>
       </div>
+
+      <EventForm
+        isOpen={showEventForm}
+        onClose={() => setShowEventForm(false)}
+        onEventCreated={handleEventCreated}
+      />
     </div>
   );
 }

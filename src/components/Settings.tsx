@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut } from 'lucide-react';
+import { FamilyMemberForm } from './forms/FamilyMemberForm';
+import { FamilyMember } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
+  const { signOut } = useAuth();
+  const [showFamilyForm, setShowFamilyForm] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
@@ -90,6 +96,18 @@ export function Settings() {
     }));
   };
 
+  const handleFamilyMemberCreated = (newMember: FamilyMember) => {
+    setFamilyMembers(prev => [...prev, newMember]);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
@@ -169,6 +187,11 @@ export function Settings() {
                         </button>
                       ) : (
                         <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors">
+                          onClick={() => {
+                            if (item.title === 'Family Members') {
+                              setShowFamilyForm(true);
+                            }
+                          }}
                           {item.action}
                         </button>
                       )}
@@ -179,6 +202,33 @@ export function Settings() {
             </div>
           ))}
         </div>
+
+        {/* Family Members List */}
+        {familyMembers.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
+            <div className="space-y-2">
+              {familyMembers.map((member) => (
+                <div key={member.id} className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-gray-900">{member.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {member.age && `Age ${member.age}`} {member.gender && `• ${member.gender}`}
+                        {member.school && ` • ${member.school}`}
+                      </p>
+                      {member.allergies && member.allergies.length > 0 && (
+                        <p className="text-xs text-red-600 mt-1">
+                          Allergies: {member.allergies.join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Background Check History */}
         <div className="mt-6">
@@ -202,11 +252,20 @@ export function Settings() {
         </div>
 
         {/* Sign Out */}
-        <button className="w-full mt-8 py-3 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center justify-center space-x-2">
+        <button 
+          onClick={handleSignOut}
+          className="w-full mt-8 py-3 bg-red-50 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center justify-center space-x-2"
+        >
           <LogOut className="w-4 h-4" />
           <span>Sign Out</span>
         </button>
       </div>
+
+      <FamilyMemberForm
+        isOpen={showFamilyForm}
+        onClose={() => setShowFamilyForm(false)}
+        onMemberCreated={handleFamilyMemberCreated}
+      />
     </div>
   );
 }
