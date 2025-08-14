@@ -124,12 +124,12 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           <p className="text-sm text-blue-800 mb-2">Demo Account:</p>
           <div className="text-xs text-blue-600 mb-3">
             <p>Email: demo@busymoms.app</p>
-            <p>Password: demo123</p>
+            <p>Password: demo123456</p>
           </div>
           <button
             type="button"
             onClick={() => {
-              setFormData({ ...formData, email: 'demo@busymoms.app', password: 'demo123' });
+              setFormData({ ...formData, email: 'demo@busymoms.app', password: 'demo123456' });
             }}
             className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
           >
