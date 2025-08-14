@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ConnectionTest } from './ConnectionTest';
+import { AuthTest } from './AuthTest';
 import { FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,6 +10,7 @@ export function Settings() {
   const { signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
+  const [showAuthTest, setShowAuthTest] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [notifications, setNotifications] = useState({
     events: true,
@@ -124,6 +126,13 @@ export function Settings() {
           description: 'Verify database connectivity',
           action: 'Test',
           onClick: () => setShowConnectionTest(true)
+        },
+        {
+          icon: User,
+          title: 'Test Authentication',
+          description: 'Setup and test demo user login',
+          action: 'Test',
+          onClick: () => setShowAuthTest(true)
         }
       ]
     },
@@ -373,6 +382,11 @@ export function Settings() {
       <ConnectionTest
         isOpen={showConnectionTest}
         onClose={() => setShowConnectionTest(false)}
+      />
+
+      <AuthTest
+        isOpen={showAuthTest}
+        onClose={() => setShowAuthTest(false)}
       />
     </div>
   );
