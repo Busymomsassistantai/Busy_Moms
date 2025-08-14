@@ -36,7 +36,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthForm />
+    return <AuthForm onAuthSuccess={() => setShowOnboarding(false)} />
   }
 
   if (showOnboarding) {
