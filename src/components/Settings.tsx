@@ -24,34 +24,47 @@ export function Settings() {
 
   const loadFamilyMembers = async () => {
     try {
-      // For demo purposes, we'll use mock data since we don't have authentication
-      const mockFamilyMembers: FamilyMember[] = [
-        {
-          id: '1',
-          user_id: 'demo-user',
-          name: 'Emma Johnson',
-          age: 7,
-          gender: 'Girl',
-          allergies: ['Peanuts'],
-          medical_notes: 'Inhaler for asthma',
-          school: 'Lincoln Elementary',
-          grade: '2nd Grade'
-        },
-        {
-          id: '2',
-          user_id: 'demo-user',
-          name: 'Tom Johnson',
-          age: 5,
-          gender: 'Boy',
-          allergies: ['Dairy'],
-          medical_notes: 'Lactose intolerant',
-          school: 'Lincoln Elementary',
-          grade: 'Kindergarten'
-        }
-      ];
-      setFamilyMembers(mockFamilyMembers);
+      // Try to load family members from Supabase
+      const { data: members, error } = await supabase
+        .from('family_members')
+        .select('*')
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.warn('Could not load family members from database:', error.message)
+        // Fall back to demo data if database is not available
+        const mockFamilyMembers: FamilyMember[] = [
+          {
+            id: '1',
+            user_id: 'demo-user',
+            name: 'Emma Johnson',
+            age: 7,
+            gender: 'Girl',
+            allergies: ['Peanuts'],
+            medical_notes: 'Inhaler for asthma',
+            school: 'Lincoln Elementary',
+            grade: '2nd Grade'
+          },
+          {
+            id: '2',
+            user_id: 'demo-user',
+            name: 'Tom Johnson',
+            age: 5,
+            gender: 'Boy',
+            allergies: ['Dairy'],
+            medical_notes: 'Lactose intolerant',
+            school: 'Lincoln Elementary',
+            grade: 'Kindergarten'
+          }
+        ];
+        setFamilyMembers(mockFamilyMembers);
+      } else {
+        setFamilyMembers(members || []);
+      }
     } catch (error) {
       console.error('Error loading family members:', error);
+      // Fall back to empty array on error
+      setFamilyMembers([]);
     }
   };
 
