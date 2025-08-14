@@ -8,7 +8,7 @@ import Calendar from './components/Calendar'
 import Contacts from './components/Contacts'
 import Shopping from './components/Shopping'
 import Settings from './components/Settings'
-import AIChat from './components/AIChat'
+import { AIChat } from './components/AIChat'
 import { Loader2 } from 'lucide-react'
 
 type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
