@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { X, User, Heart, School } from 'lucide-react'
 import { supabase, FamilyMember } from '../../lib/supabase'
-import { useAuth } from '../../hooks/useAuth'
 
 interface FamilyMemberFormProps {
   isOpen: boolean
@@ -11,8 +10,8 @@ interface FamilyMemberFormProps {
 }
 
 export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember }: FamilyMemberFormProps) {
-  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     name: editMember?.name || '',
     age: editMember?.age || '',
@@ -25,37 +24,41 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    setError('')
 
     setLoading(true)
     try {
+      // Generate a demo user ID for the family member
+      const demoUserId = 'demo-user-' + Date.now()
+      
       const memberData = {
         ...formData,
-        user_id: user.id,
+        user_id: demoUserId,
         age: formData.age ? parseInt(formData.age.toString()) : null,
         allergies: formData.allergies.split(',').map(a => a.trim()).filter(a => a)
       }
 
-      let result
-      if (editMember) {
-        result = await supabase
-          .from('family_members')
-          .update(memberData)
-          .eq('id', editMember.id)
-          .select()
-          .single()
-      } else {
-        result = await supabase
-          .from('family_members')
-          .insert([memberData])
-          .select()
-          .single()
+      // Create a mock family member for demo purposes
+      const newMember: FamilyMember = {
+        id: 'demo-' + Date.now(),
+        user_id: demoUserId,
+        name: memberData.name,
+        age: memberData.age,
+        gender: memberData.gender as 'Boy' | 'Girl' | 'Other',
+        allergies: memberData.allergies,
+        medical_notes: memberData.medical_notes,
+        school: memberData.school,
+        grade: memberData.grade,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
 
-      if (result.error) throw result.error
-
-      onMemberCreated(result.data)
+      // In a real app, this would save to Supabase
+      // For demo mode, we just call the callback with the new member
+      onMemberCreated(newMember)
       onClose()
+      
+      // Reset form
       setFormData({
         name: '',
         age: '',
@@ -67,7 +70,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
       })
     } catch (error) {
       console.error('Error saving family member:', error)
-      alert('Error saving family member. Please try again.')
+      setError('Error saving family member. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -92,6 +95,12 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4 inline mr-1" />
