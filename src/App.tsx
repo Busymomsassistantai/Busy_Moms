@@ -1,36 +1,28 @@
-import { useAuth } from './hooks/useAuth'
-import { AuthForm } from './components/forms/AuthForm'
-import Onboarding from './components/Onboarding'
-import Dashboard from './components/Dashboard'
-import Navigation from './components/Navigation'
 
-function App() {
-  const { user, loading, profile } = useAuth()
+import { useState, useEffect } from 'react'
+import { supabase } from '../utils/supabase'
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    )
-  }
+function Page() {
+  const [todos, setTodos] = useState([])
 
-  if (!user) {
-    return <AuthForm />
-  }
+  useEffect(() => {
+    function getTodos() {
+      const { data: todos } = await supabase.from('todos').select()
 
-  if (!profile?.onboarding_completed) {
-    return <Onboarding />
-  }
+      if (todos.length > 1) {
+        setTodos(todos)
+      }
+    }
+
+    getTodos()
+  }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <main className="pt-16">
-        <Dashboard />
-      </main>
+    <div>
+      {todos.map((todo) => (
+        <li key={todo}>{todo}</li>
+      ))}
     </div>
   )
 }
-
-export default App
+export default Page
