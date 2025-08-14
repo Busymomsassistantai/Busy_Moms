@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
+import { ConnectionTest } from './ConnectionTest';
 import { FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
   const { signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-  const [connectionError, setConnectionError] = useState<string>('');
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
@@ -110,7 +109,8 @@ export function Settings() {
           icon: Database,
           title: 'Test Supabase Connection',
           description: 'Verify database connectivity',
-          action: 'Test'
+          action: 'Test',
+          onClick: () => setShowConnectionTest(true)
         }
       ]
     },
@@ -268,14 +268,18 @@ export function Settings() {
                         </button>
                       ) : (
                         <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors">
-                          onClick={() => {
+                          <button 
+                            onClick={() => {
                             if (item.title === 'Family Members') {
                               setShowFamilyForm(true);
-                            } else if (item.title === 'Test Supabase Connection') {
-                              testSupabaseConnection();
+                            } else if (item.onClick) {
+                              item.onClick();
                             }
                           }}
+                            className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                          >
                           {item.action}
+                          </button>
                         </button>
                       )}
                     </div>
@@ -285,37 +289,6 @@ export function Settings() {
             </div>
           ))}
         </div>
-
-        {/* Connection Test Results */}
-        {connectionStatus !== 'idle' && (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Connection Test Results</h2>
-            <div className={`p-4 rounded-xl border-2 ${
-              connectionStatus === 'testing' ? 'bg-yellow-50 border-yellow-200' :
-              connectionStatus === 'success' ? 'bg-green-50 border-green-200' :
-              'bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-center space-x-3">
-                {connectionStatus === 'testing' && <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />}
-                {connectionStatus === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                {connectionStatus === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
-                <div>
-                  <h3 className="font-medium">
-                    {connectionStatus === 'testing' && 'Testing connection...'}
-                    {connectionStatus === 'success' && 'Connection successful!'}
-                    {connectionStatus === 'error' && 'Connection failed'}
-                  </h3>
-                  {connectionStatus === 'success' && (
-                    <p className="text-sm text-green-700">Supabase database is accessible</p>
-                  )}
-                  {connectionStatus === 'error' && (
-                    <p className="text-sm text-red-700">{connectionError}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Family Members List */}
         {familyMembers.length > 0 && (
@@ -382,6 +355,11 @@ export function Settings() {
           handleFamilyMemberCreated(newMember);
           loadFamilyMembers(); // Reload the list
         }}
+      />
+
+      <ConnectionTest
+        isOpen={showConnectionTest}
+        onClose={() => setShowConnectionTest(false)}
       />
     </div>
   );
