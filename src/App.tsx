@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
-import AuthForm from './components/forms/AuthForm'
+import { AuthForm } from './components/forms/AuthForm'
 import Onboarding from './components/Onboarding'
 import Dashboard from './components/Dashboard'
 import Navigation from './components/Navigation'
