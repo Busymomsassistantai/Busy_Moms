@@ -1,19 +1,89 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
-import { FamilyMember } from '../lib/supabase';
+import { FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
   const { signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [showConnectionTest, setShowConnectionTest] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [connectionError, setConnectionError] = useState<string>('');
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
     reminders: true,
     whatsapp: false
   });
+
+  // Load family members on component mount
+  React.useEffect(() => {
+    loadFamilyMembers();
+  }, []);
+
+  const loadFamilyMembers = async () => {
+    try {
+      // For demo purposes, we'll use mock data since we don't have authentication
+      const mockFamilyMembers: FamilyMember[] = [
+        {
+          id: '1',
+          user_id: 'demo-user',
+          name: 'Emma Johnson',
+          age: 7,
+          gender: 'Girl',
+          allergies: ['Peanuts'],
+          medical_notes: 'Inhaler for asthma',
+          school: 'Lincoln Elementary',
+          grade: '2nd Grade'
+        },
+        {
+          id: '2',
+          user_id: 'demo-user',
+          name: 'Tom Johnson',
+          age: 5,
+          gender: 'Boy',
+          allergies: ['Dairy'],
+          medical_notes: 'Lactose intolerant',
+          school: 'Lincoln Elementary',
+          grade: 'Kindergarten'
+        }
+      ];
+      setFamilyMembers(mockFamilyMembers);
+    } catch (error) {
+      console.error('Error loading family members:', error);
+    }
+  };
+
+  const testSupabaseConnection = async () => {
+    setConnectionStatus('testing');
+    setConnectionError('');
+    
+    try {
+      // Test basic connection
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('count')
+        .limit(1);
+
+      if (error) {
+        throw new Error(`Database connection failed: ${error.message}`);
+      }
+
+      // Test auth system
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      if (authError) {
+        console.warn('Auth test warning:', authError.message);
+      }
+
+      setConnectionStatus('success');
+    } catch (error: any) {
+      setConnectionStatus('error');
+      setConnectionError(error.message || 'Unknown connection error');
+      console.error('Supabase connection test failed:', error);
+    }
+  };
 
   const settingSections = [
     {
@@ -22,7 +92,7 @@ export function Settings() {
         {
           icon: User,
           title: 'Family Members',
-          description: 'Emma (7), Tom (5)',
+          description: `${familyMembers.length} family members`,
           action: 'Edit'
         },
         {
@@ -30,6 +100,17 @@ export function Settings() {
           title: 'Privacy & Safety',
           description: 'Allergies, medical info, emergency contacts',
           action: 'Manage'
+        }
+      ]
+    },
+    {
+      title: 'System',
+      items: [
+        {
+          icon: Database,
+          title: 'Test Supabase Connection',
+          description: 'Verify database connectivity',
+          action: 'Test'
         }
       ]
     },
@@ -190,6 +271,8 @@ export function Settings() {
                           onClick={() => {
                             if (item.title === 'Family Members') {
                               setShowFamilyForm(true);
+                            } else if (item.title === 'Test Supabase Connection') {
+                              testSupabaseConnection();
                             }
                           }}
                           {item.action}
@@ -202,6 +285,37 @@ export function Settings() {
             </div>
           ))}
         </div>
+
+        {/* Connection Test Results */}
+        {connectionStatus !== 'idle' && (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Connection Test Results</h2>
+            <div className={`p-4 rounded-xl border-2 ${
+              connectionStatus === 'testing' ? 'bg-yellow-50 border-yellow-200' :
+              connectionStatus === 'success' ? 'bg-green-50 border-green-200' :
+              'bg-red-50 border-red-200'
+            }`}>
+              <div className="flex items-center space-x-3">
+                {connectionStatus === 'testing' && <Loader2 className="w-5 h-5 text-yellow-500 animate-spin" />}
+                {connectionStatus === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                {connectionStatus === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
+                <div>
+                  <h3 className="font-medium">
+                    {connectionStatus === 'testing' && 'Testing connection...'}
+                    {connectionStatus === 'success' && 'Connection successful!'}
+                    {connectionStatus === 'error' && 'Connection failed'}
+                  </h3>
+                  {connectionStatus === 'success' && (
+                    <p className="text-sm text-green-700">Supabase database is accessible</p>
+                  )}
+                  {connectionStatus === 'error' && (
+                    <p className="text-sm text-red-700">{connectionError}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Family Members List */}
         {familyMembers.length > 0 && (
@@ -264,7 +378,10 @@ export function Settings() {
       <FamilyMemberForm
         isOpen={showFamilyForm}
         onClose={() => setShowFamilyForm(false)}
-        onMemberCreated={handleFamilyMemberCreated}
+        onMemberCreated={(newMember) => {
+          handleFamilyMemberCreated(newMember);
+          loadFamilyMembers(); // Reload the list
+        }}
       />
     </div>
   );
