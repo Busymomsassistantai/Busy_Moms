@@ -28,14 +28,17 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
     e.preventDefault()
     setError('')
     
-    // For demo mode, create a demo user ID if no authenticated user
-    const userId = user?.id || 'demo-user-' + Date.now()
+    // Ensure we have a valid authenticated user
+    if (!user?.id) {
+      setError('You must be logged in to add family members.')
+      return
+    }
 
     setLoading(true)
     try {
       const memberData = {
         ...formData,
-        user_id: userId,
+        user_id: user.id,
         age: formData.age ? parseInt(formData.age.toString()) : null,
         allergies: formData.allergies.split(',').map(a => a.trim()).filter(a => a)
       }
