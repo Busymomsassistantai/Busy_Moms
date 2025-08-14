@@ -7,11 +7,12 @@ import { FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
@@ -25,77 +26,54 @@ export function Settings() {
   }, []);
 
   const loadFamilyMembers = async () => {
+    setLoadingMembers(true);
     try {
-      // Try to load family members from Supabase
-      const { data: members, error } = await supabase
-        .from('family_members')
-        .select('*')
-        .order('created_at', { ascending: true })
+      if (user) {
+        // Load family members from Supabase for authenticated user
+        const { data: members, error } = await supabase
+          .from('family_members')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
 
-      if (error) {
-        console.warn('Could not load family members from database:', error.message)
-        // Fall back to demo data if database is not available
-        const mockFamilyMembers: FamilyMember[] = [
-          {
-            id: '1',
-            user_id: 'demo-user',
-            name: 'Emma Johnson',
-            age: 7,
-            gender: 'Girl',
-            allergies: ['Peanuts'],
-            medical_notes: 'Inhaler for asthma',
-            school: 'Lincoln Elementary',
-            grade: '2nd Grade'
-          },
-          {
-            id: '2',
-            user_id: 'demo-user',
-            name: 'Tom Johnson',
-            age: 5,
-            gender: 'Boy',
-            allergies: ['Dairy'],
-            medical_notes: 'Lactose intolerant',
-            school: 'Lincoln Elementary',
-            grade: 'Kindergarten'
-          }
-        ];
-        setFamilyMembers(mockFamilyMembers);
+        if (error) {
+          console.warn('Could not load family members from database:', error.message);
+          setFamilyMembers([]);
+        } else {
+          setFamilyMembers(members || []);
+        }
       } else {
-        setFamilyMembers(members || []);
+        // No user, show empty list
+        setFamilyMembers([]);
       }
     } catch (error) {
       console.error('Error loading family members:', error);
-      // Fall back to empty array on error
       setFamilyMembers([]);
+    } finally {
+      setLoadingMembers(false);
     }
   };
 
-  const testSupabaseConnection = async () => {
-    setConnectionStatus('testing');
-    setConnectionError('');
-    
+  const deleteFamilyMember = async (memberId: string) => {
+    if (!confirm('Are you sure you want to delete this family member?')) {
+      return;
+    }
+
     try {
-      // Test basic connection
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('count')
-        .limit(1);
+      const { error } = await supabase
+        .from('family_members')
+        .delete()
+        .eq('id', memberId);
 
       if (error) {
-        throw new Error(`Database connection failed: ${error.message}`);
+        throw error;
       }
 
-      // Test auth system
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
-      if (authError) {
-        console.warn('Auth test warning:', authError.message);
-      }
-
-      setConnectionStatus('success');
-    } catch (error: any) {
-      setConnectionStatus('error');
-      setConnectionError(error.message || 'Unknown connection error');
-      console.error('Supabase connection test failed:', error);
+      // Remove from local state
+      setFamilyMembers(prev => prev.filter(member => member.id !== memberId));
+    } catch (error) {
+      console.error('Error deleting family member:', error);
+      alert('Error deleting family member. Please try again.');
     }
   };
 
@@ -106,7 +84,7 @@ export function Settings() {
         {
           icon: User,
           title: 'Family Members',
-          description: `${familyMembers.length} family members`,
+          description: loadingMembers ? 'Loading...' : `${familyMembers.length} family member${familyMembers.length !== 1 ? 's' : ''}`,
           action: 'Edit'
         },
         {
@@ -313,7 +291,15 @@ export function Settings() {
         </div>
 
         {/* Family Members List */}
-        {familyMembers.length > 0 && (
+        {loadingMembers ? (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+              <span className="ml-2 text-gray-600">Loading family members...</span>
+            </div>
+          </div>
+        ) : familyMembers.length > 0 ? (
           <div className="mt-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
             <div className="space-y-2">
@@ -323,18 +309,47 @@ export function Settings() {
                     <div>
                       <h3 className="font-medium text-gray-900">{member.name}</h3>
                       <p className="text-sm text-gray-600">
-                        {member.age && `Age ${member.age}`} {member.gender && `• ${member.gender}`}
+                        {member.age && `Age ${member.age}`}{member.gender && ` • ${member.gender}`}
                         {member.school && ` • ${member.school}`}
+                        {member.grade && ` (${member.grade})`}
                       </p>
                       {member.allergies && member.allergies.length > 0 && (
                         <p className="text-xs text-red-600 mt-1">
                           Allergies: {member.allergies.join(', ')}
                         </p>
                       )}
+                      {member.medical_notes && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Medical: {member.medical_notes}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => deleteFamilyMember(member.id)}
+                        className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200 transition-colors"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
+            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
+              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No family members yet</h3>
+              <p className="text-gray-600 mb-4">Add your children and family members to get started</p>
+              <button
+                onClick={() => setShowFamilyForm(true)}
+                className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
+              >
+                Add First Family Member
+              </button>
             </div>
           </div>
         )}
