@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Heart, Mail, Lock, User } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 
 interface AuthFormProps {
   onAuthSuccess: () => void
@@ -22,9 +23,29 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(formData.email, formData.password)
+        const { data, error } = await signUp(formData.email, formData.password)
         if (error) throw error
-        alert('Check your email for the confirmation link!')
+        
+        // Create profile after successful signup
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+              id: data.user.id,
+              email: data.user.email,
+              full_name: formData.fullName,
+              user_type: 'Mom',
+              onboarding_completed: false,
+              ai_personality: 'Friendly'
+            }])
+          
+          if (profileError) {
+            console.warn('Profile creation failed:', profileError.message)
+          }
+        }
+        
+        alert('Account created successfully! You can now sign in.')
+        setIsSignUp(false) // Switch to sign in form
       } else {
         const { error } = await signIn(formData.email, formData.password)
         if (error) throw error
