@@ -28,14 +28,13 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
     e.preventDefault()
     setError('')
     
-    // Ensure we have a valid authenticated user
-    if (!user?.id) {
-      setError('You must be logged in to add family members.')
-      return
-    }
-
     setLoading(true)
     try {
+      // Ensure we have a valid authenticated user
+      if (!user?.id) {
+        throw new Error('You must be logged in to add family members.')
+      }
+
       const memberData = {
         ...formData,
         user_id: user.id,

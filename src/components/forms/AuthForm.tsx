@@ -142,7 +142,6 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           <button
             type="button"
             onClick={onAuthSuccess}
-            onClick={onAuthSuccess}
             className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
           >
             🚀 Skip Sign-In (Demo Mode)
