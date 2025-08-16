@@ -60,6 +60,12 @@ export function Calendar() {
     return date1.toDateString() === date2.toDateString();
   };
 
+  const hasItemsOnDate = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const dayEvents = events.filter(event => event.event_date === dateString);
+    const dayReminders = reminders.filter(reminder => reminder.reminder_date === dateString);
+    return { hasEvents: dayEvents.length > 0, hasReminders: dayReminders.length > 0, count: dayEvents.length + dayReminders.length };
+  };
   const renderCalendarDays = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
@@ -77,12 +83,13 @@ export function Calendar() {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const isSelected = isSameDay(selectedDate, date);
       const isTodayDate = isToday(date);
+      const { hasEvents, hasReminders, count } = hasItemsOnDate(date);
 
       days.push(
         <button
           key={day}
           onClick={() => setSelectedDate(date)}
-          className={`aspect-square flex items-center justify-center text-sm rounded-lg transition-all hover:bg-gray-100 ${
+          className={`aspect-square flex flex-col items-center justify-center text-sm rounded-lg transition-all hover:bg-gray-100 relative ${
             isSelected
               ? 'bg-purple-500 text-white hover:bg-purple-600'
               : isTodayDate
@@ -90,7 +97,21 @@ export function Calendar() {
               : 'text-gray-700'
           }`}
         >
-          {day}
+          <span className="mb-1">{day}</span>
+          {(hasEvents || hasReminders) && (
+            <div className="flex space-x-1">
+              {hasEvents && (
+                <div className={`w-2 h-2 rounded-full ${
+                  isSelected ? 'bg-white' : 'bg-blue-500'
+                }`}></div>
+              )}
+              {hasReminders && (
+                <div className={`w-2 h-2 rounded-full ${
+                  isSelected ? 'bg-white' : 'bg-purple-500'
+                }`}></div>
+              )}
+            </div>
+          )}
         </button>
       );
     }
