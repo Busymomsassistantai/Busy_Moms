@@ -51,7 +51,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             .from('profiles')
             .select('id')
             .eq('id', currentUser.id)
-            .single()
+            .maybeSingle()
           
           if (profileCheckError && profileCheckError.code === 'PGRST116') {
             // Profile doesn't exist, create it

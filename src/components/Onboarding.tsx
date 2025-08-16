@@ -165,9 +165,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         .from('profiles')
         .select('id')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
       
-      if (checkError && checkError.code === 'PGRST116') {
+      if (!existingProfile) {
         // Profile doesn't exist, create it
         const { error: createError } = await supabase
           .from('profiles')
