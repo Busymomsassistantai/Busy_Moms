@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, MessageCircle, X } from 'lucide-react';
 import { aiService, ChatMessage } from '../services/openai';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, Profile } from '../lib/supabase';
+import { supabase, Profile, Reminder } from '../lib/supabase';
 
 interface AIChatProps {
   isOpen: boolean;
@@ -73,6 +73,57 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
     setIsLoading(true);
 
     try {
+      // Check if the message is about adding a reminder
+      const isReminderRequest = inputMessage.toLowerCase().includes('add reminder') || 
+                               inputMessage.toLowerCase().includes('remind me') ||
+                               inputMessage.toLowerCase().includes('create reminder');
+      
+      if (isReminderRequest && user?.id) {
+        // Try to extract reminder details from the message
+        const reminderDetails = await extractReminderDetails(inputMessage);
+        
+        if (reminderDetails) {
+          try {
+            const { data: newReminder, error } = await supabase
+              .from('reminders')
+              .insert([{
+                user_id: user.id,
+                title: reminderDetails.title,
+                description: reminderDetails.description || '',
+                reminder_date: reminderDetails.date,
+                reminder_time: reminderDetails.time,
+                priority: reminderDetails.priority || 'medium',
+                completed: false,
+                recurring: false
+              }])
+              .select()
+              .single();
+
+            if (error) {
+              throw error;
+            }
+
+            const assistantMessage: ChatMessage = {
+              role: 'assistant',
+              content: `✅ Perfect! I've added a reminder for "${reminderDetails.title}" on ${reminderDetails.date}${reminderDetails.time ? ` at ${reminderDetails.time}` : ''}. You'll get notified when it's time!`
+            };
+
+            setMessages(prev => [...prev, assistantMessage]);
+            setIsLoading(false);
+            return;
+          } catch (error) {
+            console.error('Error creating reminder:', error);
+            const errorMessage: ChatMessage = {
+              role: 'assistant',
+              content: 'I had trouble saving that reminder to your list. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?'
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
       const response = await aiService.chat([...messages, userMessage]);
       
       const assistantMessage: ChatMessage = {
@@ -89,6 +140,49 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const extractReminderDetails = async (message: string): Promise<{
+    title: string;
+    description?: string;
+    date: string;
+    time?: string;
+    priority?: 'low' | 'medium' | 'high';
+  } | null> => {
+    try {
+      // Use AI to extract structured reminder data
+      const extractionPrompt = `Extract reminder details from this message: "${message}"
+      
+      Respond ONLY with valid JSON in this exact format:
+      {
+        "title": "brief reminder title",
+        "description": "optional longer description",
+        "date": "YYYY-MM-DD format",
+        "time": "HH:MM format (24-hour) or null",
+        "priority": "low, medium, or high"
+      }
+      
+      If no specific date is mentioned, use tomorrow's date. If "today" is mentioned, use today's date.
+      Today is ${new Date().toISOString().split('T')[0]}.
+      Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}.`;
+
+      const response = await aiService.chat([
+        { role: 'user', content: extractionPrompt }
+      ]);
+
+      // Try to parse the JSON response
+      const parsed = JSON.parse(response.trim());
+      
+      // Validate required fields
+      if (parsed.title && parsed.date) {
+        return parsed;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error extracting reminder details:', error);
+      return null;
     }
   };
 

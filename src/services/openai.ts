@@ -30,13 +30,17 @@ Keep responses concise, practical, and empathetic. Always consider the busy life
           { role: 'system', content: this.systemPrompt },
           ...messages
         ],
-        max_tokens: 300,
+        max_tokens: 500,
         temperature: 0.7,
       });
 
       return response.choices[0]?.message?.content || 'I apologize, but I couldn\'t generate a response. Please try again.';
     } catch (error) {
       console.error('OpenAI API Error:', error);
+      // Return a fallback response instead of throwing an error for reminder extraction
+      if (error instanceof Error && error.message.includes('API')) {
+        return 'I\'m having trouble connecting to my AI service right now. Please try again in a moment.';
+      }
       throw new Error('Unable to connect to AI service. Please check your connection and try again.');
     }
   }
