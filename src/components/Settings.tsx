@@ -145,7 +145,7 @@ export function Settings() {
           description: 'Setup and test demo user login',
           action: 'Test',
           onClick: () => setShowAuthTest(true)
-        }
+        },
         {
           icon: CalendarIcon,
           title: 'Test Google Calendar API',
