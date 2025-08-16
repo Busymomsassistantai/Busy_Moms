@@ -59,33 +59,46 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    if (!user?.id) {
+      setError('No authenticated user found')
+      return
+    }
 
     setError('')
     setLoading(true)
 
     try {
+      const updateData = {
+        full_name: formData.full_name,
+        user_type: formData.user_type,
+        ai_personality: formData.ai_personality,
+        updated_at: new Date().toISOString()
+      }
+
+      console.log('Updating profile for user:', user.id, 'with data:', updateData)
+
       const { data: updatedProfile, error } = await supabase
         .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          user_type: formData.user_type,
-          ai_personality: formData.ai_personality,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', user.id)
         .select()
-        .single()
+        .maybeSingle()
 
       if (error) {
+        console.error('Profile update error:', error)
         throw error
       }
 
+      if (!updatedProfile) {
+        throw new Error('Profile not found or update failed')
+      }
+
+      console.log('Profile updated successfully:', updatedProfile)
       onProfileUpdated(updatedProfile)
       onClose()
     } catch (error: any) {
       console.error('Error updating profile:', error)
-      setError(`Error updating profile: ${error.message}`)
+      setError(error.message || 'Failed to update profile')
     } finally {
       setLoading(false)
     }
