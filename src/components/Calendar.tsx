@@ -21,6 +21,7 @@ export function Calendar() {
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isGoogleServiceReady, setIsGoogleServiceReady] = useState(false);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   // Calendar helper functions
   const getDaysInMonth = (date: Date) => {
@@ -66,7 +67,12 @@ export function Calendar() {
   const hasItemsOnDate = (date: Date) => {
     const dateString = date.toISOString().split('T')[0];
     const dayEvents = events.filter(event => event.event_date === dateString);
-    return { hasEvents: dayEvents.length > 0, hasReminders: false, count: dayEvents.length };
+    const dayReminders = reminders.filter(reminder => reminder.reminder_date === dateString);
+    return { 
+      hasEvents: dayEvents.length > 0, 
+      hasReminders: dayReminders.length > 0, 
+      count: dayEvents.length + dayReminders.length 
+    };
   };
   const renderCalendarDays = () => {
     const daysInMonth = getDaysInMonth(currentDate);
@@ -181,6 +187,21 @@ export function Calendar() {
         console.log('✅ Loaded events:', eventsData);
         setEvents(eventsData || []);
       }
+
+      // Load reminders
+      const { data: remindersData, error: remindersError } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('completed', false)
+        .order('reminder_date', { ascending: true });
+
+      if (remindersError) {
+        console.error('❌ Error loading reminders:', remindersError);
+      } else {
+        console.log('✅ Loaded reminders:', remindersData);
+        setReminders(remindersData || []);
+      }
     } catch (error) {
       console.error('❌ Error loading calendar data:', error);
     } finally {
@@ -200,8 +221,9 @@ export function Calendar() {
     const dateString = date.toISOString().split('T')[0];
     
     const dayEvents = events.filter(event => event.event_date === dateString);
+    const dayReminders = reminders.filter(reminder => reminder.reminder_date === dateString);
     
-    return { events: dayEvents, reminders: [] };
+    return { events: dayEvents, reminders: dayReminders };
   };
 
   const connectGoogleCalendar = async () => {
@@ -466,7 +488,7 @@ export function Calendar() {
 
           {/* Display events and reminders for selected date */}
           {selectedDate && (() => {
-            const { events: dayEvents } = getItemsForDate(selectedDate);
+            const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
             
             return (
               <>
@@ -527,6 +549,51 @@ export function Calendar() {
                     )}
                   </div>
                 ))}
+
+                {/* Database Reminders */}
+                {dayReminders.map((reminder) => (
+                  <div
+                    key={`reminder-${reminder.id}`}
+                    className="p-4 rounded-xl border-2 bg-yellow-50 border-yellow-200 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{reminder.title}</h3>
+                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                            Reminder
+                          </span>
+                          {reminder.priority === 'high' && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                              High Priority
+                            </span>
+                          )}
+                        </div>
+                        {reminder.description && (
+                          <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
+                        )}
+                        <div className="flex items-center space-x-3 text-sm text-gray-500">
+                          {reminder.reminder_time && (
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{new Date(`2000-01-01T${reminder.reminder_time}`).toLocaleTimeString([], { 
+                                hour: 'numeric', 
+                                minute: '2-digit' 
+                              })}</span>
+                            </div>
+                          )}
+                          {reminder.recurring && (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                {reminder.recurring_pattern}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </>
             );
           })()}
@@ -547,6 +614,54 @@ export function Calendar() {
           </h2>
           
           <div className="space-y-4">
+            {/* Display reminders for selected date */}
+            {selectedDate && (() => {
+              const { reminders: dayReminders } = getItemsForDate(selectedDate);
+              return dayReminders.map((reminder) => (
+                <div
+                  key={`reminder-${reminder.id}`}
+                  className="p-4 rounded-xl border-2 bg-yellow-50 border-yellow-200 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="font-semibold text-gray-900">{reminder.title}</h3>
+                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                          Reminder
+                        </span>
+                        {reminder.priority === 'high' && (
+                          <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                            High Priority
+                          </span>
+                        )}
+                      </div>
+                      {reminder.description && (
+                        <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
+                      )}
+                      <div className="flex items-center space-x-3 text-sm text-gray-500">
+                        {reminder.reminder_time && (
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-4 h-4" />
+                            <span>{new Date(`2000-01-01T${reminder.reminder_time}`).toLocaleTimeString([], { 
+                              hour: 'numeric', 
+                              minute: '2-digit' 
+                            })}</span>
+                          </div>
+                        )}
+                        {reminder.recurring && (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              {reminder.recurring_pattern}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ));
+            })()}
+
             {events.map((event) => (
               <div
                 key={event.id}
@@ -634,8 +749,8 @@ export function Calendar() {
 
             {/* Empty state for Google Calendar */}
             {isGoogleConnected && googleEvents.length === 0 && selectedDate && (() => {
-              const { events: dayEvents } = getItemsForDate(selectedDate);
-              return dayEvents.length === 0;
+              const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
+              return dayEvents.length === 0 && dayReminders.length === 0;
             })() && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                 <CalendarIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
@@ -656,14 +771,14 @@ export function Calendar() {
 
             {/* Empty state for no events */}
             {!loading && selectedDate && (() => {
-              const { events: dayEvents } = getItemsForDate(selectedDate);
-              return dayEvents.length === 0 && googleEvents.length === 0;
+              const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
+              return dayEvents.length === 0 && dayReminders.length === 0 && googleEvents.length === 0;
             })() && (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
                 <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No events</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No events or reminders</h3>
                 <p className="text-gray-600 mb-4">
-                  No events scheduled for {selectedDate.toLocaleDateString()}
+                  No events or reminders scheduled for {selectedDate.toLocaleDateString()}
                 </p>
                 <button
                   onClick={() => setShowEventForm(true)}
