@@ -84,6 +84,8 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         
         if (reminderDetails) {
           try {
+            console.log('Creating reminder with details:', reminderDetails);
+            
             const { data: newReminder, error } = await supabase
               .from('reminders')
               .insert([{
@@ -100,9 +102,12 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               .single();
 
             if (error) {
+              console.error('Supabase error creating reminder:', error);
               throw error;
             }
 
+            console.log('Reminder created successfully:', newReminder);
+            
             const assistantMessage: ChatMessage = {
               role: 'assistant',
               content: `✅ Perfect! I've added a reminder for "${reminderDetails.title}" on ${reminderDetails.date}${reminderDetails.time ? ` at ${reminderDetails.time}` : ''}. You'll get notified when it's time!`
@@ -115,12 +120,21 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
             console.error('Error creating reminder:', error);
             const errorMessage: ChatMessage = {
               role: 'assistant',
-              content: 'I had trouble saving that reminder to your list. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?'
+              content: `I had trouble saving that reminder to your list. Error: ${error.message}. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?`
             };
             setMessages(prev => [...prev, errorMessage]);
             setIsLoading(false);
             return;
           }
+        } else {
+          console.log('Could not extract reminder details from message:', inputMessage);
+          const errorMessage: ChatMessage = {
+            role: 'assistant',
+            content: 'I had trouble understanding the reminder details. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?'
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setIsLoading(false);
+          return;
         }
       }
 
@@ -151,6 +165,8 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
     priority?: 'low' | 'medium' | 'high';
   } | null> => {
     try {
+      console.log('Extracting reminder details from message:', message);
+      
       // Use AI to extract structured reminder data
       const extractionPrompt = `Extract reminder details from this message: "${message}"
       
@@ -171,20 +187,27 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         { role: 'user', content: extractionPrompt }
       ]);
 
+      console.log('AI response for reminder extraction:', response);
+
       // Try to parse the JSON response
-     // Clean the response by removing markdown code block syntax
-     const cleanedResponse = response.trim()
-       .replace(/^```json\s*/, '')  // Remove opening ```json
-       .replace(/^```\s*/, '')      // Remove opening ```
-       .replace(/\s*```$/, '');     // Remove closing ```
-     
-     const parsed = JSON.parse(cleanedResponse);
+      // Clean the response by removing markdown code block syntax
+      const cleanedResponse = response.trim()
+        .replace(/^```json\s*/, '')  // Remove opening ```json
+        .replace(/^```\s*/, '')      // Remove opening ```
+        .replace(/\s*```$/, '');     // Remove closing ```
+      
+      console.log('Cleaned response:', cleanedResponse);
+      
+      const parsed = JSON.parse(cleanedResponse);
+      console.log('Parsed reminder details:', parsed);
       
       // Validate required fields
       if (parsed.title && parsed.date) {
+        console.log('Reminder details validated successfully');
         return parsed;
       }
       
+      console.log('Reminder details validation failed - missing title or date');
       return null;
     } catch (error) {
       console.error('Error extracting reminder details:', error);
