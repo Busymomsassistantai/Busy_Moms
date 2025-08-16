@@ -174,9 +174,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <button
           onClick={nextStep}
           disabled={step === 1 && !userType}
+          disabled={(step === 1 && !userType) || saving}
           className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {step === steps.length - 1 ? 'Get Started' : 'Next'}
+          {saving ? 'Saving...' : step === steps.length - 1 ? 'Get Started' : 'Next'}
         </button>
       </div>
     </div>
