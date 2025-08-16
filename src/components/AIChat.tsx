@@ -108,9 +108,44 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
 
             console.log('Reminder created successfully:', newReminder);
             
+            // Also create a calendar event for the reminder
+            try {
+              const eventData = {
+                user_id: user.id,
+                title: reminderDetails.title,
+                description: reminderDetails.description || 'Reminder',
+                event_date: reminderDetails.date,
+                start_time: reminderDetails.time,
+                end_time: reminderDetails.time ? 
+                  new Date(new Date(`2000-01-01T${reminderDetails.time}`).getTime() + 30 * 60 * 1000)
+                    .toTimeString().slice(0, 5) : null, // Add 30 minutes if time is specified
+                location: '',
+                event_type: 'other' as const,
+                participants: [],
+                rsvp_required: false,
+                rsvp_status: 'pending' as const,
+                source: 'manual' as const
+              };
+
+              const { data: newEvent, error: eventError } = await supabase
+                .from('events')
+                .insert([eventData])
+                .select()
+                .single();
+
+              if (eventError) {
+                console.error('Error creating calendar event for reminder:', eventError);
+                // Don't fail the whole operation if calendar event creation fails
+              } else {
+                console.log('Calendar event created for reminder:', newEvent);
+              }
+            } catch (eventCreationError) {
+              console.error('Error creating calendar event:', eventCreationError);
+            }
+            
             const assistantMessage: ChatMessage = {
               role: 'assistant',
-              content: `✅ Perfect! I've added a reminder for "${reminderDetails.title}" on ${reminderDetails.date}${reminderDetails.time ? ` at ${reminderDetails.time}` : ''}. You'll get notified when it's time!`
+              content: `✅ Perfect! I've added a reminder for "${reminderDetails.title}" on ${reminderDetails.date}${reminderDetails.time ? ` at ${reminderDetails.time}` : ''}. I've also added it to your calendar so you can see it there too!`
             };
 
             setMessages(prev => [...prev, assistantMessage]);
