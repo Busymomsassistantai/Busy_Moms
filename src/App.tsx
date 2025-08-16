@@ -72,7 +72,7 @@ function App() {
         onScreenChange={setCurrentScreen}
         onSignOut={signOut}
       />
-      <main className="pt-16">
+      <main className="pb-20">
         {renderScreen()}
       </main>
     </div>
