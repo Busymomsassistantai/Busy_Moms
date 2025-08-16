@@ -67,12 +67,37 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       content: (
         <div className="space-y-4">
           {[
-            { icon: Calendar, title: 'Calendar Access', desc: 'Sync your events automatically' },
-            { icon: MessageCircle, title: 'WhatsApp Integration', desc: 'Parse invitations and reminders' },
-            { icon: Watch, title: 'Smartwatch', desc: 'Voice commands and quick actions' },
-            { icon: MapPin, title: 'Location', desc: 'Smart reminders based on location' },
-            { icon: Bell, title: 'Notifications', desc: 'Never miss important events' }
-          ].map(({ icon: Icon, title, desc }) => (
+            { 
+              icon: Bell, 
+              title: 'Event Notifications', 
+              desc: 'Get notified about upcoming events',
+              key: 'notification_events'
+            },
+            { 
+              icon: Calendar, 
+              title: 'Shopping Alerts', 
+              desc: 'Reminders for your shopping lists',
+              key: 'notification_shopping'
+            },
+            { 
+              icon: Bell, 
+              title: 'General Reminders', 
+              desc: 'Never miss important tasks',
+              key: 'notification_reminders'
+            },
+            { 
+              icon: MessageCircle, 
+              title: 'WhatsApp Integration', 
+              desc: 'Parse invitations and reminders',
+              key: 'whatsapp_integration_enabled'
+            },
+            { 
+              icon: Watch, 
+              title: 'Smartwatch Connection', 
+              desc: 'Voice commands and quick actions',
+              key: 'smartwatch_connected'
+            }
+          ].map(({ icon: Icon, title, desc, key }) => (
             <div key={title} className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -82,9 +107,23 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   <h4 className="font-medium text-gray-900">{title}</h4>
                   <p className="text-sm text-gray-600">{desc}</p>
                 </div>
-                <div className="w-12 h-6 bg-purple-500 rounded-full relative">
-                  <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 shadow"></div>
-                </div>
+                <button
+                  onClick={() => setPreferences(prev => ({
+                    ...prev,
+                    [key]: !prev[key as keyof typeof prev]
+                  }))}
+                  className={`w-12 h-6 rounded-full relative transition-colors ${
+                    preferences[key as keyof typeof preferences] 
+                      ? 'bg-purple-500' 
+                      : 'bg-gray-300'
+                  }`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow transition-transform ${
+                    preferences[key as keyof typeof preferences] 
+                      ? 'translate-x-6' 
+                      : 'translate-x-0.5'
+                  }`}></div>
+                </button>
               </div>
             </div>
           ))}
