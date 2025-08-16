@@ -495,125 +495,30 @@ export function Calendar() {
             </div>
           ))}
 
-          {/* Display events and reminders for selected date */}
-          {selectedDate && (() => {
-            const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
-            
-            return (
-              <>
-                {/* Database Events */}
-                {dayEvents.map((event) => (
-                  <div
-                    key={`event-${event.id}`}
-                    className={`p-4 rounded-xl border-2 ${getEventColor(event.event_type || 'other')} hover:shadow-md transition-all cursor-pointer`}
-                    onClick={() => handleEventClick(event)}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold">{event.title}</h3>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                            Event
-                          </span>
-                        </div>
-                        {event.description && (
-                          <p className="text-sm opacity-75 mb-2">{event.description}</p>
-                        )}
-                        <div className="flex items-center space-x-3 text-sm opacity-75 mb-2">
-                          {event.start_time && (
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{formatTime(event.start_time, event.end_time)}</span>
-                            </div>
-                          )}
-                          {event.location && (
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{event.location}</span>
-                            </div>
-                          )}
-                        </div>
-                        {event.participants && event.participants.length > 0 && (
-                          <div className="flex items-center space-x-1 text-sm opacity-75">
-                            <Users className="w-4 h-4" />
-                            <span>{event.participants.join(', ')}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {event.rsvp_required && (
-                      <div className="flex space-x-2 mt-3">
-                        {['Buy Gift', 'RSVP'].map((action) => (
-                          <button
-                            key={action}
-                            className="flex items-center space-x-1 px-3 py-1 bg-white bg-opacity-50 rounded-full text-sm font-medium hover:bg-opacity-75 transition-colors"
-                          >
-                            {action === 'Buy Gift' && <Gift className="w-3 h-3" />}
-                            {action === 'RSVP' && <MessageCircle className="w-3 h-3" />}
-                            <span>{action}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Database Reminders */}
-                {dayReminders.map((reminder) => (
-                  <div
-                    key={`reminder-${reminder.id}`}
-                    className="p-4 rounded-xl border-2 bg-yellow-50 border-yellow-200 hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold text-gray-900">{reminder.title}</h3>
-                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
-                            Reminder
-                          </span>
-                          {reminder.priority === 'high' && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                              High Priority
-                            </span>
-                          )}
-                        </div>
-                        {reminder.description && (
-                          <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
-                        )}
-                        <div className="flex items-center space-x-3 text-sm text-gray-500">
-                          {reminder.reminder_time && (
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{new Date(`2000-01-01T${reminder.reminder_time}`).toLocaleTimeString([], { 
-                                hour: 'numeric', 
-                                minute: '2-digit' 
-                              })}</span>
-                            </div>
-                          )}
-                          {reminder.recurring && (
-                            <div className="flex items-center space-x-1">
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                {reminder.recurring_pattern}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            );
-          })()}
           {renderCalendarDays()}
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Events and Reminders for Selected Date */}
+        {selectedDate && (() => {
+          const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
           
-          {/* Display events and reminders for selected date in calendar grid */}
-          {selectedDate && (() => {
-            const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
-            
-            return (
-              <>
+          if (dayEvents.length === 0 && dayReminders.length === 0) {
+            return null;
+          }
+          
+          return (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Events & Reminders for {selectedDate.toLocaleDateString('en-US', { 
+                  weekday: 'short',
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </h3>
+              
+              <div className="space-y-3">
                 {/* Database Events */}
                 {dayEvents.map((event) => (
                   <div
@@ -621,18 +526,15 @@ export function Calendar() {
                     className={`p-4 rounded-xl border-2 ${getEventColor(event.event_type || 'other')} hover:shadow-md transition-all cursor-pointer`}
                     onClick={() => handleEventClick(event)}
                   >
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold">{event.title}</h3>
+                          <h4 className="font-semibold">{event.title}</h4>
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                             Event
                           </span>
                         </div>
-                        {event.description && (
-                          <p className="text-sm opacity-75 mb-2">{event.description}</p>
-                        )}
-                        <div className="flex items-center space-x-3 text-sm opacity-75 mb-2">
+                        <div className="flex items-center space-x-3 text-sm opacity-75">
                           {event.start_time && (
                             <div className="flex items-center space-x-1">
                               <Clock className="w-4 h-4" />
@@ -646,29 +548,8 @@ export function Calendar() {
                             </div>
                           )}
                         </div>
-                        {event.participants && event.participants.length > 0 && (
-                          <div className="flex items-center space-x-1 text-sm opacity-75">
-                            <Users className="w-4 h-4" />
-                            <span>{event.participants.join(', ')}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
-
-                    {event.rsvp_required && (
-                      <div className="flex space-x-2 mt-3">
-                        {['Buy Gift', 'RSVP'].map((action) => (
-                          <button
-                            key={action}
-                            className="flex items-center space-x-1 px-3 py-1 bg-white bg-opacity-50 rounded-full text-sm font-medium hover:bg-opacity-75 transition-colors"
-                          >
-                            {action === 'Buy Gift' && <Gift className="w-3 h-3" />}
-                            {action === 'RSVP' && <MessageCircle className="w-3 h-3" />}
-                            <span>{action}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 ))}
 
@@ -679,10 +560,10 @@ export function Calendar() {
                     className="p-4 rounded-xl border-2 bg-yellow-50 border-yellow-200 hover:shadow-md transition-all cursor-pointer"
                     onClick={() => handleReminderClick(reminder)}
                   >
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold text-gray-900">{reminder.title}</h3>
+                          <h4 className="font-semibold text-gray-900">{reminder.title}</h4>
                           <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
                             Reminder
                           </span>
@@ -692,9 +573,6 @@ export function Calendar() {
                             </span>
                           )}
                         </div>
-                        {reminder.description && (
-                          <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
-                        )}
                         <div className="flex items-center space-x-3 text-sm text-gray-500">
                           {reminder.reminder_time && (
                             <div className="flex items-center space-x-1">
@@ -706,24 +584,20 @@ export function Calendar() {
                             </div>
                           )}
                           {reminder.recurring && (
-                            <div className="flex items-center space-x-1">
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                {reminder.recurring_pattern}
-                              </span>
-                            </div>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                              {reminder.recurring_pattern}
+                            </span>
                           )}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
-              </>
-            );
-          })()}
-        </div>
-      </div>
+              </div>
+            </div>
+          );
+        })()}
 
-      <div className="p-6">
         {/* Selected Date Events and Reminders */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -765,18 +639,6 @@ export function Calendar() {
             )}
           </div>
         </div>
-
-        {/* Event List for Selected Date */}
-        {selectedDate && (() => {
-          const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
-          return (
-            <div className="text-center text-gray-500 text-sm">
-              Click on events in the calendar grid above to view details, or use the "+" button to add new events.
-              <br />
-              {dayEvents.length + dayReminders.length > 0 && `${dayEvents.length + dayReminders.length} item(s) scheduled for this date.`}
-            </div>
-          );
-        })()}
 
         {/* WhatsApp Integration Alert */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 cursor-pointer hover:bg-green-100 transition-colors" onClick={() => setShowWhatsAppForm(true)}>
