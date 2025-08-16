@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, Edit } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, Edit, Calendar as CalendarIcon } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { googleCalendarService } from '../services/googleCalendar';
+import { aiService } from '../services/openai';
 
 export function Settings() {
   const { user, signOut } = useAuth();
@@ -144,6 +146,20 @@ export function Settings() {
           action: 'Test',
           onClick: () => setShowAuthTest(true)
         }
+        {
+          icon: CalendarIcon,
+          title: 'Test Google Calendar API',
+          description: 'Verify Google Calendar integration',
+          action: 'Test',
+          onClick: testGoogleCalendarAPI
+        },
+        {
+          icon: MessageCircle,
+          title: 'Test WhatsApp Integration',
+          description: 'Verify AI message parsing',
+          action: 'Test',
+          onClick: testWhatsAppIntegration
+        }
       ]
     },
     {
@@ -226,6 +242,65 @@ export function Settings() {
     }
   };
 
+  const testGoogleCalendarAPI = async () => {
+    try {
+      // Test environment variables
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        alert('❌ Google Calendar Test Failed:\n\nVITE_GOOGLE_CLIENT_ID environment variable is not set.\n\nPlease add your Google Client ID to enable Google Calendar integration.');
+        return;
+      }
+
+      // Test Google APIs loading
+      if (!window.google || !window.gapi) {
+        alert('❌ Google Calendar Test Failed:\n\nGoogle APIs are not loaded. Please refresh the page and try again.');
+        return;
+      }
+
+      // Test service initialization
+      const initialized = await googleCalendarService.initialize();
+      if (!initialized) {
+        alert('❌ Google Calendar Test Failed:\n\nFailed to initialize Google Calendar service.');
+        return;
+      }
+
+      // Check authentication status
+      const isSignedIn = googleCalendarService.isSignedIn();
+      
+      alert(`✅ Google Calendar Test Results:\n\n• Environment: ✅ Client ID configured\n• APIs: ✅ Google APIs loaded\n• Service: ✅ Calendar service initialized\n• Authentication: ${isSignedIn ? '✅ Signed in' : '⚠️ Not signed in (click sync in Calendar to sign in)'}\n\nGoogle Calendar integration is ready to use!`);
+      
+    } catch (error: any) {
+      console.error('Google Calendar test error:', error);
+      alert(`❌ Google Calendar Test Failed:\n\n${error.message || 'Unknown error occurred'}`);
+    }
+  };
+
+  const testWhatsAppIntegration = async () => {
+    try {
+      // Test environment variables
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        alert('❌ WhatsApp Integration Test Failed:\n\nVITE_OPENAI_API_KEY environment variable is not set.\n\nPlease add your OpenAI API key to enable WhatsApp message parsing.');
+        return;
+      }
+
+      // Test AI service with sample message
+      const sampleMessage = "Hi everyone! Emma's 8th birthday party this Saturday 2-5pm at Chuck E. Cheese on Main Street. RSVP by Thursday! 🎂🎉";
+      
+      const result = await aiService.parseWhatsAppMessage(sampleMessage);
+      
+      if (result.isEvent && result.eventDetails) {
+        const details = result.eventDetails;
+        alert(`✅ WhatsApp Integration Test Results:\n\n• API Key: ✅ OpenAI API key configured\n• AI Service: ✅ Connected successfully\n• Message Parsing: ✅ Working\n\nSample Event Detected:\n• Title: ${details.title}\n• Date: ${details.date || 'Not specified'}\n• Time: ${details.time || 'Not specified'}\n• Location: ${details.location || 'Not specified'}\n\nWhatsApp integration is working perfectly!`);
+      } else {
+        alert('⚠️ WhatsApp Integration Test:\n\nAPI connection successful, but failed to parse the sample message. The integration may need adjustment.');
+      }
+      
+    } catch (error: any) {
+      console.error('WhatsApp integration test error:', error);
+      alert(`❌ WhatsApp Integration Test Failed:\n\n${error.message || 'Unknown error occurred'}\n\nPlease check your OpenAI API key configuration.`);
+    }
+  };
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
