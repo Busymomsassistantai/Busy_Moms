@@ -171,7 +171,6 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([{
-            id: user.id,
             email: user.email || '',
             full_name: user.user_metadata?.full_name || 'User',
             user_type: userType as any,

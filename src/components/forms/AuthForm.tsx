@@ -34,7 +34,6 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([{
-              id: data.user.id,
               email: data.user.email || formData.email,
               full_name: formData.fullName || '',
               user_type: 'Mom',
