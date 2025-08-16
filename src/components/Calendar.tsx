@@ -271,7 +271,7 @@ export function Calendar() {
   }, []);
 
   return (
-    <div className="h-screen overflow-y-auto pb-20">
+    <div className="h-screen overflow-y-auto pb-24">
       {/* Header */}
       <div className="bg-white p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
