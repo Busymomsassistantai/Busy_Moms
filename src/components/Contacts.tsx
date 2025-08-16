@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, Edit } from 'lucide-react';
 import { ContactForm } from './forms/ContactForm';
 import { Contact, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
