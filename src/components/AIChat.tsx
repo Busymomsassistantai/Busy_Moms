@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, MessageCircle, X } from 'lucide-react';
 import { aiService, ChatMessage } from '../services/openai';
+import { useAuth } from '../hooks/useAuth';
+import { supabase, Profile } from '../lib/supabase';
 
 interface AIChatProps {
   isOpen: boolean;
@@ -8,15 +10,47 @@ interface AIChatProps {
 }
 
 export function AIChat({ isOpen, onClose }: AIChatProps) {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Hi! I\'m your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?'
+      content: `Hi${profile?.full_name ? ` ${profile.full_name}` : ''}! I'm your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?`
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load user profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (!error && profileData) {
+          setProfile(profileData);
+          // Update the initial message with the user's name
+          setMessages([{
+            role: 'assistant',
+            content: `Hi ${profileData.full_name || user.email?.split('@')[0] || 'there'}! I'm your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?`
+          }]);
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    };
+    
+    if (isOpen) {
+      loadProfile();
+    }
+  }, [user, isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

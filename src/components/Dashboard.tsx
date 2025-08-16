@@ -2,10 +2,36 @@ import React from 'react';
 import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { useAuth } from '../hooks/useAuth';
+import { supabase, Profile } from '../lib/supabase';
 
 export function Dashboard() {
   const { signOut } = useAuth();
+  const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
+  const [profile, setProfile] = React.useState<Profile | null>(null);
+
+  // Load user profile
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (!error && profileData) {
+          setProfile(profileData);
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    };
+    
+    loadProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -41,7 +67,7 @@ export function Dashboard() {
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 pb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Good Morning, Sarah!</h1>
+            <h1 className="text-2xl font-bold">Good Morning, {profile?.full_name || user?.email?.split('@')[0] || 'User'}!</h1>
             <p className="text-purple-100">Here's what's happening today</p>
           </div>
           <div className="flex items-center space-x-3">
