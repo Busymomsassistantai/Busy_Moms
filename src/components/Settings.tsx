@@ -30,6 +30,12 @@ export function Settings() {
     loadCurrentProfile();
   }, []);
 
+  // Refresh data when component becomes visible (when user navigates to settings)
+  React.useEffect(() => {
+    loadFamilyMembers();
+    loadCurrentProfile();
+  }, [user]);
+
   const loadCurrentProfile = async () => {
     if (!user) return;
 
