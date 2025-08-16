@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink } from 'lucide-react';
 import { EventForm } from './forms/EventForm';
 import { Event } from '../lib/supabase';
+import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 
 export function Calendar() {
   const [selectedDate, setSelectedDate] = useState(15);
@@ -9,6 +10,8 @@ export function Calendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const getEventColor = (type: string) => {
     const colors = {
@@ -45,27 +48,22 @@ export function Calendar() {
 
   const connectGoogleCalendar = async () => {
     try {
-      // Initialize Google Calendar API
-      // Note: In a real implementation, you would need to:
-      // 1. Set up Google Cloud Console project
-      // 2. Enable Google Calendar API
-      // 3. Configure OAuth 2.0 credentials
-      // 4. Use Google's JavaScript client library
-      
-      // For demo purposes, we'll simulate the connection
+      setError(null);
       setSyncingCalendar(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Sign in to Google Calendar
+      await googleCalendarService.signIn();
       
       setIsGoogleConnected(true);
       setSyncingCalendar(false);
       
-      alert('Google Calendar connected successfully! Your events will now sync automatically.');
+      // Automatically sync events after connection
+      await syncWithGoogleCalendar();
+      
     } catch (error) {
       console.error('Failed to connect Google Calendar:', error);
       setSyncingCalendar(false);
-      alert('Failed to connect to Google Calendar. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to connect to Google Calendar');
     }
   };
 
@@ -77,23 +75,54 @@ export function Calendar() {
 
     try {
       setSyncingCalendar(true);
+      setError(null);
       
-      // Simulate syncing events
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!googleCalendarService.isSignedIn()) {
+        await connectGoogleCalendar();
+        return;
+      }
       
-      // In a real implementation, you would:
-      // 1. Fetch events from Google Calendar API
-      // 2. Compare with local events
-      // 3. Sync bidirectionally
+      // Fetch events from Google Calendar
+      const fetchedEvents = await googleCalendarService.getEvents();
+      setGoogleEvents(fetchedEvents);
       
       setSyncingCalendar(false);
-      alert('Calendar synced successfully!');
+      
     } catch (error) {
       console.error('Failed to sync calendar:', error);
       setSyncingCalendar(false);
-      alert('Failed to sync calendar. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to sync calendar');
     }
   };
+
+  const disconnectGoogleCalendar = async () => {
+    try {
+      await googleCalendarService.signOut();
+      setIsGoogleConnected(false);
+      setGoogleEvents([]);
+      setError(null);
+    } catch (error) {
+      console.error('Failed to disconnect Google Calendar:', error);
+      setError('Failed to disconnect from Google Calendar');
+    }
+  };
+
+  // Check if user is already signed in on component mount
+  React.useEffect(() => {
+    const checkGoogleAuth = async () => {
+      try {
+        await googleCalendarService.initialize();
+        if (googleCalendarService.isSignedIn()) {
+          setIsGoogleConnected(true);
+          await syncWithGoogleCalendar();
+        }
+      } catch (error) {
+        console.error('Failed to check Google auth status:', error);
+      }
+    };
+    
+    checkGoogleAuth();
+  }, []);
 
   const getDaysInMonth = () => {
     const days = [];
@@ -141,30 +170,60 @@ export function Calendar() {
         <div className={`p-4 rounded-xl border-2 mb-4 ${
           isGoogleConnected 
             ? 'bg-green-50 border-green-200' 
+            : error 
+            ? 'bg-red-50 border-red-200'
             : 'bg-blue-50 border-blue-200'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <CalendarIcon className={`w-5 h-5 ${
-                isGoogleConnected ? 'text-green-600' : 'text-blue-600'
+                isGoogleConnected ? 'text-green-600' : error ? 'text-red-600' : 'text-blue-600'
               }`} />
               <div>
                 <h3 className={`font-medium ${
-                  isGoogleConnected ? 'text-green-900' : 'text-blue-900'
+                  isGoogleConnected ? 'text-green-900' : error ? 'text-red-900' : 'text-blue-900'
                 }`}>
-                  Google Calendar {isGoogleConnected ? 'Connected' : 'Integration'}
+                  Google Calendar {isGoogleConnected ? 'Connected' : error ? 'Error' : 'Integration'}
                 </h3>
                 <p className={`text-sm ${
-                  isGoogleConnected ? 'text-green-700' : 'text-blue-700'
+                  isGoogleConnected ? 'text-green-700' : error ? 'text-red-700' : 'text-blue-700'
                 }`}>
                   {isGoogleConnected 
                     ? 'Your events sync automatically with Google Calendar'
+                    : error 
+                    ? error
                     : 'Connect to sync your events with Google Calendar'
                   }
                 </p>
               </div>
             </div>
-            {!isGoogleConnected && (
+            {isGoogleConnected ? (
+              <div className="flex space-x-2">
+                <button
+                  onClick={syncWithGoogleCalendar}
+                  disabled={syncingCalendar}
+                  className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center space-x-1"
+                >
+                  {syncingCalendar ? (
+                    <>
+                      <Sync className="w-3 h-3 animate-spin" />
+                      <span>Syncing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sync className="w-3 h-3" />
+                      <span>Sync</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={disconnectGoogleCalendar}
+                  className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
               <button
                 onClick={connectGoogleCalendar}
                 disabled={syncingCalendar}
@@ -185,6 +244,30 @@ export function Calendar() {
             )}
           </div>
         </div>
+
+        {/* Environment Variable Warning */}
+        {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-yellow-800 text-xs font-bold">!</span>
+              </div>
+              <div>
+                <h3 className="font-medium text-yellow-900 mb-1">Setup Required</h3>
+                <p className="text-sm text-yellow-800 mb-2">
+                  To enable Google Calendar integration, you need to:
+                </p>
+                <ol className="text-sm text-yellow-800 list-decimal list-inside space-y-1">
+                  <li>Create a Google Cloud Console project</li>
+                  <li>Enable the Google Calendar API</li>
+                  <li>Set up OAuth 2.0 credentials</li>
+                  <li>Add VITE_GOOGLE_CLIENT_ID to your environment variables</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mini Calendar */}
         <div className="grid grid-cols-7 gap-1 mb-4">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
@@ -260,13 +343,55 @@ export function Calendar() {
               </div>
             ))}
 
-            {/* Google Calendar Events Indicator */}
-            {isGoogleConnected && events.length === 0 && (
+            {/* Google Calendar Events */}
+            {isGoogleConnected && googleEvents.map((googleEvent) => {
+              const appEvent = googleCalendarService.convertToAppEvent(googleEvent);
+              return (
+                <div
+                  key={`google-${googleEvent.id}`}
+                  className={`p-4 rounded-xl border-2 ${getEventColor(appEvent.event_type)} hover:shadow-md transition-all cursor-pointer`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="font-semibold">{appEvent.title}</h3>
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                          Google
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3 text-sm opacity-75 mb-2">
+                        {appEvent.start_time && (
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-4 h-4" />
+                            <span>{formatTime(appEvent.start_time, appEvent.end_time)}</span>
+                          </div>
+                        )}
+                        {appEvent.location && (
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="w-4 h-4" />
+                            <span>{appEvent.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      {appEvent.participants.length > 0 && (
+                        <div className="flex items-center space-x-1 text-sm opacity-75">
+                          <Users className="w-4 h-4" />
+                          <span>{appEvent.participants.join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Empty state for Google Calendar */}
+            {isGoogleConnected && googleEvents.length === 0 && events.length === 0 && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                 <CalendarIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <h3 className="font-medium text-green-900 mb-1">Google Calendar Synced</h3>
                 <p className="text-sm text-green-700">
-                  Your Google Calendar events will appear here automatically
+                  No events found for the selected date
                 </p>
               </div>
             )}
