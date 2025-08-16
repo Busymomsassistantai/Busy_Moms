@@ -12,6 +12,7 @@ export function Calendar() {
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleServiceReady, setIsGoogleServiceReady] = useState(false);
 
   const getEventColor = (type: string) => {
     const colors = {
@@ -112,12 +113,14 @@ export function Calendar() {
     const checkGoogleAuth = async () => {
       try {
         await googleCalendarService.initialize();
+        setIsGoogleServiceReady(true);
         if (googleCalendarService.isSignedIn()) {
           setIsGoogleConnected(true);
           await syncWithGoogleCalendar();
         }
       } catch (error) {
         console.error('Failed to check Google auth status:', error);
+        setIsGoogleServiceReady(false);
       }
     };
     
@@ -226,13 +229,18 @@ export function Calendar() {
             ) : (
               <button
                 onClick={connectGoogleCalendar}
-                disabled={syncingCalendar}
+                disabled={syncingCalendar || !isGoogleServiceReady}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
               >
                 {syncingCalendar ? (
                   <>
                     <Sync className="w-4 h-4 animate-spin" />
                     <span>Connecting...</span>
+                  </>
+                ) : !isGoogleServiceReady ? (
+                  <>
+                    <Sync className="w-4 h-4 animate-spin" />
+                    <span>Loading...</span>
                   </>
                 ) : (
                   <>

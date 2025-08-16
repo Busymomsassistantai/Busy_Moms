@@ -86,10 +86,8 @@ export class GoogleCalendarService {
       throw new Error('Google Client ID is required. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
     }
 
-    try {
-      await this.initialize();
-
-      return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
+      try {
         window.google.accounts.oauth2.initTokenClient({
           client_id: this.clientId,
           scope: this.SCOPES,
@@ -106,11 +104,11 @@ export class GoogleCalendarService {
             resolve(true);
           },
         }).requestAccessToken();
-      });
-    } catch (error) {
-      console.error('Google sign-in failed:', error);
-      throw error;
-    }
+      } catch (error) {
+        console.error('Google sign-in failed:', error);
+        reject(error);
+      }
+    });
   }
 
   async signOut(): Promise<void> {
