@@ -87,7 +87,7 @@ export function Settings() {
           title: 'Family Members',
           description: 'Manage your family members',
           action: 'Add',
-          showAddButton: true
+          showAddButton: false
         },
         {
           icon: Shield,
