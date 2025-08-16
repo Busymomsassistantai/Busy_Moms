@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, Edit } from 'lucide-react';
+import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, Edit, Mail } from 'lucide-react';
 import { ContactForm } from './forms/ContactForm';
 import { Contact, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -199,6 +199,19 @@ export function Contacts() {
                     >
                       <MessageCircle className="w-3 h-3" />
                       <span>Text</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (contact.email) {
+                          window.open(`mailto:${contact.email}`, '_self');
+                        } else {
+                          alert('No email address available for this contact');
+                        }
+                      }}
+                      className="flex items-center space-x-1 px-3 py-1 bg-purple-500 text-white rounded-lg text-sm hover:bg-purple-600 transition-colors"
+                    >
+                      <Mail className="w-3 h-3" />
+                      <span>Email</span>
                     </button>
                     {contact.category === 'babysitter' && !contact.verified && (
                       <button className="flex items-center space-x-1 px-3 py-1 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600 transition-colors">
