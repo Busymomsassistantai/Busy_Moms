@@ -93,6 +93,7 @@ export class GoogleCalendarService {
         window.google.accounts.oauth2.initTokenClient({
           client_id: this.clientId,
           scope: this.SCOPES,
+          redirect_uri: window.location.origin,
           callback: (response: any) => {
             if (response.error) {
               console.error('Google OAuth error:', response.error);
