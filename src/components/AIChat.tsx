@@ -117,9 +117,14 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         // Try to extract reminder details from the message
         const reminderDetails = await extractReminderDetails(inputMessage);
         
+        console.log('🔍 Reminder request detected');
+        console.log('📝 User ID:', user.id);
+        console.log('📋 Extracted details:', reminderDetails);
+        
         if (reminderDetails) {
           // Check if no time was specified and ask for clarification
           if (!reminderDetails.time) {
+            console.log('⏰ No time specified, asking for clarification');
             const clarificationMessage: ChatMessage = {
               role: 'assistant',
               content: 'Is there a certain time or is it all day?'
@@ -130,29 +135,40 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
           }
           
           try {
-            console.log('Creating reminder with details:', reminderDetails);
+            console.log('💾 Creating reminder with details:', reminderDetails);
+            console.log('🔑 User ID for reminder:', user.id);
+            
+            const reminderData = {
+              user_id: user.id,
+              title: reminderDetails.title,
+              description: reminderDetails.description || '',
+              reminder_date: reminderDetails.date,
+              reminder_time: reminderDetails.time,
+              priority: reminderDetails.priority || 'medium',
+              completed: false,
+              recurring: false
+            };
+            
+            console.log('📤 Sending to Supabase:', reminderData);
             
             const { data: newReminder, error } = await supabase
               .from('reminders')
-              .insert([{
-                user_id: user.id,
-                title: reminderDetails.title,
-                description: reminderDetails.description || '',
-                reminder_date: reminderDetails.date,
-                reminder_time: reminderDetails.time,
-                priority: reminderDetails.priority || 'medium',
-                completed: false,
-                recurring: false
-              }])
+              .insert([reminderData])
               .select()
               .single();
 
             if (error) {
-              console.error('Supabase error creating reminder:', error);
+              console.error('❌ Supabase error creating reminder:', error);
+              console.error('❌ Error details:', {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code
+              });
               throw error;
             }
 
-            console.log('Reminder created successfully:', newReminder);
+            console.log('✅ Reminder created successfully:', newReminder);
             
             // Also create a calendar event for the reminder
             try {
@@ -183,13 +199,13 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
                 .single();
 
               if (eventError) {
-                console.error('Error creating calendar event for reminder:', eventError);
+                console.error('❌ Error creating calendar event for reminder:', eventError);
                 // Don't fail the whole operation if calendar event creation fails
               } else {
-                console.log('Calendar event created for reminder:', newEvent);
+                console.log('✅ Calendar event created for reminder:', newEvent);
               }
             } catch (eventCreationError) {
-              console.error('Error creating calendar event:', eventCreationError);
+              console.error('❌ Error creating calendar event:', eventCreationError);
             }
             
             const assistantMessage: ChatMessage = {
@@ -201,17 +217,18 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
             setIsLoading(false);
             return;
           } catch (error) {
-            console.error('Error creating reminder:', error);
+            console.error('❌ Error creating reminder:', error);
+            console.error('❌ Full error object:', JSON.stringify(error, null, 2));
             const errorMessage: ChatMessage = {
               role: 'assistant',
-              content: `I had trouble saving that reminder to your list. Error: ${error.message}. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?`
+              content: `I had trouble saving that reminder to your list. Error: ${error?.message || 'Unknown error'}. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?`
             };
             setMessages(prev => [...prev, errorMessage]);
             setIsLoading(false);
             return;
           }
         } else {
-          console.log('Could not extract reminder details from message:', inputMessage);
+          console.log('❌ Could not extract reminder details from message:', inputMessage);
           const errorMessage: ChatMessage = {
             role: 'assistant',
             content: 'I had trouble understanding the reminder details. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?'
@@ -249,7 +266,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
     priority?: 'low' | 'medium' | 'high';
   } | null> => {
     try {
-      console.log('Extracting reminder details from message:', message);
+      console.log('🔍 Extracting reminder details from message:', message);
       
       // Use AI to extract structured reminder data
       const extractionPrompt = `Extract reminder details from this message: "${message}"
@@ -271,7 +288,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         { role: 'user', content: extractionPrompt }
       ]);
 
-      console.log('AI response for reminder extraction:', response);
+      console.log('🤖 AI response for reminder extraction:', response);
 
       // Try to parse the JSON response
       // Clean the response by removing markdown code block syntax
@@ -280,21 +297,21 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         .replace(/^```\s*/, '')      // Remove opening ```
         .replace(/\s*```$/, '');     // Remove closing ```
       
-      console.log('Cleaned response:', cleanedResponse);
+      console.log('🧹 Cleaned response:', cleanedResponse);
       
       const parsed = JSON.parse(cleanedResponse);
-      console.log('Parsed reminder details:', parsed);
+      console.log('📋 Parsed reminder details:', parsed);
       
       // Validate required fields
       if (parsed.title && parsed.date) {
-        console.log('Reminder details validated successfully');
+        console.log('✅ Reminder details validated successfully');
         return parsed;
       }
       
-      console.log('Reminder details validation failed - missing title or date');
+      console.log('❌ Reminder details validation failed - missing title or date');
       return null;
     } catch (error) {
-      console.error('Error extracting reminder details:', error);
+      console.error('❌ Error extracting reminder details:', error);
       return null;
     }
   };
