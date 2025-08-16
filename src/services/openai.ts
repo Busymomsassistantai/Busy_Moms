@@ -71,13 +71,15 @@ Keep responses concise, practical, and empathetic. Always consider the busy life
 
 Message: "${message}"
 
+IMPORTANT: For the date field, convert any relative dates (like "this Saturday", "next Friday", "tomorrow") to the actual date in YYYY-MM-DD format. For time, use HH:MM format (24-hour).
+
 Respond in JSON format with:
 {
   "isEvent": boolean,
   "eventDetails": {
     "title": "event name",
-    "date": "date if mentioned",
-    "time": "time if mentioned", 
+    "date": "YYYY-MM-DD format if mentioned",
+    "time": "HH:MM format if mentioned", 
     "location": "location if mentioned"
   }
 }`;
