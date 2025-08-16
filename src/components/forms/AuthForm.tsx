@@ -39,7 +39,8 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         }
         
         // Don't switch to sign in, let them proceed to onboarding
-        onAuthSuccess()
+        // For new signups, they'll go through onboarding
+        // onAuthSuccess() will be called after onboarding is complete
       } else {
         const { error } = await signIn(formData.email, formData.password)
         if (error) throw error
@@ -74,6 +75,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           }
         }
         
+        // For existing users signing in, go directly to dashboard
         onAuthSuccess()
       }
     } catch (error: any) {

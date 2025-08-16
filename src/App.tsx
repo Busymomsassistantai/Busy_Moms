@@ -19,8 +19,11 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
-    if (user && !user.user_metadata?.onboarding_completed) {
+    // Only show onboarding for new signups, not existing users signing in
+    if (user && !user.user_metadata?.onboarding_completed && !user.email_confirmed_at) {
       setShowOnboarding(true)
+    } else {
+      setShowOnboarding(false)
     }
   }, [user])
 
