@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, Edit } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
+import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
-import { FamilyMember, supabase } from '../lib/supabase';
+import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function Settings() {
   const { user, signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
+  const [showProfileForm, setShowProfileForm] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
+  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
@@ -24,7 +27,28 @@ export function Settings() {
   // Load family members on component mount
   React.useEffect(() => {
     loadFamilyMembers();
+    loadCurrentProfile();
   }, []);
+
+  const loadCurrentProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Could not load profile:', error.message);
+      } else {
+        setCurrentProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
   const loadFamilyMembers = async () => {
     setLoadingMembers(true);
@@ -183,6 +207,10 @@ export function Settings() {
     setFamilyMembers(prev => [...prev, newMember]);
   };
 
+  const handleProfileUpdated = (updatedProfile: Profile) => {
+    setCurrentProfile(updatedProfile);
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -200,9 +228,16 @@ export function Settings() {
             <User className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Sarah Johnson</h1>
-            <p className="text-purple-100">sarah.johnson@email.com</p>
+            <h1 className="text-2xl font-bold">{currentProfile?.full_name || user?.email || 'User'}</h1>
+            <p className="text-purple-100">{user?.email}</p>
           </div>
+          <button
+            onClick={() => setShowProfileForm(true)}
+            className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-30 transition-colors"
+            title="Edit Profile"
+          >
+            <Edit className="w-5 h-5" />
+          </button>
         </div>
         
         <div className="bg-white bg-opacity-10 rounded-xl p-4">
@@ -227,10 +262,11 @@ export function Settings() {
               <button
                 key={personality}
                 className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  personality === 'Friendly'
+                  personality === (currentProfile?.ai_personality || 'Friendly')
                     ? 'bg-purple-500 text-white'
                     : 'bg-white text-gray-600 hover:bg-purple-100'
                 }`}
+                onClick={() => setShowProfileForm(true)}
               >
                 {personality}
               </button>
@@ -455,6 +491,12 @@ export function Settings() {
       <AuthTest
         isOpen={showAuthTest}
         onClose={() => setShowAuthTest(false)}
+      />
+
+      <ProfileForm
+        isOpen={showProfileForm}
+        onClose={() => setShowProfileForm(false)}
+        onProfileUpdated={handleProfileUpdated}
       />
     </div>
   );
