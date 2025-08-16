@@ -15,14 +15,40 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
-    name: editMember?.name || '',
-    age: editMember?.age || '',
-    gender: editMember?.gender || 'Other',
-    allergies: editMember?.allergies?.join(', ') || '',
-    medical_notes: editMember?.medical_notes || '',
-    school: editMember?.school || '',
-    grade: editMember?.grade || ''
+    name: '',
+    age: '',
+    gender: 'Other',
+    allergies: '',
+    medical_notes: '',
+    school: '',
+    grade: ''
   })
+
+  // Update form data when editMember changes
+  React.useEffect(() => {
+    if (editMember) {
+      setFormData({
+        name: editMember.name || '',
+        age: editMember.age?.toString() || '',
+        gender: editMember.gender || 'Other',
+        allergies: editMember.allergies?.join(', ') || '',
+        medical_notes: editMember.medical_notes || '',
+        school: editMember.school || '',
+        grade: editMember.grade || ''
+      })
+    } else {
+      // Reset form for new member
+      setFormData({
+        name: '',
+        age: '',
+        gender: 'Other',
+        allergies: '',
+        medical_notes: '',
+        school: '',
+        grade: ''
+      })
+    }
+  }, [editMember])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
