@@ -157,7 +157,10 @@ export function Contacts() {
         {filteredContacts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No contacts in this category yet</p>
-            <button className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors">
+            <button 
+              onClick={() => setShowContactForm(true)}
+              className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
+            >
               Add First Contact
             </button>
           </div>
