@@ -151,9 +151,11 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
                 description: reminderDetails.description || 'Reminder',
                 event_date: reminderDetails.date,
                 start_time: reminderDetails.time,
-                end_time: reminderDetails.time ? 
-                  new Date(new Date(`2000-01-01T${reminderDetails.time}`).getTime() + 30 * 60 * 1000)
-                    .toTimeString().slice(0, 5) : null, // Add 30 minutes if time is specified
+                end_time: reminderDetails.time ? (() => {
+                  const startTime = new Date(`2000-01-01T${reminderDetails.time}`);
+                  const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+                  return endTime.toTimeString().slice(0, 5);
+                })() : null,
                 location: '',
                 event_type: 'other' as const,
                 participants: [],
@@ -162,6 +164,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
                 source: 'manual' as const
               };
 
+              console.log('Creating calendar event with data:', eventData);
               const { data: newEvent, error: eventError } = await supabase
                 .from('events')
                 .insert([eventData])
