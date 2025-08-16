@@ -14,16 +14,46 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: editContact?.name || '',
-    role: editContact?.role || '',
-    phone: editContact?.phone || '',
-    email: editContact?.email || '',
-    category: editContact?.category || 'other',
-    rating: editContact?.rating || 0,
-    notes: editContact?.notes || '',
-    verified: editContact?.verified || false,
-    available: editContact?.available !== false
+    name: '',
+    role: '',
+    phone: '',
+    email: '',
+    category: 'other' as const,
+    rating: 0,
+    notes: '',
+    verified: false,
+    available: true
   })
+
+  // Update form data when editContact changes
+  React.useEffect(() => {
+    if (editContact) {
+      setFormData({
+        name: editContact.name || '',
+        role: editContact.role || '',
+        phone: editContact.phone || '',
+        email: editContact.email || '',
+        category: editContact.category || 'other',
+        rating: editContact.rating || 0,
+        notes: editContact.notes || '',
+        verified: editContact.verified || false,
+        available: editContact.available !== false
+      })
+    } else {
+      // Reset form for new contact
+      setFormData({
+        name: '',
+        role: '',
+        phone: '',
+        email: '',
+        category: 'other',
+        rating: 0,
+        notes: '',
+        verified: false,
+        available: true
+      })
+    }
+  }, [editContact])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,17 +86,6 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
 
       onContactCreated(result.data)
       onClose()
-      setFormData({
-        name: '',
-        role: '',
-        phone: '',
-        email: '',
-        category: 'other',
-        rating: 0,
-        notes: '',
-        verified: false,
-        available: true
-      })
     } catch (error) {
       console.error('Error saving contact:', error)
       alert('Error saving contact. Please try again.')

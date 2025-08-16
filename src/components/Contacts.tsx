@@ -1,15 +1,65 @@
 import React, { useState } from 'react';
 import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle } from 'lucide-react';
 import { ContactForm } from './forms/ContactForm';
-import { Contact } from '../lib/supabase';
+import { Contact, supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 export function Contacts() {
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showContactForm, setShowContactForm] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Load contacts on component mount
+  React.useEffect(() => {
+    loadContacts();
+  }, [user]);
+
+  const loadContacts = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      const { data: contactsData, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading contacts:', error);
+      } else {
+        setContacts(contactsData || []);
+      }
+    } catch (error) {
+      console.error('Error loading contacts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleContactCreated = (newContact: Contact) => {
-    setContacts(prev => [...prev, newContact]);
+    if (editingContact) {
+      // Update existing contact
+      setContacts(prev => prev.map(contact => 
+        contact.id === editingContact.id ? newContact : contact
+      ));
+    } else {
+      // Add new contact
+      setContacts(prev => [...prev, newContact]);
+    }
+    setEditingContact(null);
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    setShowContactForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowContactForm(false);
+    setEditingContact(null);
   };
 
   const categories = [
@@ -156,6 +206,13 @@ export function Contacts() {
                         <span>Verify</span>
                       </button>
                     )}
+                    <button
+                      onClick={() => handleEditContact(contact)}
+                      className="flex items-center space-x-1 px-3 py-1 bg-purple-500 text-white rounded-lg text-sm hover:bg-purple-600 transition-colors"
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
                   </div>
                 </div>
                 
@@ -174,21 +231,31 @@ export function Contacts() {
 
         {filteredContacts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No contacts in this category yet</p>
-            <button 
-              onClick={() => setShowContactForm(true)}
-              className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
-            >
-              Add First Contact
-            </button>
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <span className="ml-2 text-gray-600">Loading contacts...</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-gray-500 mb-4">No contacts in this category yet</p>
+                <button 
+                  onClick={() => setShowContactForm(true)}
+                  className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
+                >
+                  Add First Contact
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
 
       <ContactForm
         isOpen={showContactForm}
-        onClose={() => setShowContactForm(false)}
+        onClose={handleCloseForm}
         onContactCreated={handleContactCreated}
+        editContact={editingContact}
       />
     </div>
   );
