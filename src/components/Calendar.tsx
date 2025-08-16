@@ -13,6 +13,7 @@ export function Calendar() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
@@ -158,11 +159,19 @@ export function Calendar() {
 
   const handleEventClick = (event: Event) => {
     setSelectedEvent(event);
+    setSelectedReminder(null);
+    setShowEventDetails(true);
+  };
+
+  const handleReminderClick = (reminder: Reminder) => {
+    setSelectedReminder(reminder);
+    setSelectedEvent(null);
     setShowEventDetails(true);
   };
 
   const closeEventDetails = () => {
     setSelectedEvent(null);
+    setSelectedReminder(null);
     setShowEventDetails(false);
   };
 
@@ -598,6 +607,119 @@ export function Calendar() {
             );
           })()}
           {renderCalendarDays()}
+          
+          {/* Display events and reminders for selected date in calendar grid */}
+          {selectedDate && (() => {
+            const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
+            
+            return (
+              <>
+                {/* Database Events */}
+                {dayEvents.map((event) => (
+                  <div
+                    key={`event-${event.id}`}
+                    className={`p-4 rounded-xl border-2 ${getEventColor(event.event_type || 'other')} hover:shadow-md transition-all cursor-pointer`}
+                    onClick={() => handleEventClick(event)}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold">{event.title}</h3>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            Event
+                          </span>
+                        </div>
+                        {event.description && (
+                          <p className="text-sm opacity-75 mb-2">{event.description}</p>
+                        )}
+                        <div className="flex items-center space-x-3 text-sm opacity-75 mb-2">
+                          {event.start_time && (
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{formatTime(event.start_time, event.end_time)}</span>
+                            </div>
+                          )}
+                          {event.location && (
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-4 h-4" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                        {event.participants && event.participants.length > 0 && (
+                          <div className="flex items-center space-x-1 text-sm opacity-75">
+                            <Users className="w-4 h-4" />
+                            <span>{event.participants.join(', ')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {event.rsvp_required && (
+                      <div className="flex space-x-2 mt-3">
+                        {['Buy Gift', 'RSVP'].map((action) => (
+                          <button
+                            key={action}
+                            className="flex items-center space-x-1 px-3 py-1 bg-white bg-opacity-50 rounded-full text-sm font-medium hover:bg-opacity-75 transition-colors"
+                          >
+                            {action === 'Buy Gift' && <Gift className="w-3 h-3" />}
+                            {action === 'RSVP' && <MessageCircle className="w-3 h-3" />}
+                            <span>{action}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Database Reminders */}
+                {dayReminders.map((reminder) => (
+                  <div
+                    key={`reminder-${reminder.id}`}
+                    className="p-4 rounded-xl border-2 bg-yellow-50 border-yellow-200 hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => handleReminderClick(reminder)}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{reminder.title}</h3>
+                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                            Reminder
+                          </span>
+                          {reminder.priority === 'high' && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                              High Priority
+                            </span>
+                          )}
+                        </div>
+                        {reminder.description && (
+                          <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
+                        )}
+                        <div className="flex items-center space-x-3 text-sm text-gray-500">
+                          {reminder.reminder_time && (
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{new Date(`2000-01-01T${reminder.reminder_time}`).toLocaleTimeString([], { 
+                                hour: 'numeric', 
+                                minute: '2-digit' 
+                              })}</span>
+                            </div>
+                          )}
+                          {reminder.recurring && (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                {reminder.recurring_pattern}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -694,12 +816,14 @@ export function Calendar() {
       />
 
       {/* Event Details Modal */}
-      {showEventDetails && selectedEvent && (
+      {showEventDetails && (selectedEvent || selectedReminder) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Event Details</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {selectedEvent ? 'Event Details' : 'Reminder Details'}
+                </h2>
                 <button
                   onClick={closeEventDetails}
                   className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -708,27 +832,150 @@ export function Calendar() {
                 </button>
               </div>
 
-              <div className="space-y-4">
+              {/* Event Details */}
+              {selectedEvent && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedEvent.title}</h3>
+                    <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getEventColor(selectedEvent.event_type || 'other')}`}>
+                      {selectedEvent.event_type?.charAt(0).toUpperCase() + selectedEvent.event_type?.slice(1) || 'Other'}
+                    </div>
+                  </div>
+
+                  {selectedEvent.description && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-1">Description</h4>
+                      <p className="text-gray-600">{selectedEvent.description}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center space-x-3">
+                      <Calendar className="w-5 h-5 text-purple-500" />
+                      <div>
+                        <p className="font-medium text-gray-700">Date</p>
+                        <p className="text-gray-600">{new Date(selectedEvent.event_date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</p>
+                      </div>
+                    </div>
+
+                    {(selectedEvent.start_time || selectedEvent.end_time) && (
+                      <div className="flex items-center space-x-3">
+                        <Clock className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <p className="font-medium text-gray-700">Time</p>
+                          <p className="text-gray-600">{formatTime(selectedEvent.start_time, selectedEvent.end_time)}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedEvent.location && (
+                      <div className="flex items-center space-x-3">
+                        <MapPin className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <p className="font-medium text-gray-700">Location</p>
+                          <p className="text-gray-600">{selectedEvent.location}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedEvent.participants && selectedEvent.participants.length > 0 && (
+                      <div className="flex items-start space-x-3">
+                        <Users className="w-5 h-5 text-purple-500 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-gray-700">Participants</p>
+                          <p className="text-gray-600">{selectedEvent.participants.join(', ')}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedEvent.rsvp_required && (
+                      <div className="flex items-center space-x-3">
+                        <MessageCircle className="w-5 h-5 text-purple-500" />
+                        <div>
+                          <p className="font-medium text-gray-700">RSVP Status</p>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              selectedEvent.rsvp_status === 'yes' ? 'bg-green-100 text-green-700' :
+                              selectedEvent.rsvp_status === 'no' ? 'bg-red-100 text-red-700' :
+                              selectedEvent.rsvp_status === 'maybe' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {selectedEvent.rsvp_status?.charAt(0).toUpperCase() + selectedEvent.rsvp_status?.slice(1) || 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-3">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <div className={`w-3 h-3 rounded-full ${
+                          selectedEvent.source === 'whatsapp' ? 'bg-green-500' :
+                          selectedEvent.source === 'calendar_sync' ? 'bg-blue-500' :
+                          'bg-purple-500'
+                        }`}></div>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700">Source</p>
+                        <p className="text-gray-600 capitalize">
+                          {selectedEvent.source === 'calendar_sync' ? 'Calendar Sync' : selectedEvent.source || 'Manual'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedEvent.rsvp_required && (
+                    <div className="border-t pt-4 mt-6">
+                      <h4 className="font-medium text-gray-700 mb-3">Quick Actions</h4>
+                      <div className="flex space-x-2">
+                        <button className="flex items-center space-x-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors">
+                          <MessageCircle className="w-3 h-3" />
+                          <span>RSVP Yes</span>
+                        </button>
+                        <button className="flex items-center space-x-1 px-3 py-2 bg-pink-500 text-white rounded-lg text-sm hover:bg-pink-600 transition-colors">
+                          <Gift className="w-3 h-3" />
+                          <span>Buy Gift</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reminder Details */}
+              {selectedReminder && (
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedEvent.title}</h3>
-                  <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getEventColor(selectedEvent.event_type || 'other')}`}>
-                    {selectedEvent.event_type?.charAt(0).toUpperCase() + selectedEvent.event_type?.slice(1) || 'Other'}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedReminder.title}</h3>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
+                      Reminder
+                    </span>
+                    {selectedReminder.priority === 'high' && (
+                      <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                        High Priority
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {selectedEvent.description && (
+                {selectedReminder.description && (
                   <div>
                     <h4 className="font-medium text-gray-700 mb-1">Description</h4>
-                    <p className="text-gray-600">{selectedEvent.description}</p>
+                    <p className="text-gray-600">{selectedReminder.description}</p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-4">
                   <div className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-purple-500" />
+                    <Calendar className="w-5 h-5 text-yellow-500" />
                     <div>
                       <p className="font-medium text-gray-700">Date</p>
-                      <p className="text-gray-600">{new Date(selectedEvent.event_date).toLocaleDateString('en-US', { 
+                      <p className="text-gray-600">{new Date(selectedReminder.reminder_date).toLocaleDateString('en-US', { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -737,51 +984,31 @@ export function Calendar() {
                     </div>
                   </div>
 
-                  {(selectedEvent.start_time || selectedEvent.end_time) && (
+                  {selectedReminder.reminder_time && (
                     <div className="flex items-center space-x-3">
-                      <Clock className="w-5 h-5 text-purple-500" />
+                      <Clock className="w-5 h-5 text-yellow-500" />
                       <div>
                         <p className="font-medium text-gray-700">Time</p>
-                        <p className="text-gray-600">{formatTime(selectedEvent.start_time, selectedEvent.end_time)}</p>
+                        <p className="text-gray-600">{new Date(`2000-01-01T${selectedReminder.reminder_time}`).toLocaleTimeString([], { 
+                          hour: 'numeric', 
+                          minute: '2-digit' 
+                        })}</p>
                       </div>
                     </div>
                   )}
 
-                  {selectedEvent.location && (
+                  {selectedReminder.priority && (
                     <div className="flex items-center space-x-3">
-                      <MapPin className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <p className="font-medium text-gray-700">Location</p>
-                        <p className="text-gray-600">{selectedEvent.location}</p>
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <div className={`w-3 h-3 rounded-full ${
+                          selectedReminder.priority === 'high' ? 'bg-red-500' :
+                          selectedReminder.priority === 'medium' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`}></div>
                       </div>
-                    </div>
-                  )}
-
-                  {selectedEvent.participants && selectedEvent.participants.length > 0 && (
-                    <div className="flex items-start space-x-3">
-                      <Users className="w-5 h-5 text-purple-500 mt-0.5" />
                       <div>
-                        <p className="font-medium text-gray-700">Participants</p>
-                        <p className="text-gray-600">{selectedEvent.participants.join(', ')}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedEvent.rsvp_required && (
-                    <div className="flex items-center space-x-3">
-                      <MessageCircle className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <p className="font-medium text-gray-700">RSVP Status</p>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            selectedEvent.rsvp_status === 'yes' ? 'bg-green-100 text-green-700' :
-                            selectedEvent.rsvp_status === 'no' ? 'bg-red-100 text-red-700' :
-                            selectedEvent.rsvp_status === 'maybe' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {selectedEvent.rsvp_status?.charAt(0).toUpperCase() + selectedEvent.rsvp_status?.slice(1) || 'Pending'}
-                          </span>
-                        </div>
+                        <p className="font-medium text-gray-700">Priority</p>
+                        <p className="text-gray-600 capitalize">{selectedReminder.priority}</p>
                       </div>
                     </div>
                   )}
@@ -789,36 +1016,18 @@ export function Calendar() {
                   <div className="flex items-center space-x-3">
                     <div className="w-5 h-5 flex items-center justify-center">
                       <div className={`w-3 h-3 rounded-full ${
-                        selectedEvent.source === 'whatsapp' ? 'bg-green-500' :
-                        selectedEvent.source === 'calendar_sync' ? 'bg-blue-500' :
-                        'bg-purple-500'
+                        selectedReminder.recurring ? 'bg-blue-500' : 'bg-gray-500'
                       }`}></div>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700">Source</p>
-                      <p className="text-gray-600 capitalize">
-                        {selectedEvent.source === 'calendar_sync' ? 'Calendar Sync' : selectedEvent.source || 'Manual'}
+                      <p className="font-medium text-gray-700">Recurring</p>
+                      <p className="text-gray-600">
+                        {selectedReminder.recurring ? selectedReminder.recurring_pattern || 'Yes' : 'No'}
                       </p>
                     </div>
                   </div>
                 </div>
-
-                {selectedEvent.rsvp_required && (
-                  <div className="border-t pt-4 mt-6">
-                    <h4 className="font-medium text-gray-700 mb-3">Quick Actions</h4>
-                    <div className="flex space-x-2">
-                      <button className="flex items-center space-x-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors">
-                        <MessageCircle className="w-3 h-3" />
-                        <span>RSVP Yes</span>
-                      </button>
-                      <button className="flex items-center space-x-1 px-3 py-2 bg-pink-500 text-white rounded-lg text-sm hover:bg-pink-600 transition-colors">
-                        <Gift className="w-3 h-3" />
-                        <span>Buy Gift</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
