@@ -1,9 +1,19 @@
 import React from 'react';
-import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users } from 'lucide-react';
+import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut } from 'lucide-react';
 import { AIChat } from './AIChat';
+import { useAuth } from '../hooks/useAuth';
 
 export function Dashboard() {
+  const { signOut } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   const todayEvents = [
     { time: '9:00 AM', title: 'Emma\'s Soccer Practice', location: 'Riverside Park' },
@@ -34,8 +44,17 @@ export function Dashboard() {
             <h1 className="text-2xl font-bold">Good Morning, Sarah!</h1>
             <p className="text-purple-100">Here's what's happening today</p>
           </div>
-          <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-            <Heart className="w-6 h-6" />
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleSignOut}
+              className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-30 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <Heart className="w-6 h-6" />
+            </div>
           </div>
         </div>
         
