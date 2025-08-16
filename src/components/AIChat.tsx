@@ -172,7 +172,13 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       ]);
 
       // Try to parse the JSON response
-      const parsed = JSON.parse(response.trim());
+     // Clean the response by removing markdown code block syntax
+     const cleanedResponse = response.trim()
+       .replace(/^```json\s*/, '')  // Remove opening ```json
+       .replace(/^```\s*/, '')      // Remove opening ```
+       .replace(/\s*```$/, '');     // Remove closing ```
+     
+     const parsed = JSON.parse(cleanedResponse);
       
       // Validate required fields
       if (parsed.title && parsed.date) {
