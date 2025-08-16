@@ -118,6 +118,17 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         const reminderDetails = await extractReminderDetails(inputMessage);
         
         if (reminderDetails) {
+          // Check if no time was specified and ask for clarification
+          if (!reminderDetails.time) {
+            const clarificationMessage: ChatMessage = {
+              role: 'assistant',
+              content: 'Is there a certain time or is it all day?'
+            };
+            setMessages(prev => [...prev, clarificationMessage]);
+            setIsLoading(false);
+            return;
+          }
+          
           try {
             console.log('Creating reminder with details:', reminderDetails);
             
