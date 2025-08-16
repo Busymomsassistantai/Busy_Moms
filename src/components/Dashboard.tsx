@@ -170,7 +170,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded transition-colors"
             >
               <ShoppingBag className="w-4 h-4" />
-              <span>{tasks.length} tasks</span>
+              <span>{tasks.length} shopping list</span>
             </button>
             <button 
               onClick={() => setShowRemindersPopup(true)}
@@ -344,7 +344,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Shopping Tasks</h2>
+                <h2 className="text-xl font-bold text-gray-900">Shopping List</h2>
                 <button
                   onClick={() => setShowTasksPopup(false)}
                   className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -377,7 +377,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">No pending tasks</p>
+                <p className="text-gray-500 text-center py-8">No pending items</p>
               )}
             </div>
           </div>
