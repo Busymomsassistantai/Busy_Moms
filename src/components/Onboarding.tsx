@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { Heart, Users, Shield, Calendar, MessageCircle, Watch, MapPin, Bell } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 interface OnboardingProps {
   onComplete: () => void;
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [userType, setUserType] = useState('');
+  const [preferences, setPreferences] = useState({
+    notification_events: true,
+    notification_shopping: true,
+    notification_reminders: true,
+    notification_whatsapp: false,
+    whatsapp_integration_enabled: false,
+    smartwatch_connected: false,
+    background_check_alerts: true
+  });
+  const [saving, setSaving] = useState(false);
 
   const steps = [
     {

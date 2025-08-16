@@ -33,7 +33,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             .insert([{
               id: data.user.id,
               email: data.user.email,
-              full_name: formData.fullName,
+              full_name: formData.fullName || '',
               user_type: 'Mom',
               onboarding_completed: false,
               ai_personality: 'Friendly'
@@ -47,8 +47,8 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           console.log('Profile created successfully for user:', data.user.email)
         }
         
-        alert('Account created successfully! You can now sign in.')
-        setIsSignUp(false) // Switch to sign in form
+        // Don't switch to sign in, let them proceed to onboarding
+        onAuthSuccess()
       } else {
         const { error } = await signIn(formData.email, formData.password)
         if (error) throw error
