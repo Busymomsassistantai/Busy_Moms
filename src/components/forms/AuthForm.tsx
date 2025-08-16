@@ -24,7 +24,14 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     try {
       if (isSignUp) {
         const { data, error } = await signUp(formData.email, formData.password)
-        if (error) throw error
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            alert('This email is already registered. Please sign in instead, or use a different email to sign up.')
+            setIsSignUp(false) // Switch to sign-in mode
+            return
+          }
+          throw error
+        }
         
         // Create profile after successful signup
         if (data.user) {
