@@ -124,11 +124,29 @@ export function Contacts() {
                   </p>
                   
                   <div className="flex items-center space-x-2">
-                    <button className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors">
+                    <button 
+                      onClick={() => {
+                        if (contact.phone) {
+                          window.open(`tel:${contact.phone}`, '_self');
+                        } else {
+                          alert('No phone number available for this contact');
+                        }
+                      }}
+                      className="flex items-center space-x-1 px-3 py-1 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors"
+                    >
                       <Phone className="w-3 h-3" />
                       <span>Call</span>
                     </button>
-                    <button className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                    <button 
+                      onClick={() => {
+                        if (contact.phone) {
+                          window.open(`sms:${contact.phone}`, '_self');
+                        } else {
+                          alert('No phone number available for this contact');
+                        }
+                      }}
+                      className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+                    >
                       <MessageCircle className="w-3 h-3" />
                       <span>Text</span>
                     </button>
