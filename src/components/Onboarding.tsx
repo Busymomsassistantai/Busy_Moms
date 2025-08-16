@@ -152,11 +152,80 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     }
   ];
 
+  const completeOnboarding = async () => {
+    if (!user?.id) {
+      console.error('No authenticated user found')
+      return
+    }
+
+    setSaving(true)
+    try {
+      // First, ensure profile exists (create if missing)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single()
+      
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || 'User',
+            user_type: userType as any,
+            onboarding_completed: true,
+            ai_personality: 'Friendly'
+          }])
+        
+        if (profileError) {
+          throw new Error(`Failed to create profile: ${profileError.message}`)
+        }
+      } else {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            user_type: userType as any,
+            onboarding_completed: true
+          })
+          .eq('id', user.id)
+        
+        if (updateError) {
+          throw new Error(`Failed to update profile: ${updateError.message}`)
+        }
+      }
+
+      // Create or update user preferences
+      const { error: preferencesError } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          ...preferences
+        }, {
+          onConflict: 'user_id'
+        })
+      
+      if (preferencesError) {
+        throw new Error(`Failed to save preferences: ${preferencesError.message}`)
+      }
+
+      console.log('Onboarding completed successfully')
+      onComplete()
+    } catch (error: any) {
+      console.error('Error completing onboarding:', error)
+      alert(`Error completing onboarding: ${error.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const nextStep = () => {
     if (step < steps.length - 1) {
       setStep(step + 1);
     } else {
-      onComplete();
+      completeOnboarding();
     }
   };
 
@@ -212,7 +281,6 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         </button>
         <button
           onClick={nextStep}
-          disabled={step === 1 && !userType}
           disabled={(step === 1 && !userType) || saving}
           className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
