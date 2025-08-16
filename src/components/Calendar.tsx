@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, Sync, ExternalLink } from 'lucide-react';
+import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink } from 'lucide-react';
 import { EventForm } from './forms/EventForm';
 import { Event } from '../lib/supabase';
 
