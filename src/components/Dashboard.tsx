@@ -125,7 +125,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     { icon: MessageCircle, title: 'RSVP Party', desc: 'Due today', color: 'from-purple-400 to-violet-400' }
   ];
 
-  const reminders = [
+  const sampleReminders = [
     'Pack Emma\'s water bottle',
     'Buy birthday gift for Jessica',
     'Schedule parent-teacher conference',
@@ -236,7 +236,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Smart Reminders</h2>
           <div className="space-y-2">
-            {reminders.map((reminder, index) => (
+            {sampleReminders.map((reminder, index) => (
               <div key={index} className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
                 <span className="text-gray-800">{reminder}</span>
