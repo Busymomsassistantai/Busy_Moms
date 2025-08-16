@@ -154,7 +154,8 @@ export function Settings() {
           title: 'WhatsApp Integration',
           description: 'Parse messages and images for events',
           toggle: true,
-          enabled: notifications.whatsapp
+          enabled: notifications.whatsapp,
+          onClick: () => toggleNotification('whatsapp')
         },
         {
           icon: Smartphone,

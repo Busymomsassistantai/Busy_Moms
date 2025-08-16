@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink, ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
 import { EventForm } from './forms/EventForm';
+import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { Event, Reminder, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
@@ -10,6 +11,7 @@ export function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
@@ -306,6 +308,13 @@ export function Calendar() {
               ) : (
                 <CalendarIcon className="w-5 h-5" />
               )}
+            </button>
+            <button 
+              onClick={() => setShowWhatsAppForm(true)}
+              className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors"
+              title="Parse WhatsApp Message"
+            >
+              <Smartphone className="w-5 h-5" />
             </button>
             <button 
               onClick={() => setShowEventForm(true)}
@@ -668,20 +677,23 @@ export function Calendar() {
         </div>
 
         {/* WhatsApp Integration Alert */}
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 cursor-pointer hover:bg-green-100 transition-colors" onClick={() => setShowWhatsAppForm(true)}>
           <div className="flex items-start space-x-3">
             <MessageCircle className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
               <h3 className="font-medium text-green-900 mb-1">WhatsApp Integration</h3>
               <p className="text-sm text-green-700 mb-2">
-                New invitation detected in Mom's Group chat
+                Click to parse WhatsApp messages and create events automatically
               </p>
               <div className="bg-white p-3 rounded-lg border border-green-200 text-sm">
                 <p className="text-gray-700 mb-2">
                   "Hi everyone! Sophia's 7th birthday party this Saturday 2-5pm at Chuck E. Cheese on Main Street. RSVP by Thursday! 🎂🎉"
                 </p>
-                <button className="text-green-600 font-medium hover:underline">
-                  Add to Calendar
+                <button className="text-green-600 font-medium hover:underline" onClick={(e) => {
+                  e.stopPropagation();
+                  setShowWhatsAppForm(true);
+                }}>
+                  Parse Message
                 </button>
               </div>
             </div>
@@ -692,6 +704,12 @@ export function Calendar() {
       <EventForm
         isOpen={showEventForm}
         onClose={() => setShowEventForm(false)}
+        onEventCreated={handleEventCreated}
+      />
+
+      <WhatsAppIntegration
+        isOpen={showWhatsAppForm}
+        onClose={() => setShowWhatsAppForm(false)}
         onEventCreated={handleEventCreated}
       />
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut } from 'lucide-react';
+import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut, Smartphone } from 'lucide-react';
 import { AIChat } from './AIChat';
+import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
 
@@ -12,6 +13,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { signOut } = useAuth();
   const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [showEventsPopup, setShowEventsPopup] = React.useState(false);
   const [showTasksPopup, setShowTasksPopup] = React.useState(false);
@@ -119,10 +121,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   ];
 
   const quickActions = [
-    { icon: Gift, title: 'Buy Gift', desc: 'For Jessica\'s party', color: 'from-pink-400 to-rose-400' },
-    { icon: Car, title: 'Schedule Ride', desc: 'To soccer practice', color: 'from-blue-400 to-cyan-400' },
-    { icon: ShoppingBag, title: 'Grocery Run', desc: '8 items needed', color: 'from-green-400 to-emerald-400' },
-    { icon: MessageCircle, title: 'RSVP Party', desc: 'Due today', color: 'from-purple-400 to-violet-400' }
+    { icon: Gift, title: 'Buy Gift', desc: 'For Jessica\'s party', color: 'from-pink-400 to-rose-400', action: null },
+    { icon: Car, title: 'Schedule Ride', desc: 'To soccer practice', color: 'from-blue-400 to-cyan-400', action: null },
+    { icon: ShoppingBag, title: 'Grocery Run', desc: '8 items needed', color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
+    { icon: Smartphone, title: 'Parse WhatsApp', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) }
   ];
 
   const sampleReminders = [
@@ -192,8 +194,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               <div
                 key={index}
                 onClick={() => {
-                  if (action.title === 'Grocery Run') {
-                    onNavigate('shopping');
+                  if (action.action) {
+                    action.action();
                   }
                 }}
                 className="p-4 rounded-xl bg-gradient-to-br shadow-sm hover:shadow-md transition-all cursor-pointer"
@@ -295,6 +297,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       </div>
 
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <WhatsAppIntegration 
+        isOpen={isWhatsAppOpen} 
+        onClose={() => setIsWhatsAppOpen(false)}
+        onEventCreated={(event) => {
+          setEvents(prev => [...prev, event]);
+        }}
+      />
 
       {/* Events Popup */}
       {showEventsPopup && (
