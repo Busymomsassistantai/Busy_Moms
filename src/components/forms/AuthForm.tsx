@@ -28,27 +28,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         
         // Create profile after successful signup
         if (data.user) {
-          // Wait a moment for the auth state to be fully established
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([{
-              email: data.user.email || formData.email,
-              full_name: formData.fullName || '',
-              user_type: 'Mom',
-              onboarding_completed: false,
-              ai_personality: 'Friendly'
-            }])
-          
-          if (profileError) {
-            console.error('Profile creation failed:', profileError.message)
-            // Don't throw error for profile creation failure, let user proceed
-            console.warn('Profile will be created during onboarding instead')
-          }
-          else {
-            console.log('Profile created successfully for user:', data.user.email)
-          }
+          console.log('User created successfully, profile will be created during onboarding')
         }
         
         // Don't switch to sign in, let them proceed to onboarding

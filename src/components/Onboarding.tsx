@@ -160,17 +160,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
     setSaving(true)
     try {
-      // First, ensure profile exists (create if missing)
-      const { data: existingProfile } = await supabase
+      // Check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single()
       
-      if (!existingProfile) {
-        const { error: profileError } = await supabase
+      if (checkError && checkError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const { error: createError } = await supabase
           .from('profiles')
           .insert([{
+            id: user.id,
             email: user.email || '',
             full_name: user.user_metadata?.full_name || 'User',
             user_type: userType as any,
@@ -178,8 +180,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             ai_personality: 'Friendly'
           }])
         
-        if (profileError) {
-          throw new Error(`Failed to create profile: ${profileError.message}`)
+        if (createError) {
+          throw new Error(`Failed to create profile: ${createError.message}`)
         }
       } else {
         // Update existing profile
