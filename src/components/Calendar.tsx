@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink } from 'lucide-react';
+import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventForm } from './forms/EventForm';
 import { Event } from '../lib/supabase';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 
 export function Calendar() {
-  const [selectedDate, setSelectedDate] = useState(15);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [showEventForm, setShowEventForm] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
@@ -13,6 +14,85 @@ export function Calendar() {
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isGoogleServiceReady, setIsGoogleServiceReady] = useState(false);
+
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const getMonthName = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
+
+  const navigateToToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const isSameDay = (date1: Date | null, date2: Date) => {
+    if (!date1) return false;
+    return date1.toDateString() === date2.toDateString();
+  };
+
+  const renderCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentDate);
+    const firstDay = getFirstDayOfMonth(currentDate);
+    const days = [];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(
+        <div key={`empty-${i}`} className="aspect-square"></div>
+      );
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      const isSelected = isSameDay(selectedDate, date);
+      const isTodayDate = isToday(date);
+
+      days.push(
+        <button
+          key={day}
+          onClick={() => setSelectedDate(date)}
+          className={`aspect-square flex items-center justify-center text-sm rounded-lg transition-all hover:bg-gray-100 ${
+            isSelected
+              ? 'bg-purple-500 text-white hover:bg-purple-600'
+              : isTodayDate
+              ? 'bg-purple-100 text-purple-700 font-semibold'
+              : 'text-gray-700'
+          }`}
+        >
+          {day}
+        </button>
+      );
+    }
+
+    return days;
+  };
 
   const getEventColor = (type: string) => {
     const colors = {
@@ -127,14 +207,6 @@ export function Calendar() {
     checkGoogleAuth();
   }, []);
 
-  const getDaysInMonth = () => {
-    const days = [];
-    for (let i = 1; i <= 31; i++) {
-      days.push(i);
-    }
-    return days;
-  };
-
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
@@ -142,7 +214,7 @@ export function Calendar() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-            <p className="text-gray-600">March 2025</p>
+            <p className="text-gray-600">{getMonthName(currentDate)}</p>
           </div>
           <div className="flex space-x-2">
             <button 
@@ -276,28 +348,38 @@ export function Calendar() {
           </div>
         )}
 
-        {/* Mini Calendar */}
-        <div className="grid grid-cols-7 gap-1 mb-4">
+        {/* Calendar Navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          
+          <button
+            onClick={navigateToToday}
+            className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
+          >
+            Today
+          </button>
+          
+          <button
+            onClick={() => navigateMonth('next')}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-1">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
             <div key={day} className="text-center text-sm font-medium text-gray-400 py-2">
               {day}
             </div>
           ))}
-          {getDaysInMonth().slice(0, 14).map((day) => (
-            <button
-              key={day}
-              onClick={() => setSelectedDate(day)}
-              className={`aspect-square flex items-center justify-center text-sm rounded-lg transition-all ${
-                day === selectedDate
-                  ? 'bg-purple-500 text-white'
-                  : day === 15
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {day}
-            </button>
-          ))}
+          {renderCalendarDays()}
         </div>
       </div>
 
@@ -305,7 +387,12 @@ export function Calendar() {
         {/* Today's Events */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            March {selectedDate}, 2025
+            {selectedDate ? selectedDate.toLocaleDateString('en-US', { 
+              weekday: 'long',
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }) : 'Select a date'}
           </h2>
           
           <div className="space-y-4">
