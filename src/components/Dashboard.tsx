@@ -238,7 +238,27 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Smart Reminders</h2>
           <div className="space-y-2">
-            {sampleReminders.map((reminder, index) => (
+            {reminders.length > 0 ? reminders.map((reminder) => (
+              <div key={reminder.id} className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <div className="flex-1">
+                  <span className="text-gray-800">{reminder.title}</span>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {new Date(reminder.reminder_date).toLocaleDateString('en-US', { 
+                      weekday: 'short',
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                    {reminder.reminder_time && ` at ${reminder.reminder_time}`}
+                  </div>
+                </div>
+                {reminder.priority === 'high' && (
+                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                    High Priority
+                  </span>
+                )}
+              </div>
+            )) : sampleReminders.map((reminder, index) => (
               <div key={index} className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
                 <span className="text-gray-800">{reminder}</span>
