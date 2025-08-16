@@ -949,7 +949,7 @@ export function Calendar() {
 
               {/* Reminder Details */}
               {selectedReminder && (
-                <div>
+                <div className="space-y-4">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedReminder.title}</h3>
                   <div className="flex items-center space-x-2 mb-4">
                     <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
@@ -961,69 +961,69 @@ export function Calendar() {
                       </span>
                     )}
                   </div>
-                </div>
 
-                {selectedReminder.description && (
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-1">Description</h4>
-                    <p className="text-gray-600">{selectedReminder.description}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-yellow-500" />
+                  {selectedReminder.description && (
                     <div>
-                      <p className="font-medium text-gray-700">Date</p>
-                      <p className="text-gray-600">{new Date(selectedReminder.reminder_date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</p>
+                      <h4 className="font-medium text-gray-700 mb-1">Description</h4>
+                      <p className="text-gray-600">{selectedReminder.description}</p>
                     </div>
-                  </div>
+                  )}
 
-                  {selectedReminder.reminder_time && (
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center space-x-3">
-                      <Clock className="w-5 h-5 text-yellow-500" />
+                      <CalendarIcon className="w-5 h-5 text-yellow-500" />
                       <div>
-                        <p className="font-medium text-gray-700">Time</p>
-                        <p className="text-gray-600">{new Date(`2000-01-01T${selectedReminder.reminder_time}`).toLocaleTimeString([], { 
-                          hour: 'numeric', 
-                          minute: '2-digit' 
+                        <p className="font-medium text-gray-700">Date</p>
+                        <p className="text-gray-600">{new Date(selectedReminder.reminder_date).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
                         })}</p>
                       </div>
                     </div>
-                  )}
 
-                  {selectedReminder.priority && (
+                    {selectedReminder.reminder_time && (
+                      <div className="flex items-center space-x-3">
+                        <Clock className="w-5 h-5 text-yellow-500" />
+                        <div>
+                          <p className="font-medium text-gray-700">Time</p>
+                          <p className="text-gray-600">{new Date(`2000-01-01T${selectedReminder.reminder_time}`).toLocaleTimeString([], { 
+                            hour: 'numeric', 
+                            minute: '2-digit' 
+                          })}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedReminder.priority && (
+                      <div className="flex items-center space-x-3">
+                        <div className="w-5 h-5 flex items-center justify-center">
+                          <div className={`w-3 h-3 rounded-full ${
+                            selectedReminder.priority === 'high' ? 'bg-red-500' :
+                            selectedReminder.priority === 'medium' ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`}></div>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-700">Priority</p>
+                          <p className="text-gray-600 capitalize">{selectedReminder.priority}</p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center space-x-3">
                       <div className="w-5 h-5 flex items-center justify-center">
                         <div className={`w-3 h-3 rounded-full ${
-                          selectedReminder.priority === 'high' ? 'bg-red-500' :
-                          selectedReminder.priority === 'medium' ? 'bg-yellow-500' :
-                          'bg-green-500'
+                          selectedReminder.recurring ? 'bg-blue-500' : 'bg-gray-500'
                         }`}></div>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-700">Priority</p>
-                        <p className="text-gray-600 capitalize">{selectedReminder.priority}</p>
+                        <p className="font-medium text-gray-700">Recurring</p>
+                        <p className="text-gray-600">
+                          {selectedReminder.recurring ? selectedReminder.recurring_pattern || 'Yes' : 'No'}
+                        </p>
                       </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 flex items-center justify-center">
-                      <div className={`w-3 h-3 rounded-full ${
-                        selectedReminder.recurring ? 'bg-blue-500' : 'bg-gray-500'
-                      }`}></div>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700">Recurring</p>
-                      <p className="text-gray-600">
-                        {selectedReminder.recurring ? selectedReminder.recurring_pattern || 'Yes' : 'No'}
-                      </p>
                     </div>
                   </div>
                 </div>
