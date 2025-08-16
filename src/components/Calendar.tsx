@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { Plus, MapPin, Clock, Users, MessageCircle, Gift, Calendar as CalendarIcon, FolderSync as Sync, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { EventForm } from './forms/EventForm';
-import { Event } from '../lib/supabase';
+import { Event, Reminder, supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 
 export function Calendar() {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [showEventForm, setShowEventForm] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
@@ -125,6 +129,66 @@ export function Calendar() {
 
   const handleEventCreated = (newEvent: Event) => {
     setEvents(prev => [...prev, newEvent]);
+    loadEventsAndReminders(); // Reload to get fresh data
+  };
+
+  // Load events and reminders from database
+  const loadEventsAndReminders = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      console.log('📅 Loading events and reminders for user:', user.id);
+      
+      // Load events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('event_date', { ascending: true });
+
+      if (eventsError) {
+        console.error('❌ Error loading events:', eventsError);
+      } else {
+        console.log('✅ Loaded events:', eventsData);
+        setEvents(eventsData || []);
+      }
+
+      // Load reminders
+      const { data: remindersData, error: remindersError } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('reminder_date', { ascending: true });
+
+      if (remindersError) {
+        console.error('❌ Error loading reminders:', remindersError);
+      } else {
+        console.log('✅ Loaded reminders:', remindersData);
+        setReminders(remindersData || []);
+      }
+    } catch (error) {
+      console.error('❌ Error loading calendar data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data when component mounts or user changes
+  React.useEffect(() => {
+    if (user) {
+      loadEventsAndReminders();
+    }
+  }, [user]);
+
+  // Filter events and reminders for selected date
+  const getItemsForDate = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    
+    const dayEvents = events.filter(event => event.event_date === dateString);
+    const dayReminders = reminders.filter(reminder => reminder.reminder_date === dateString);
+    
+    return { events: dayEvents, reminders: dayReminders };
   };
 
   const connectGoogleCalendar = async () => {
@@ -379,6 +443,115 @@ export function Calendar() {
               {day}
             </div>
           ))}
+
+          {/* Display events and reminders for selected date */}
+          {selectedDate && (() => {
+            const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
+            
+            return (
+              <>
+                {/* Database Events */}
+                {dayEvents.map((event) => (
+                  <div
+                    key={`event-${event.id}`}
+                    className={`p-4 rounded-xl border-2 ${getEventColor(event.event_type || 'other')} hover:shadow-md transition-all cursor-pointer`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold">{event.title}</h3>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            Event
+                          </span>
+                        </div>
+                        {event.description && (
+                          <p className="text-sm opacity-75 mb-2">{event.description}</p>
+                        )}
+                        <div className="flex items-center space-x-3 text-sm opacity-75 mb-2">
+                          {event.start_time && (
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-4 h-4" />
+                              <span>{formatTime(event.start_time, event.end_time)}</span>
+                            </div>
+                          )}
+                          {event.location && (
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-4 h-4" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                        {event.participants && event.participants.length > 0 && (
+                          <div className="flex items-center space-x-1 text-sm opacity-75">
+                            <Users className="w-4 h-4" />
+                            <span>{event.participants.join(', ')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {event.rsvp_required && (
+                      <div className="flex space-x-2 mt-3">
+                        {['Buy Gift', 'RSVP'].map((action) => (
+                          <button
+                            key={action}
+                            className="flex items-center space-x-1 px-3 py-1 bg-white bg-opacity-50 rounded-full text-sm font-medium hover:bg-opacity-75 transition-colors"
+                          >
+                            {action === 'Buy Gift' && <Gift className="w-3 h-3" />}
+                            {action === 'RSVP' && <MessageCircle className="w-3 h-3" />}
+                            <span>{action}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Database Reminders */}
+                {dayReminders.map((reminder) => (
+                  <div
+                    key={`reminder-${reminder.id}`}
+                    className={`p-4 rounded-xl border-2 ${
+                      reminder.priority === 'high' ? 'bg-red-50 border-red-200' :
+                      reminder.priority === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+                      'bg-gray-50 border-gray-200'
+                    } hover:shadow-md transition-all cursor-pointer`}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold">{reminder.title}</h3>
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                            Reminder
+                          </span>
+                          {reminder.priority && reminder.priority !== 'medium' && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              reminder.priority === 'high' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {reminder.priority}
+                            </span>
+                          )}
+                        </div>
+                        {reminder.description && (
+                          <p className="text-sm opacity-75 mb-2">{reminder.description}</p>
+                        )}
+                        {reminder.reminder_time && (
+                          <div className="flex items-center space-x-1 text-sm opacity-75">
+                            <Clock className="w-4 h-4" />
+                            <span>{new Date(`2000-01-01T${reminder.reminder_time}`).toLocaleTimeString([], { 
+                              hour: 'numeric', 
+                              minute: '2-digit' 
+                            })}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
           {renderCalendarDays()}
         </div>
       </div>
@@ -481,13 +654,44 @@ export function Calendar() {
             })}
 
             {/* Empty state for Google Calendar */}
-            {isGoogleConnected && googleEvents.length === 0 && events.length === 0 && (
+            {isGoogleConnected && googleEvents.length === 0 && selectedDate && (() => {
+              const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
+              return dayEvents.length === 0 && dayReminders.length === 0;
+            })() && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                 <CalendarIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <h3 className="font-medium text-green-900 mb-1">Google Calendar Synced</h3>
                 <p className="text-sm text-green-700">
                   No events found for the selected date
                 </p>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {loading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <span className="ml-2 text-gray-600">Loading events and reminders...</span>
+              </div>
+            )}
+
+            {/* Empty state for no events/reminders */}
+            {!loading && selectedDate && (() => {
+              const { events: dayEvents, reminders: dayReminders } = getItemsForDate(selectedDate);
+              return dayEvents.length === 0 && dayReminders.length === 0 && googleEvents.length === 0;
+            })() && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+                <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No events or reminders</h3>
+                <p className="text-gray-600 mb-4">
+                  No events or reminders scheduled for {selectedDate.toLocaleDateString()}
+                </p>
+                <button
+                  onClick={() => setShowEventForm(true)}
+                  className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
+                >
+                  Add Event
+                </button>
               </div>
             )}
           </div>
