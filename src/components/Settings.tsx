@@ -83,13 +83,6 @@ export function Settings() {
       title: 'Family Profile',
       items: [
         {
-          icon: User,
-          title: 'Family Members',
-          description: 'Manage your family members',
-          action: 'Add',
-          showAddButton: false
-        },
-        {
           icon: Shield,
           title: 'Privacy & Safety',
           description: 'Allergies, medical info, emergency contacts',
@@ -219,90 +212,8 @@ export function Settings() {
       </div>
 
       <div className="p-6">
-        {/* AI Personality Setting */}
-        <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded-xl p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">AI Assistant Personality</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {['Friendly', 'Professional', 'Humorous'].map((personality) => (
-              <button
-                key={personality}
-                className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  personality === 'Friendly'
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-white text-gray-600 hover:bg-purple-100'
-                }`}
-              >
-                {personality}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Settings Sections */}
-        <div className="space-y-6">
-          {settingSections.map((section, sectionIndex) => (
-            <div key={sectionIndex}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title}</h2>
-              <div className="space-y-2">
-                {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-all">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                          <item.icon className="w-5 h-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{item.title}</h3>
-                          <p className="text-sm text-gray-600">{item.description}</p>
-                        </div>
-                      </div>
-                      
-                      {item.toggle ? (
-                        <button
-                          onClick={() => toggleNotification(item.title.includes('WhatsApp') ? 'whatsapp' : item.title.includes('Event') ? 'events' : 'shopping')}
-                          className={`w-12 h-6 rounded-full relative transition-all ${
-                            item.enabled ? 'bg-purple-500' : 'bg-gray-300'
-                          }`}
-                        >
-                          <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow ${
-                            item.enabled ? 'right-0.5' : 'left-0.5'
-                          }`}></div>
-                        </button>
-                      ) : (
-                        <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors">
-                          <button 
-                            onClick={() => {
-                              if (item.title === 'Family Members') {
-                                setShowFamilyForm(true);
-                              } else if (item.onClick) {
-                                item.onClick();
-                              }
-                            }}
-                            className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                          >
-                            {item.action}
-                          </button>
-                        </button>
-                      )}
-                      
-                      {item.showAddButton && (
-                        <button
-                          onClick={() => setShowFamilyForm(true)}
-                          className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors ml-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Family Members List */}
-        <div className="mt-6">
+        {/* Family Members List - Moved to top */}
+        <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Family Members</h2>
             <button
@@ -402,69 +313,74 @@ export function Settings() {
           )}
         </div>
 
-        {/* Remove the old family members section */}
-        {false && loadingMembers ? (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-              <span className="ml-2 text-gray-600">Loading family members...</span>
-            </div>
+        {/* AI Personality Setting */}
+        <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded-xl p-4">
+          <h3 className="font-semibold text-gray-900 mb-3">AI Assistant Personality</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {['Friendly', 'Professional', 'Humorous'].map((personality) => (
+              <button
+                key={personality}
+                className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                  personality === 'Friendly'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-white text-gray-600 hover:bg-purple-100'
+                }`}
+              >
+                {personality}
+              </button>
+            ))}
           </div>
-        ) : familyMembers.length > 0 ? (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
-            <div className="space-y-2">
-              {familyMembers.map((member) => (
-                <div key={member.id} className="bg-white border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{member.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {member.age && `Age ${member.age}`}{member.gender && ` • ${member.gender}`}
-                        {member.school && ` • ${member.school}`}
-                        {member.grade && ` (${member.grade})`}
-                      </p>
-                      {member.allergies && member.allergies.length > 0 && (
-                        <p className="text-xs text-red-600 mt-1">
-                          Allergies: {member.allergies.join(', ')}
-                        </p>
+        </div>
+
+        {/* Settings Sections */}
+        <div className="space-y-6">
+          {settingSections.map((section, sectionIndex) => (
+            <div key={sectionIndex}>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{section.title}</h2>
+              <div className="space-y-2">
+                {section.items.map((item, itemIndex) => (
+                  <div key={itemIndex} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                          <item.icon className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-gray-900">{item.title}</h3>
+                          <p className="text-sm text-gray-600">{item.description}</p>
+                        </div>
+                      </div>
+                      
+                      {item.toggle ? (
+                        <button
+                          onClick={() => toggleNotification(item.title.includes('WhatsApp') ? 'whatsapp' : item.title.includes('Event') ? 'events' : 'shopping')}
+                          className={`w-12 h-6 rounded-full relative transition-all ${
+                            item.enabled ? 'bg-purple-500' : 'bg-gray-300'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow ${
+                            item.enabled ? 'right-0.5' : 'left-0.5'
+                          }`}></div>
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => {
+                            if (item.onClick) {
+                              item.onClick();
+                            }
+                          }}
+                          className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                        >
+                          {item.action}
+                        </button>
                       )}
-                      {member.medical_notes && (
-                        <p className="text-xs text-blue-600 mt-1">
-                          Medical: {member.medical_notes}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => deleteFamilyMember(member.id)}
-                        className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200 transition-colors"
-                      >
-                        Delete
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Family Members</h2>
-            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No family members yet</h3>
-              <p className="text-gray-600 mb-4">Add your children and family members to get started</p>
-              <button
-                onClick={() => setShowFamilyForm(true)}
-                className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
-              >
-                Add First Family Member
-              </button>
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Background Check History */}
         <div className="mt-6">
