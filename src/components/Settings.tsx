@@ -301,6 +301,7 @@ export function Settings() {
       alert(`❌ WhatsApp Integration Test Failed:\n\n${error.message || 'Unknown error occurred'}\n\nPlease check your OpenAI API key configuration.`);
     }
   };
+
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
