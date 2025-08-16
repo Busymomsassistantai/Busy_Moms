@@ -4,7 +4,11 @@ import { AIChat } from './AIChat';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile } from '../lib/supabase';
 
-export function Dashboard() {
+interface DashboardProps {
+  onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat') => void;
+}
+
+export function Dashboard({ onNavigate }: DashboardProps) {
   const { signOut } = useAuth();
   const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
@@ -111,6 +115,11 @@ export function Dashboard() {
             {quickActions.map((action, index) => (
               <div
                 key={index}
+                onClick={() => {
+                  if (action.title === 'Grocery Run') {
+                    onNavigate('shopping');
+                  }
+                }}
                 className="p-4 rounded-xl bg-gradient-to-br shadow-sm hover:shadow-md transition-all cursor-pointer"
                 style={{ background: `linear-gradient(135deg, var(--tw-gradient-stops))` }}
               >

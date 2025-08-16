@@ -49,7 +49,7 @@ function App() {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'dashboard':
-        return <Dashboard />
+        return <Dashboard onNavigate={setCurrentScreen} />
       case 'calendar':
         return <Calendar />
       case 'contacts':
