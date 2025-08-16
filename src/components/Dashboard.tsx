@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, Profile } from '../lib/supabase';
+import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
 
 interface DashboardProps {
   onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat') => void;
@@ -13,6 +13,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [showEventsPopup, setShowEventsPopup] = React.useState(false);
+  const [showTasksPopup, setShowTasksPopup] = React.useState(false);
+  const [showRemindersPopup, setShowRemindersPopup] = React.useState(false);
+  const [events, setEvents] = React.useState<Event[]>([]);
+  const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
+  const [reminders, setReminders] = React.useState<Reminder[]>([]);
+  const [loading, setLoading] = React.useState(false);
 
   // Load user profile
   React.useEffect(() => {
@@ -35,6 +42,66 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     };
     
     loadProfile();
+  }, [user]);
+
+  // Load events, tasks, and reminders
+  const loadDashboardData = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      // Load upcoming events (next 7 days)
+      const today = new Date().toISOString().split('T')[0];
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('event_date', today)
+        .lte('event_date', nextWeek)
+        .order('event_date', { ascending: true });
+
+      if (!eventsError) {
+        setEvents(eventsData || []);
+      }
+
+      // Load incomplete shopping items (tasks)
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('shopping_lists')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('completed', false)
+        .order('created_at', { ascending: false });
+
+      if (!tasksError) {
+        setTasks(tasksData || []);
+      }
+
+      // Load upcoming reminders (next 7 days)
+      const { data: remindersData, error: remindersError } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('completed', false)
+        .gte('reminder_date', today)
+        .lte('reminder_date', nextWeek)
+        .order('reminder_date', { ascending: true });
+
+      if (!remindersError) {
+        setReminders(remindersData || []);
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) {
+      loadDashboardData();
+    }
   }, [user]);
 
   const handleSignOut = async () => {
@@ -91,18 +158,27 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         {/* Daily Summary */}
         <div className="bg-white bg-opacity-10 rounded-xl p-4">
           <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center space-x-1">
+            <button 
+              onClick={() => setShowEventsPopup(true)}
+              className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded transition-colors"
+            >
               <Calendar className="w-4 h-4" />
-              <span>3 events</span>
-            </div>
-            <div className="flex items-center space-x-1">
+              <span>{events.length} events</span>
+            </button>
+            <button 
+              onClick={() => setShowTasksPopup(true)}
+              className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded transition-colors"
+            >
               <ShoppingBag className="w-4 h-4" />
-              <span>8 tasks</span>
-            </div>
-            <div className="flex items-center space-x-1">
+              <span>{tasks.length} tasks</span>
+            </button>
+            <button 
+              onClick={() => setShowRemindersPopup(true)}
+              className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded transition-colors"
+            >
               <Clock className="w-4 h-4" />
-              <span>2 reminders</span>
-            </div>
+              <span>{reminders.length} reminders</span>
+            </button>
           </div>
         </div>
       </div>
@@ -219,6 +295,143 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       </div>
 
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+
+      {/* Events Popup */}
+      {showEventsPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Upcoming Events</h2>
+                <button
+                  onClick={() => setShowEventsPopup(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                </div>
+              ) : events.length > 0 ? (
+                <div className="space-y-3">
+                  {events.map((event) => (
+                    <div key={event.id} className="p-3 bg-gray-50 rounded-lg">
+                      <h3 className="font-medium text-gray-900">{event.title}</h3>
+                      <p className="text-sm text-gray-600">
+                        {new Date(event.event_date).toLocaleDateString()} 
+                        {event.start_time && ` at ${event.start_time}`}
+                      </p>
+                      {event.location && (
+                        <p className="text-sm text-gray-500">{event.location}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No upcoming events</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tasks Popup */}
+      {showTasksPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Shopping Tasks</h2>
+                <button
+                  onClick={() => setShowTasksPopup(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                </div>
+              ) : tasks.length > 0 ? (
+                <div className="space-y-3">
+                  {tasks.map((task) => (
+                    <div key={task.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-gray-900">{task.item}</h3>
+                        {task.urgent && (
+                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 capitalize">{task.category}</p>
+                      {task.quantity && task.quantity > 1 && (
+                        <p className="text-sm text-gray-500">Quantity: {task.quantity}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No pending tasks</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reminders Popup */}
+      {showRemindersPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Upcoming Reminders</h2>
+                <button
+                  onClick={() => setShowRemindersPopup(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : reminders.length > 0 ? (
+                <div className="space-y-3">
+                  {reminders.map((reminder) => (
+                    <div key={reminder.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-gray-900">{reminder.title}</h3>
+                        {reminder.priority === 'high' && (
+                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                            High Priority
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {new Date(reminder.reminder_date).toLocaleDateString()}
+                        {reminder.reminder_time && ` at ${reminder.reminder_time}`}
+                      </p>
+                      {reminder.description && (
+                        <p className="text-sm text-gray-500">{reminder.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No upcoming reminders</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
