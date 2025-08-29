@@ -22,6 +22,36 @@ export function Calendar() {
   const [error, setError] = useState<string | null>(null);
   const [isGoogleServiceReady, setIsGoogleServiceReady] = useState(false);
 
+  // Load events from database
+  const loadEvents = async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      console.log('📅 Loading events for user:', user.id);
+      
+      // Load events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('event_date', { ascending: true });
+
+      if (eventsError) {
+        console.error('❌ Error loading events:', eventsError);
+      } else {
+        console.log('✅ Loaded events:', eventsData);
+        setEvents(eventsData || []);
+      }
+
+
+    } catch (error) {
+      console.error('❌ Error loading events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadEventsAndReminders = loadEvents; // Alias for backward compatibility
 
   // Calendar helper functions
@@ -165,36 +195,6 @@ export function Calendar() {
   const closeEventDetails = () => {
     setSelectedEvent(null);
     setShowEventDetails(false);
-  };
-
-  // Load events from database
-  const loadEvents = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
-      console.log('📅 Loading events for user:', user.id);
-      
-      // Load events
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('event_date', { ascending: true });
-
-      if (eventsError) {
-        console.error('❌ Error loading events:', eventsError);
-      } else {
-        console.log('✅ Loaded events:', eventsData);
-        setEvents(eventsData || []);
-      }
-
-
-    } catch (error) {
-      console.error('❌ Error loading events:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   // Load data when component mounts or user changes
