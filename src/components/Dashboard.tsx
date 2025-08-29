@@ -127,7 +127,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 pb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Good Morning, {profile?.full_name || user?.email?.split('@')[0] || 'User'}!</h1>
+            <h1 className="text-2xl font-bold">Good Morning, {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}!</h1>
             <p className="text-purple-100">Here's what's happening today</p>
           </div>
           <div className="flex items-center space-x-3">

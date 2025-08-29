@@ -46,36 +46,6 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         const { error } = await signIn(formData.email, formData.password)
         if (error) throw error
         
-        // Check if profile exists for existing user, create if missing
-        const { data: { user: currentUser } } = await supabase.auth.getUser()
-        if (currentUser) {
-          const { data: existingProfile, error: profileCheckError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', currentUser.id)
-            .maybeSingle()
-          
-          if (profileCheckError && profileCheckError.code === 'PGRST116') {
-            // Profile doesn't exist, create it
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .insert([{
-                id: currentUser.id,
-                email: currentUser.email || formData.email,
-                full_name: currentUser.user_metadata?.full_name || 'User',
-                user_type: 'Mom',
-                onboarding_completed: false,
-                ai_personality: 'Friendly'
-              }])
-            
-            if (profileError) {
-              console.error('Profile creation failed:', profileError.message)
-            } else {
-              console.log('Profile created for existing user:', currentUser.email)
-            }
-          }
-        }
-        
         // For existing users signing in, go directly to dashboard
         onAuthSuccess()
       }

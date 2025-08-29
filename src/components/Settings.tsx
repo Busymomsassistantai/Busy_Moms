@@ -235,7 +235,7 @@ export function Settings() {
             <User className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{currentProfile?.full_name || user?.email?.split('@')[0] || 'User'}</h1>
+            <h1 className="text-2xl font-bold">{currentProfile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}</h1>
             <p className="text-purple-100">{user?.email}</p>
           </div>
           <button
