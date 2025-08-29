@@ -11,7 +11,7 @@ import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { Loader2 } from 'lucide-react'
 
-type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
+export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
 
 function App() {
   const { user, loading, signOut } = useAuth()

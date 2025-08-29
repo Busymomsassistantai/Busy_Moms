@@ -90,6 +90,12 @@ Respond in JSON format with:
       ]);
       
       // Try to parse JSON response
+      // Clean the response by removing markdown code block syntax
+      const cleanedResponse = response.trim()
+        .replace(/^```json\s*/, '')  // Remove opening ```json
+        .replace(/^```\s*/, '')      // Remove opening ```
+        .replace(/\s*```$/, '');     // Remove closing ```
+      
       const parsed = JSON.parse(response);
       return parsed;
     } catch (error) {

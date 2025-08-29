@@ -17,7 +17,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [showEventsPopup, setShowEventsPopup] = React.useState(false);
   const [showTasksPopup, setShowTasksPopup] = React.useState(false);
-  const [showRemindersPopup, setShowRemindersPopup] = React.useState(false);
   const [events, setEvents] = React.useState<Event[]>([]);
   const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
@@ -80,19 +79,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         setTasks(tasksData || []);
       }
 
-      // Load upcoming reminders (next 7 days)
-      const { data: remindersData, error: remindersError } = await supabase
-        .from('reminders')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('completed', false)
-        .gte('reminder_date', today)
-        .lte('reminder_date', nextWeek)
-        .order('reminder_date', { ascending: true });
-
-      if (!remindersError) {
-        setReminders(remindersData || []);
-      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {

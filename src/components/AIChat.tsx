@@ -2,14 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, MessageCircle, X, Mic, MicOff } from 'lucide-react';
 import { aiService, ChatMessage } from '../services/openai';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, Profile, Reminder } from '../lib/supabase';
+import { supabase, Profile } from '../lib/supabase';
 
-interface AIChatProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export function AIChat({ isOpen, onClose }: AIChatProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -179,9 +173,13 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
                 event_date: reminderDetails.date,
                 start_time: reminderDetails.time,
                 end_time: reminderDetails.time ? (() => {
-                  const startTime = new Date(`2000-01-01T${reminderDetails.time}`);
-                  const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
-                  return endTime.toTimeString().slice(0, 5);
+                  try {
+                    const startTime = new Date(`2000-01-01T${reminderDetails.time}`);
+                    const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+                    return endTime.toTimeString().slice(0, 5);
+                  } catch {
+                    return null;
+                  }
                 })() : null,
                 location: '',
                 event_type: 'other' as const,
@@ -221,7 +219,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
             console.error('❌ Full error object:', JSON.stringify(error, null, 2));
             const errorMessage: ChatMessage = {
               role: 'assistant',
-              content: `I had trouble saving that reminder to your list. Error: ${error?.message || 'Unknown error'}. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?`
+              content: `I had trouble saving that reminder to your list. Error: ${(error as any)?.message || 'Unknown error'}. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?`
             };
             setMessages(prev => [...prev, errorMessage]);
             setIsLoading(false);

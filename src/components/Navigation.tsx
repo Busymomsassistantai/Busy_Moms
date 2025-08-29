@@ -5,6 +5,7 @@ import { Screen } from '../App';
 interface NavigationProps {
   currentScreen: Screen;
   onScreenChange: (screen: Screen) => void;
+  onSignOut: () => void;
 }
 
 export function Navigation({ currentScreen, onScreenChange }: NavigationProps) {

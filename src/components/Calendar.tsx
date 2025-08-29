@@ -22,6 +22,8 @@ export function Calendar() {
   const [error, setError] = useState<string | null>(null);
   const [isGoogleServiceReady, setIsGoogleServiceReady] = useState(false);
 
+  const loadEventsAndReminders = loadEvents; // Alias for backward compatibility
+
   // Calendar helper functions
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -495,7 +497,6 @@ export function Calendar() {
               </h3>
               
               <div className="space-y-3">
-                {/* Events */}
                 {dayEvents.map((event) => (
                   <div
                     key={`event-${event.id}`}
@@ -528,7 +529,6 @@ export function Calendar() {
                     </div>
                   </div>
                 ))}
-
               </div>
             </div>
           );
