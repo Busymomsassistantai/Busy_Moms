@@ -41,7 +41,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
           // Update the initial message with the user's name
           setMessages([{
             role: 'assistant',
-            content: `Hi ${profileData.full_name || user.email?.split('@')[0] || 'there'}! I'm your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?`
+            content: `Hi ${profileData.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'there'}! I'm your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?`
           }]);
         }
       } catch (error) {
