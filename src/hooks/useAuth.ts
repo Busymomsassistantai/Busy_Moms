@@ -9,34 +9,33 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true
 
-    // Get initial session with timeout
-    const sessionTimeout = setTimeout(() => {
-      if (mounted) {
-        console.warn('Session loading timeout, proceeding without auth')
-        setLoading(false)
-      }
-    }, 3000) // 3 second timeout
-
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      clearTimeout(sessionTimeout)
-      if (error) {
-        console.error('Error getting session:', error.message)
-      }
-      if (mounted) {
-        setUser(session?.user ?? null)
-        // Handle profile creation for authenticated users
-        if (session?.user) {
-          handleUserProfile(session.user).catch(console.error)
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error.message)
         }
-        setLoading(false)
+        
+        if (mounted) {
+          setUser(session?.user ?? null)
+          // Handle profile creation for authenticated users
+          if (session?.user) {
+            await handleUserProfile(session.user)
+          }
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Session fetch failed:', error)
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
       }
-    }).catch((error) => {
-      clearTimeout(sessionTimeout)
-      console.error('Session fetch failed:', error)
-      if (mounted) {
-        setLoading(false)
-      }
-    })
+    }
+
+    getInitialSession()
 
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -45,16 +44,14 @@ export function useAuth() {
           setUser(session?.user ?? null)
           // Handle profile creation for new users
           if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-            handleUserProfile(session.user).catch(console.error)
+            await handleUserProfile(session.user)
           }
-          setLoading(false)
         }
       }
     )
 
     return () => {
       mounted = false
-      clearTimeout(sessionTimeout)
       authListener.subscription.unsubscribe()
     }
   }, [])

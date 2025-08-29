@@ -22,11 +22,8 @@ function App() {
 
   useEffect(() => {
     const checkOnboarding = async () => {
-      if (!user?.id) {
-        setShowOnboarding(false)
-        setCheckingOnboarding(false)
-        return
-      }
+      // Only check onboarding if we have an authenticated user
+      if (!user?.id) return
 
       setCheckingOnboarding(true)
       try {
@@ -44,29 +41,24 @@ function App() {
           setShowOnboarding(true)
         }
       } catch (error) {
-        console.error('Error checking onboarding status:', error)
-        // Default to showing onboarding on error
-        setShowOnboarding(true)
-      } finally {
-        setCheckingOnboarding(false)
-      }
+        if (!error && profile) {
+        } else {
+          // If no profile exists or error, show onboarding
+          setShowOnboarding(true)
+        }
     }
 
-    if (user) {
-      checkOnboarding()
-    } else {
-      setShowOnboarding(false)
-      setCheckingOnboarding(false)
-    }
+    checkOnboarding()
   }, [user])
 
-  if (loading || checkingOnboarding) {
+  // Show loading only when we're checking auth or onboarding for authenticated users
+  if (loading || (user && checkingOnboarding)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-gray-600">
-            {loading ? 'Loading...' : 'Checking your profile...'}
+            {loading ? 'Loading...' : checkingOnboarding ? 'Checking your profile...' : 'Loading...'}
           </p>
         </div>
       </div>
@@ -75,10 +67,13 @@ function App() {
 
   // Show sign-in form if no user is authenticated
   if (!user) {
-    return <AuthForm onAuthSuccess={() => {
-      // Don't automatically set onboarding to false
-      // Let the useEffect above handle checking the onboarding status
-    }} />
+    return (
+      <AuthForm 
+        onAuthSuccess={() => {
+          // The useEffect will handle checking onboarding status
+        }} 
+      />
+    )
   }
 
   // Show onboarding if user exists but hasn't completed onboarding
@@ -87,25 +82,6 @@ function App() {
   }
 
   // Show main app if user is authenticated and has completed onboarding
-  const renderScreen = () => {
-    switch (currentScreen) {
-      case 'dashboard':
-        return <Dashboard onNavigate={setCurrentScreen} />
-      case 'calendar':
-        return <Calendar />
-      case 'contacts':
-        return <Contacts />
-      case 'shopping':
-        return <Shopping />
-      case 'settings':
-        return <Settings />
-      case 'ai-chat':
-        return <AIChat />
-      default:
-        return <Dashboard onNavigate={setCurrentScreen} />
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation 
@@ -114,7 +90,24 @@ function App() {
         onSignOut={signOut}
       />
       <main className="pb-20">
-        {renderScreen()}
+        {(() => {
+          switch (currentScreen) {
+            case 'dashboard':
+              return <Dashboard onNavigate={setCurrentScreen} />
+            case 'calendar':
+              return <Calendar />
+            case 'contacts':
+              return <Contacts />
+            case 'shopping':
+              return <Shopping />
+            case 'settings':
+              return <Settings />
+            case 'ai-chat':
+              return <AIChat />
+            default:
+              return <Dashboard onNavigate={setCurrentScreen} />
+          }
+        })()}
       </main>
     </div>
   )
