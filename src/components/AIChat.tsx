@@ -4,6 +4,12 @@ import { aiService, ChatMessage } from '../services/openai';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile } from '../lib/supabase';
 
+interface AIChatProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function AIChat({ isOpen, onClose }: AIChatProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
