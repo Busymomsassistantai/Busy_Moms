@@ -10,7 +10,6 @@ import { Shopping } from './components/Shopping'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { Loader2 } from 'lucide-react'
-import { supabase } from './lib/supabase'
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
 
@@ -20,39 +19,9 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
-    // Show onboarding for users who haven't completed it
-    const checkOnboardingStatus = async () => {
-      if (!user) {
-        setShowOnboarding(false);
-        return;
-      }
-
-      try {
-        // Check if user has completed onboarding in their profile
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error checking onboarding status:', error);
-          // If we can't check, assume they need onboarding
-          setShowOnboarding(true);
-          return;
-        }
-
-        // Show onboarding if profile doesn't exist or onboarding not completed
-        const needsOnboarding = !profile || !profile.onboarding_completed;
-        setShowOnboarding(needsOnboarding);
-      } catch (error) {
-        console.error('Error in onboarding check:', error);
-        setShowOnboarding(true);
-      }
-    };
-
-    if (user) {
-      checkOnboardingStatus();
+    // Only show onboarding for new signups, not existing users signing in
+    if (user && !user.user_metadata?.onboarding_completed && !user.email_confirmed_at) {
+      setShowOnboarding(true)
     } else {
       setShowOnboarding(false)
     }

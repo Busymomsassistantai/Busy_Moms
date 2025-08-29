@@ -65,7 +65,7 @@ export function useAuth() {
           email: user.email || '',
           full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
           user_type: 'Mom' as const,
-          onboarding_completed: false, // Always false for new profiles
+          onboarding_completed: false,
           ai_personality: 'Friendly' as const
         }
 

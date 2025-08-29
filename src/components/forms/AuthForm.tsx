@@ -34,14 +34,21 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           throw error
         }
         
-        // New users will automatically go through onboarding
-        console.log('New user created successfully, will go through onboarding')
+        // Create profile after successful signup
+        if (data.user) {
+          console.log('User created successfully, profile will be created during onboarding')
+        }
+        
+        // Don't switch to sign in, let them proceed to onboarding
+        // For new signups, they'll go through onboarding
+        // onAuthSuccess() will be called after onboarding is complete
       } else {
         const { error } = await signIn(formData.email, formData.password)
         if (error) throw error
+        
+        // For existing users signing in, go directly to dashboard
+        onAuthSuccess()
       }
-      
-      // Let App.tsx handle onboarding vs dashboard routing based on profile status
     } catch (error: any) {
       alert(error.message || 'An error occurred')
     } finally {
