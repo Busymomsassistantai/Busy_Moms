@@ -191,7 +191,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           >
             <Chrome className="w-5 h-5 text-gray-600" />
             <span className="text-gray-700 font-medium">
-              {googleLoading ? 'Connecting...' : 'Sign in with Google'}
+              {googleLoading ? 'Connecting...' : isSignUp ? 'Sign up with Google' : 'Sign in with Google'}
             </span>
           </button>
         </div>
