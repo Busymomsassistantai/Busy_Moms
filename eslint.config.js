@@ -3,6 +3,9 @@ import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
+// find your lucide-react import and add CalendarPlus
+import { Phone, CalendarCheck2, Clock, User, MapPin, ShieldCheck, NotebookTabs, Info, Loader2, Plus, Trash2, CalendarPlus } from "lucide-react";
+
 
 export default tseslint.config(
   { ignores: ['dist'] },
