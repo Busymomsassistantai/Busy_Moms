@@ -10,6 +10,7 @@ import { Shopping } from './components/Shopping'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { Loader2 } from 'lucide-react'
+import { supabase } from './lib/supabase'
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
 
@@ -17,14 +18,17 @@ function App() {
   const { user, loading, signOut } = useAuth()
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [checkingOnboarding, setCheckingOnboarding] = useState(false)
 
   useEffect(() => {
     const checkOnboarding = async () => {
       if (!user?.id) {
         setShowOnboarding(false)
+        setCheckingOnboarding(false)
         return
       }
 
+      setCheckingOnboarding(true)
       try {
         // Check the actual profile in the database
         const { data: profile, error } = await supabase
@@ -43,6 +47,8 @@ function App() {
         console.error('Error checking onboarding status:', error)
         // Default to showing onboarding on error
         setShowOnboarding(true)
+      } finally {
+        setCheckingOnboarding(false)
       }
     }
 
@@ -50,28 +56,37 @@ function App() {
       checkOnboarding()
     } else {
       setShowOnboarding(false)
+      setCheckingOnboarding(false)
     }
   }, [user])
 
-  if (loading) {
+  if (loading || checkingOnboarding) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">
+            {loading ? 'Loading...' : 'Checking your profile...'}
+          </p>
         </div>
       </div>
     )
   }
 
+  // Show sign-in form if no user is authenticated
   if (!user) {
-    return <AuthForm onAuthSuccess={() => setShowOnboarding(false)} />
+    return <AuthForm onAuthSuccess={() => {
+      // Don't automatically set onboarding to false
+      // Let the useEffect above handle checking the onboarding status
+    }} />
   }
 
+  // Show onboarding if user exists but hasn't completed onboarding
   if (showOnboarding) {
     return <Onboarding onComplete={() => setShowOnboarding(false)} />
   }
 
+  // Show main app if user is authenticated and has completed onboarding
   const renderScreen = () => {
     switch (currentScreen) {
       case 'dashboard':
@@ -87,7 +102,7 @@ function App() {
       case 'ai-chat':
         return <AIChat />
       default:
-        return <Dashboard />
+        return <Dashboard onNavigate={setCurrentScreen} />
     }
   }
 
