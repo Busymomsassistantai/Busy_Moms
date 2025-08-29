@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Heart, Mail, Lock, User } from 'lucide-react'
+import { Heart, Mail, Lock, User, Chrome } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 
@@ -8,9 +8,10 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ onAuthSuccess }: AuthFormProps) {
-  const { signUp, signIn } = useAuth()
+  const { signUp, signIn, signInWithGoogle } = useAuth()
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -82,6 +83,20 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       alert(error.message || 'An error occurred')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true)
+    try {
+      const { error } = await signInWithGoogle()
+      if (error) {
+        throw error
+      }
+      // OAuth redirect will handle the rest
+    } catch (error: any) {
+      alert(error.message || 'Google sign-in failed')
+      setGoogleLoading(false)
     }
   }
 
@@ -157,6 +172,29 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
         </form>
+
+        {/* Google Sign-In */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading || loading}
+            className="w-full mt-4 flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <Chrome className="w-5 h-5 text-gray-600" />
+            <span className="text-gray-700 font-medium">
+              {googleLoading ? 'Connecting...' : 'Sign in with Google'}
+            </span>
+          </button>
+        </div>
 
         <div className="mt-6 text-center">
           <button
