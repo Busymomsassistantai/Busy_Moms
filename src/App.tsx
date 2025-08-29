@@ -46,6 +46,9 @@ function App() {
           // If no profile exists or error, show onboarding
           setShowOnboarding(true)
         }
+      } finally {
+        setCheckingOnboarding(false)
+      }
     }
 
     checkOnboarding()
