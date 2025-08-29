@@ -29,17 +29,27 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       if (!user?.id) return;
       
       try {
+        // Add timeout for profile loading
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        
         const { data: profileData, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle()
+          .abortSignal(controller.signal);
         
+        clearTimeout(timeoutId)
         if (!error && profileData) {
           setProfile(profileData);
         }
-      } catch (error) {
-        console.error('Error loading profile:', error);
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.warn('Profile loading timeout')
+        } else {
+          console.error('Error loading profile:', error);
+        }
       }
     };
     

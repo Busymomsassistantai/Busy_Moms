@@ -120,19 +120,29 @@ export function Calendar() {
 
   // --- Google Calendar bootstrapping & sync ---------------------------------
   useEffect(() => {
+    let mounted = true
     (async () => {
       try {
         await googleCalendarService.initialize();
-        setIsGoogleServiceReady(true);
-        if (googleCalendarService.isSignedIn()) {
-          setIsGoogleConnected(true);
-          await syncWithGoogleCalendar();
+        if (mounted) {
+          setIsGoogleServiceReady(true);
+          if (googleCalendarService.isSignedIn()) {
+            setIsGoogleConnected(true);
+            // Don't auto-sync on load to improve performance
+            // await syncWithGoogleCalendar();
+          }
         }
       } catch (e) {
         console.error('Failed to init Google service', e);
-        setIsGoogleServiceReady(false);
+        if (mounted) {
+          setIsGoogleServiceReady(false);
+        }
       }
     })();
+    
+    return () => {
+      mounted = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

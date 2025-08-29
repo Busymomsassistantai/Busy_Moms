@@ -19,9 +19,35 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
-    // Only show onboarding for new signups, not existing users signing in
-    if (user && !user.user_metadata?.onboarding_completed && !user.email_confirmed_at) {
-      setShowOnboarding(true)
+    const checkOnboarding = async () => {
+      if (!user?.id) {
+        setShowOnboarding(false)
+        return
+      }
+
+      try {
+        // Check the actual profile in the database
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (!error && profile) {
+          setShowOnboarding(!profile.onboarding_completed)
+        } else {
+          // If no profile exists or error, show onboarding
+          setShowOnboarding(true)
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error)
+        // Default to showing onboarding on error
+        setShowOnboarding(true)
+      }
+    }
+
+    if (user) {
+      checkOnboarding()
     } else {
       setShowOnboarding(false)
     }

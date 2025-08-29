@@ -9,8 +9,16 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true
 
-    // Get initial session
+    // Get initial session with timeout
+    const sessionTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Session loading timeout, proceeding without auth')
+        setLoading(false)
+      }
+    }, 3000) // 3 second timeout
+
     supabase.auth.getSession().then(({ data: { session }, error }) => {
+      clearTimeout(sessionTimeout)
       if (error) {
         console.error('Error getting session:', error.message)
       }
@@ -18,8 +26,14 @@ export function useAuth() {
         setUser(session?.user ?? null)
         // Handle profile creation for authenticated users
         if (session?.user) {
-          handleUserProfile(session.user)
+          handleUserProfile(session.user).catch(console.error)
         }
+        setLoading(false)
+      }
+    }).catch((error) => {
+      clearTimeout(sessionTimeout)
+      console.error('Session fetch failed:', error)
+      if (mounted) {
         setLoading(false)
       }
     })
@@ -31,7 +45,7 @@ export function useAuth() {
           setUser(session?.user ?? null)
           // Handle profile creation for new users
           if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-            await handleUserProfile(session.user)
+            handleUserProfile(session.user).catch(console.error)
           }
           setLoading(false)
         }
@@ -40,6 +54,7 @@ export function useAuth() {
 
     return () => {
       mounted = false
+      clearTimeout(sessionTimeout)
       authListener.subscription.unsubscribe()
     }
   }, [])

@@ -27,7 +27,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   // Load user profile
   useEffect(() => {
     const loadProfile = async () => {
-      if (!user?.id) return;
+      if (!user?.id || !isOpen) return;
       
       try {
         const { data: profileData, error } = await supabase
@@ -49,7 +49,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       }
     };
     
-    if (isOpen) {
+    if (isOpen && user?.id) {
       loadProfile();
     }
   }, [user, isOpen]);

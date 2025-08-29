@@ -67,16 +67,20 @@ export class GoogleCalendarService {
 
   private waitForGoogleAPIs(): Promise<void> {
     return new Promise((resolve, reject) => {
+      let attempts = 0
+      const maxAttempts = 50 // 5 seconds max
+      
       const checkAPIs = () => {
+        attempts++
         if (window.google && window.gapi) {
           resolve();
-        } else {
+        } else if (attempts < maxAttempts) {
           setTimeout(checkAPIs, 100);
+        } else {
+          reject(new Error('Google APIs failed to load within timeout'));
         }
       };
       
-      // Timeout after 10 seconds
-      setTimeout(() => reject(new Error('Google APIs failed to load')), 10000);
       checkAPIs();
     });
   }
