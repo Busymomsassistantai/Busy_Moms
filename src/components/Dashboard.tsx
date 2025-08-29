@@ -17,6 +17,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [showEventsPopup, setShowEventsPopup] = React.useState(false);
   const [showTasksPopup, setShowTasksPopup] = React.useState(false);
+  const [showRemindersPopup, setShowRemindersPopup] = React.useState(false);
   const [events, setEvents] = React.useState<Event[]>([]);
   const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
