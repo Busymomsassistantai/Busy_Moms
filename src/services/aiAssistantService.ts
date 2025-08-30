@@ -54,8 +54,9 @@ Response format:
 {
   "type": "calendar|reminder|shopping|chat",
   "details": {
-    "action": "create|update|delete|view",
+    "action": "create|add|update|delete|remove|complete|mark|view",
     "title": "extracted title",
+    "item": "item name for shopping actions",
     "date": "YYYY-MM-DD if mentioned",
     "time": "HH:MM if mentioned",
     "location": "location if mentioned",
@@ -65,6 +66,12 @@ Response format:
     "quantity": number if mentioned
   }
 }
+
+For shopping actions:
+- "add" or "create": Adding new items
+- "remove" or "delete": Removing items from list
+- "complete" or "mark": Marking items as completed
+- "view" or "show": Displaying the shopping list
 
 Today is ${new Date().toISOString().split('T')[0]}.
 Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}.`;
@@ -258,7 +265,7 @@ Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T'
 
   private async handleShoppingAction(message: string, userId: string, details: any): Promise<AIAction> {
     try {
-      if (details.action === 'create' || !details.action) {
+      if (details.action === 'create' || details.action === 'add' || !details.action) {
         // Add item to shopping list
         const itemData = {
           user_id: userId,
@@ -283,6 +290,95 @@ Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T'
           data: newItem,
           success: true,
           message: `✅ I've added "${newItem.item}" to your shopping list${newItem.quantity > 1 ? ` (quantity: ${newItem.quantity})` : ''}${newItem.urgent ? ' and marked it as urgent' : ''}.`
+        };
+      } else if (details.action === 'remove' || details.action === 'delete') {
+        // Remove item from shopping list
+        const itemName = details.title || details.item;
+        if (!itemName) {
+          return {
+            type: 'shopping',
+            success: false,
+            message: 'Please specify which item you want to remove from your shopping list.'
+          };
+        }
+
+        // Find and remove the item
+        const { data: items, error: findError } = await supabase
+          .from('shopping_lists')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('completed', false)
+          .ilike('item', `%${itemName}%`)
+          .limit(1);
+
+        if (findError) throw findError;
+
+        if (!items || items.length === 0) {
+          return {
+            type: 'shopping',
+            success: false,
+            message: `I couldn't find "${itemName}" in your shopping list. Try saying "show my shopping list" to see what's available.`
+          };
+        }
+
+        const itemToRemove = items[0];
+        const { error: deleteError } = await supabase
+          .from('shopping_lists')
+          .delete()
+          .eq('id', itemToRemove.id);
+
+        if (deleteError) throw deleteError;
+
+        return {
+          type: 'shopping',
+          data: itemToRemove,
+          success: true,
+          message: `✅ I've removed "${itemToRemove.item}" from your shopping list.`
+        };
+      } else if (details.action === 'complete' || details.action === 'mark') {
+        // Mark item as completed
+        const itemName = details.title || details.item;
+        if (!itemName) {
+          return {
+            type: 'shopping',
+            success: false,
+            message: 'Please specify which item you want to mark as completed.'
+          };
+        }
+
+        const { data: items, error: findError } = await supabase
+          .from('shopping_lists')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('completed', false)
+          .ilike('item', `%${itemName}%`)
+          .limit(1);
+
+        if (findError) throw findError;
+
+        if (!items || items.length === 0) {
+          return {
+            type: 'shopping',
+            success: false,
+            message: `I couldn't find "${itemName}" in your shopping list.`
+          };
+        }
+
+        const itemToComplete = items[0];
+        const { data: completedItem, error: updateError } = await supabase
+          .from('shopping_lists')
+          .update({ completed: true })
+          .eq('id', itemToComplete.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+
+        return {
+          type: 'shopping',
+          data: completedItem,
+          success: true,
+          message: `✅ I've marked "${completedItem.item}" as completed on your shopping list.`
         };
       } else if (details.action === 'view') {
         // View shopping list
@@ -313,7 +409,7 @@ Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T'
       return {
         type: 'shopping',
         success: false,
-        message: 'I can help you manage your shopping list. Try saying "Add milk to shopping list" or "Show my shopping list".'
+        message: 'I can help you manage your shopping list. Try saying "Add milk to shopping list", "Remove bread from shopping list", "Mark eggs as completed", or "Show my shopping list".'
       };
     } catch (error) {
       console.error('Error handling shopping action:', error);
