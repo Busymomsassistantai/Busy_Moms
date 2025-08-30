@@ -9,6 +9,7 @@ import { Contacts } from './components/Contacts'
 import { Shopping } from './components/Shopping'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
+import { AIVoiceChat } from './components/AIVoiceChat'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
@@ -19,6 +20,7 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
+  const [showVoiceChat, setShowVoiceChat] = useState(false)
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -102,6 +104,7 @@ function App() {
         currentScreen={currentScreen}
         onScreenChange={setCurrentScreen}
         onSignOut={signOut}
+        onVoiceChatOpen={() => setShowVoiceChat(true)}
       />
       <main className="pb-20">
         {(() => {
@@ -123,6 +126,11 @@ function App() {
           }
         })()}
       </main>
+      
+      <AIVoiceChat 
+        isOpen={showVoiceChat} 
+        onClose={() => setShowVoiceChat(false)} 
+      />
     </div>
   )
 }

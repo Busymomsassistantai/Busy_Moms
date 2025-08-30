@@ -1,14 +1,15 @@
 import React from 'react';
-import { Home, Calendar, ShoppingBag, Users, Settings } from 'lucide-react';
+import { Home, Calendar, ShoppingBag, Users, Settings, MessageCircle } from 'lucide-react';
 import { Screen } from '../App';
 
 interface NavigationProps {
   currentScreen: Screen;
   onScreenChange: (screen: Screen) => void;
   onSignOut: () => void;
+  onVoiceChatOpen?: () => void;
 }
 
-export function Navigation({ currentScreen, onScreenChange }: NavigationProps) {
+export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: NavigationProps) {
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
     { id: 'calendar' as Screen, icon: Calendar, label: 'Calendar' },
@@ -19,7 +20,7 @@ export function Navigation({ currentScreen, onScreenChange }: NavigationProps) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-2 relative">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -34,6 +35,15 @@ export function Navigation({ currentScreen, onScreenChange }: NavigationProps) {
             <span className="text-xs font-medium">{item.label}</span>
           </button>
         ))}
+        
+        {/* Voice Chat Button - Floating */}
+        <button
+          onClick={onVoiceChatOpen}
+          className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          title="AI Voice Assistant"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
       </div>
     </div>
   );
