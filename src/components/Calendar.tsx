@@ -464,7 +464,7 @@ export function Calendar() {
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-[1px] bg-gray-200 rounded overflow-hidden">
         {daysInGrid.map((day, idx) => {
-          const inMonth = day.getMonth() === currentDate.getMonth();
+          className="ml-2 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-purple-300 hover:bg-purple-50 text-sm font-medium text-gray-700 hover:text-purple-600 transition-all duration-200 shadow-sm"
           const isToday = isSameDay(day, new Date());
           const selected = selectedDate ? isSameDay(day, selectedDate) : false;
           const count = dayEventsCount(day);
@@ -474,16 +474,16 @@ export function Calendar() {
               key={idx}
               onClick={() => onDayClick(day)}
               className={[
-                'relative h-24 bg-white p-2 text-left focus:outline-none focus:ring-2 focus:ring-purple-500',
-                !inMonth ? 'bg-gray-50 text-gray-400' : '',
-                selected ? 'ring-2 ring-purple-500' : '',
+                'relative h-24 bg-white p-3 text-left focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-gray-50 transition-all duration-200 group',
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                selected ? 'ring-2 ring-purple-500 bg-purple-50' : '',
               ].join(' ')}
               aria-label={`Day ${toLocalISODate(day)} (${count} events)`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs">{day.getDate()}</span>
-                {isToday && (
-                  <span className="rounded-full bg-purple-600 text-white text-[10px] px-1.5 py-0.5">
+                <span className={`text-sm font-medium ${selected ? 'text-purple-700' : 'text-gray-700'} group-hover:text-purple-600 transition-colors`}>{day.getDate()}</span>
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                  <span className="rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] px-2 py-1 font-medium shadow-sm">
                     Today
                   </span>
                 )}
@@ -491,7 +491,7 @@ export function Calendar() {
 
               {count > 0 && (
                 <div className="absolute bottom-1 left-1 right-1">
-                  <div className="text-[10px] text-gray-600">
+                  <div className={`text-[10px] font-medium ${selected ? 'text-purple-600' : 'text-gray-500'} group-hover:text-purple-600 transition-colors`}>
                     {count} event{count === 1 ? '' : 's'}
                   </div>
                 </div>
@@ -501,7 +501,7 @@ export function Calendar() {
         })}
       </div>
 
-      {/* Inline day agenda */}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-medium shadow-md hover:shadow-lg transition-all duration-200"
       <div className="mt-6">
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-lg font-semibold">Agenda</h3>
@@ -509,7 +509,7 @@ export function Calendar() {
             <span className="text-sm text-gray-500">
               {selectedDate.toLocaleDateString(undefined, {
                 weekday: 'short',
-                month: 'short',
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-medium shadow-md hover:shadow-lg transition-all duration-200"
                 day: 'numeric',
                 year: 'numeric',
               })}
@@ -518,7 +518,7 @@ export function Calendar() {
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-700 hover:text-blue-600 font-medium shadow-sm hover:shadow-md transition-all duration-200"
             <Loader2 className="w-4 h-4 animate-spin" />
             Loading events…
           </div>
