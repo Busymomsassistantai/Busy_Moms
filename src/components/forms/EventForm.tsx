@@ -4,51 +4,64 @@ import { supabase, Event } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 
 interface EventFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onEventCreated: (event: Event) => void
   defaultDate?: string
-  editEvent?: Event | null
+  event?: Event
+  onCancel: () => void
+  onSaved: () => void
 }
 
-export function EventForm({ isOpen, onClose, onEventCreated, defaultDate, editEvent }: EventFormProps) {
+export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    title: editEvent?.title || '',
-    description: editEvent?.description || '',
-    event_date: editEvent?.event_date || defaultDate || '',
-    start_time: editEvent?.start_time || '',
-    end_time: editEvent?.end_time || '',
-    location: editEvent?.location || '',
-    event_type: editEvent?.event_type || 'other',
-    participants: editEvent?.participants?.join(', ') || '',
-    rsvp_required: editEvent?.rsvp_required || false,
-    rsvp_status: editEvent?.rsvp_status || 'pending'
+    title: '',
+    description: '',
+    event_date: '',
+    start_time: '',
+    end_time: '',
+    location: '',
+    event_type: 'other' as const,
+    participants: '',
+    rsvp_required: false,
+    rsvp_status: 'pending' as const
   })
 
-  // Update form data when defaultDate or editEvent changes
+  // Update form data when defaultDate or event changes
   React.useEffect(() => {
-    if (editEvent) {
+    if (event) {
       setFormData({
-        title: editEvent.title || '',
-        description: editEvent.description || '',
-        event_date: editEvent.event_date || '',
-        start_time: editEvent.start_time || '',
-        end_time: editEvent.end_time || '',
-        location: editEvent.location || '',
-        event_type: editEvent.event_type || 'other',
-        participants: editEvent.participants?.join(', ') || '',
-        rsvp_required: editEvent.rsvp_required || false,
-        rsvp_status: editEvent.rsvp_status || 'pending'
+        title: event.title || '',
+        description: event.description || '',
+        event_date: event.event_date || '',
+        start_time: event.start_time || '',
+        end_time: event.end_time || '',
+        location: event.location || '',
+        event_type: event.event_type || 'other',
+        participants: event.participants?.join(', ') || '',
+        rsvp_required: event.rsvp_required || false,
+        rsvp_status: event.rsvp_status || 'pending'
       })
     } else if (defaultDate) {
       setFormData(prev => ({
         ...prev,
         event_date: defaultDate
       }))
+    } else {
+      // Reset form for new event
+      setFormData({
+        title: '',
+        description: '',
+        event_date: '',
+        start_time: '',
+        end_time: '',
+        location: '',
+        event_type: 'other',
+        participants: '',
+        rsvp_required: false,
+        rsvp_status: 'pending'
+      })
     }
-  }, [editEvent, defaultDate])
+  }, [event, defaultDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
