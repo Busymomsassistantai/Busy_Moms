@@ -26,7 +26,7 @@ export class OpenAIRealtimeService {
       voice: 'alloy',
       speed: '2.0',
       instructions: `You are a helpful AI assistant for busy parents in the "Busy Moms Assistant" app.
-Keep responses concise, practical, empathetic, and actionable.`,
+Keep responses concise, practical, empathetic, and actionable. Speak in a cheerful and positive tone.`,
       ...config,
     };
   }
