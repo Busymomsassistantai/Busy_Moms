@@ -25,6 +25,7 @@ function App() {
       // Only check onboarding if we have an authenticated user
       if (!user?.id) return
 
+      console.log('🔍 Checking onboarding status for user:', user.id)
       setCheckingOnboarding(true)
       try {
         // Check the actual profile in the database
@@ -35,12 +36,15 @@ function App() {
           .maybeSingle()
 
         if (!error && profile) {
+          console.log('📋 Profile found, onboarding completed:', profile.onboarding_completed)
           setShowOnboarding(!profile.onboarding_completed)
         } else {
+          console.log('❌ No profile found or error, showing onboarding')
           // If no profile exists or error, show onboarding
           setShowOnboarding(true)
         }
       } catch (error) {
+        console.error('Error checking onboarding:', error)
         // If no profile exists or error, show onboarding
         setShowOnboarding(true)
       } finally {
@@ -48,7 +52,13 @@ function App() {
       }
     }
 
-    checkOnboarding()
+    if (user?.id) {
+      checkOnboarding()
+    } else {
+      // No user, don't show onboarding
+      setShowOnboarding(false)
+      setCheckingOnboarding(false)
+    }
   }, [user])
 
   // Show loading only when we're checking auth or onboarding for authenticated users
@@ -67,9 +77,11 @@ function App() {
 
   // Show sign-in form if no user is authenticated
   if (!user) {
+    console.log('🔐 No user authenticated, showing sign-in form')
     return (
       <AuthForm 
         onAuthSuccess={() => {
+          console.log('✅ Auth success callback triggered')
           // The useEffect will handle checking onboarding status
         }} 
       />
@@ -78,9 +90,11 @@ function App() {
 
   // Show onboarding if user exists but hasn't completed onboarding
   if (showOnboarding) {
+    console.log('📚 Showing onboarding for user:', user.id)
     return <Onboarding onComplete={() => setShowOnboarding(false)} />
   }
 
+  console.log('🏠 Showing main app for user:', user.id)
   // Show main app if user is authenticated and has completed onboarding
   return (
     <div className="min-h-screen bg-gray-50">

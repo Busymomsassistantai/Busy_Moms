@@ -12,16 +12,20 @@ export function useAuth() {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('🔍 Getting initial session...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('Error getting session:', error.message)
+          // Don't throw here, just log and continue
         }
         
         if (mounted) {
+          console.log('📝 Session found:', session ? 'Yes' : 'No')
           setUser(session?.user ?? null)
           // Handle profile creation for authenticated users
           if (session?.user) {
+            console.log('👤 User authenticated, handling profile...')
             await handleUserProfile(session.user)
           }
           setLoading(false)
@@ -40,12 +44,15 @@ export function useAuth() {
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session ? 'User present' : 'No user')
         if (mounted) {
           setUser(session?.user ?? null)
           // Handle profile creation for new users
           if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
             await handleUserProfile(session.user)
           }
+          // Set loading to false on any auth state change
+          setLoading(false)
         }
       }
     )
@@ -58,6 +65,7 @@ export function useAuth() {
 
   const handleUserProfile = async (user: User) => {
     try {
+      console.log('🔍 Checking profile for user:', user.id)
       // Check if profile already exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
@@ -71,6 +79,7 @@ export function useAuth() {
       }
 
       if (!existingProfile) {
+        console.log('📝 Creating new profile for user:', user.id)
         // Profile doesn't exist, create it
         const profileData = {
           id: user.id,
@@ -90,6 +99,8 @@ export function useAuth() {
         } else {
           console.log('Profile created successfully for:', profileData.full_name)
         }
+      } else {
+        console.log('✅ Profile already exists for user:', user.id)
       }
     } catch (error) {
       console.error('Error handling user profile:', error)
