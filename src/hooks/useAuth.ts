@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User } from '@supabase/supabase-js'
+import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
 export function useAuth() {
@@ -9,103 +9,92 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true
 
-    // Get initial session
-    const getInitialSession = async () => {
+    // 1) Handle initial session via getSession (fine) 
+    //    (Alternative: rely only on INITIAL_SESSION below.)
+    const prime = async () => {
       try {
-        console.log('🔍 Getting initial session...')
         const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('Error getting session:', error.message)
-          // Don't throw here, just log and continue
+        if (error) console.error('getSession error:', error.message)
+        if (!mounted) return
+
+        setUser(session?.user ?? null)
+        setLoading(false)
+
+        if (session?.user) {
+          // Don’t block UI on this
+          handleUserProfile(session.user).catch((e) =>
+            console.error('Profile init error:', e)
+          )
         }
-        
-        if (mounted) {
-          console.log('📝 Session found:', session ? 'Yes' : 'No')
-          setUser(session?.user ?? null)
-          // Handle profile creation for authenticated users
-          if (session?.user) {
-            console.log('👤 User authenticated, handling profile...')
-            await handleUserProfile(session.user)
-          }
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Session fetch failed:', error)
-        if (mounted) {
-          setUser(null)
-          setLoading(false)
-        }
+      } catch (e) {
+        console.error('getSession failed:', e)
+        if (mounted) setLoading(false)
       }
     }
 
-    getInitialSession()
+    prime()
 
-    // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    // 2) Subscribe to auth changes (correct destructure)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Auth state changed:', event, session ? 'User present' : 'No user')
-        if (mounted) {
-          setUser(session?.user ?? null)
-          // Handle profile creation for new users
-          if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-            await handleUserProfile(session.user)
-          }
-          // Set loading to false on any auth state change
-          setLoading(false)
+        // Events include: INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, USER_UPDATED, etc.
+        console.log('Auth event:', event)
+        if (!mounted) return
+
+        setUser(session?.user ?? null)
+        setLoading(false)
+
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
+          // Fire-and-forget; don’t block UI
+          handleUserProfile(session.user).catch((e) =>
+            console.error('Profile init error:', e)
+          )
         }
       }
     )
 
     return () => {
       mounted = false
-      authListener.subscription.unsubscribe()
+      subscription.unsubscribe()
     }
   }, [])
 
   const handleUserProfile = async (user: User) => {
-    try {
-      console.log('🔍 Checking profile for user:', user.id)
-      // Check if profile already exists
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle()
-      
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Error checking profile:', checkError)
-        return
+    console.log('Checking profile for user:', user.id)
+    // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id
+    const { data: existing, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    // Ignore "no rows" code (PGRST116)
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Profile check error:', checkError)
+      return
+    }
+
+    if (!existing) {
+      const profileData = {
+        id: user.id,
+        email: user.email ?? '',
+        full_name:
+          (user.user_metadata?.full_name ??
+           user.user_metadata?.name ??
+           user.email?.split('@')[0]) || 'User',
+        user_type: 'Mom' as const,
+        onboarding_completed: false,
+        ai_personality: 'Friendly' as const,
       }
 
-      if (!existingProfile) {
-        console.log('📝 Creating new profile for user:', user.id)
-        // Profile doesn't exist, create it
-        const profileData = {
-          id: user.id,
-          email: user.email || '',
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-          user_type: 'Mom' as const,
-          onboarding_completed: false,
-          ai_personality: 'Friendly' as const
-        }
-
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert([profileData])
-        
-        if (createError) {
-          console.error('Error creating profile:', createError)
-        } else {
-          console.log('Profile created successfully for:', profileData.full_name)
-        }
-      } else {
-        console.log('✅ Profile already exists for user:', user.id)
-      }
-    } catch (error) {
-      console.error('Error handling user profile:', error)
+      const { error: createError } = await supabase.from('profiles').insert([profileData])
+      if (createError) console.error('Profile create error:', createError)
+      else console.log('Profile created:', profileData.full_name)
+    } else {
+      console.log('Profile exists for user:', user.id)
     }
   }
+
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) console.error('Sign-up error:', error.message)
@@ -113,10 +102,7 @@ export function useAuth() {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) console.error('Sign-in error:', error.message)
     return { data, error }
   }
@@ -131,6 +117,8 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        // Prefer a dedicated callback route:
+        // redirectTo: `${window.location.origin}/auth/callback`
         redirectTo: window.location.origin
       }
     })
