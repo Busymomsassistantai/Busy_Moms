@@ -234,19 +234,15 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-              <li>• Once activated, you can ask me to manage your calendar, reminders, and shopping list</li>
-              <li>• Try: "Add dentist appointment tomorrow at 2pm" or "Remind me to buy milk"</li>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full h-[600px] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-              <li>• You can also type messages for calendar, reminders, and shopping management</li>
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
+            <MessageCircle className="w-5 h-5 text-purple-500" />
             <div>
-              <h5 className="font-medium text-green-900 mb-1">Smart Assistant Features:</h5>
+              <h3 className="font-semibold text-gray-900">AI Voice Assistant</h3>
               <p className={`text-sm ${getConnectionStatusColor()}`}>
-                I can help you manage your calendar, set reminders, and update your shopping list through voice commands or text. 
-                Say "Hey, Sarah" followed by commands like "add meeting tomorrow" or "remind me to call the doctor".
+                {getConnectionStatusText()}
               </p>
             </div>
           </div>
