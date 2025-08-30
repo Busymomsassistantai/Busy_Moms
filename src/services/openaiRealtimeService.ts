@@ -23,7 +23,7 @@ export class OpenAIRealtimeService {
   constructor(config: OpenAIRealtimeConfig = {}) {
     this.config = {
       model: 'gpt-realtime',         // ✅ current model
-      voice: 'alloy',
+      voice: 'coral',
       speed: '2.0',
       instructions: `You are a helpful AI assistant for busy parents in the "Busy Moms Assistant" app.
 Keep responses concise, practical, empathetic, and actionable. Speak in a cheerful and positive tone.`,
