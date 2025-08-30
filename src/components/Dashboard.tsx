@@ -5,7 +5,7 @@ import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { VoiceChat } from './VoiceChat';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
-import { speechService } from '../services/speechService'
+import { speechService } from '../services/speechService';
 
 interface DashboardProps {
   onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat') => void;
@@ -25,7 +25,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const [welcomeSpoken, setWelcomeSpoken] = React.useState(false)
+  const [welcomeSpoken, setWelcomeSpoken] = React.useState(false);
 
   // Load user profile
   React.useEffect(() => {
@@ -34,8 +34,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       
       try {
         // Add timeout for profile loading
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         
         const { data: profileData, error } = await supabase
           .from('profiles')
@@ -44,13 +44,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           .maybeSingle()
           .abortSignal(controller.signal);
         
-        clearTimeout(timeoutId)
+        clearTimeout(timeoutId);
         if (!error && profileData) {
           setProfile(profileData);
         }
       } catch (error: any) {
         if (error.name === 'AbortError') {
-          console.warn('Profile loading timeout')
+          console.warn('Profile loading timeout');
         } else {
           console.error('Error loading profile:', error);
         }
@@ -152,7 +152,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Good Morning, {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}!</h1>
-            <div className="grid grid-cols-2 gap-3">
           </div>
           <div className="flex items-center space-x-3">
             <button
