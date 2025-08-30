@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  KeyboardEvent,
+} from 'react';
 import {
   Plus,
   MapPin,
@@ -16,27 +22,36 @@ import {
   Info,
   Loader2,
 } from 'lucide-react';
+
 import { EventForm } from './forms/EventForm';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
-import { Event, supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 
 /**
  * Calendar
- * - Cleaned up state & effects
+ * - Local date (no UTC drift)
  * - Month-range querying (lighter DB load)
  * - Keyboard navigation (← → T) & a11y labels
  * - Click-on-day to create event (pre-filled date)
- * - Inline agenda for selected day (sorted)
- * - Optional Google Calendar merge toggle
+ * - Inline agenda for selected day (sorted, handles all-day)
+ * - Optional Google Calendar merge toggle (connect/disconnect)
  * - Keeps original color language (purple, blue, green, etc.)
  */
 
 // --- Helpers -----------------------------------------------------------------
 const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
 const endOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0);
-const toISODate = (d: Date) => d.toISOString().split('T')[0];
+
+// Local YYYY-MM-DD (no UTC shift)
+const toLocalISODate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
 
 const WEEKDAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -50,11 +65,16 @@ const EVENT_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
-const getEventBadge = (type?: string) => EVENT_COLORS[type ?? 'other'] ?? EVENT_COLORS.other;
+const getEventBadge = (type?: string) =>
+  EVENT_COLORS[type ?? 'other'] ?? EVENT_COLORS.other;
 
 const formatTimeRange = (startTime?: string | null, endTime?: string | null) => {
   if (!startTime) return '';
-  const fmt = (t: string) => new Date(`2000-01-01T${t}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const fmt = (t: string) =>
+    new Date(`2000-01-01T${t}`).toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   const start = fmt(startTime);
   if (endTime) return `${start} - ${fmt(endTime)}`;
   return start;
@@ -74,8 +94,8 @@ export function Calendar() {
   const [showEventDetails, setShowEventDetails] = useState(false);
 
   // Data
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [events, setEvents] = useState<DbEvent[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,16 +119,16 @@ export function Calendar() {
         .from('events')
         .select('*')
         .eq('user_id', user.id)
-        .gte('event_date', toISODate(monthStart))
-        .lte('event_date', toISODate(monthEnd))
+        .gte('event_date', toLocalISODate(monthStart))
+        .lte('event_date', toLocalISODate(monthEnd))
         .order('event_date', { ascending: true })
         .order('start_time', { ascending: true });
 
       if (qErr) throw qErr;
       setEvents(data ?? []);
-    } catch (e: any) {
+    } catch (e) {
       console.error('❌ Error loading events:', e);
-      setError(e?.message ?? 'Failed to load events');
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -120,27 +140,22 @@ export function Calendar() {
 
   // --- Google Calendar bootstrapping & sync ---------------------------------
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
     (async () => {
       try {
         await googleCalendarService.initialize();
         if (mounted) {
           setIsGoogleServiceReady(true);
-          if (googleCalendarService.isSignedIn()) {
-            setIsGoogleConnected(true);
-          }
+          setIsGoogleConnected(googleCalendarService.isSignedIn());
         }
       } catch (e) {
         console.error('Failed to init Google service', e);
-        if (mounted) {
-          setIsGoogleServiceReady(false);
-        }
+        if (mounted) setIsGoogleServiceReady(false);
       }
     })();
-    
     return () => {
-      mounted = false
-    }
+      mounted = false;
+    };
   }, []);
 
   const connectGoogleCalendar = useCallback(async () => {
@@ -149,10 +164,11 @@ export function Calendar() {
       setSyncingCalendar(true);
       await googleCalendarService.signIn();
       setIsGoogleConnected(true);
-      await syncWithGoogleCalendar();
-    } catch (e: any) {
+    } catch (e) {
       console.error('Google connect error', e);
-      setError(e?.message ?? 'Failed to connect to Google Calendar');
+      setError(
+        e instanceof Error ? e.message : 'Failed to connect to Google Calendar'
+      );
     } finally {
       setSyncingCalendar(false);
     }
@@ -160,27 +176,37 @@ export function Calendar() {
 
   const syncWithGoogleCalendar = useCallback(async () => {
     try {
+      if (!isGoogleServiceReady) return;
       setSyncingCalendar(true);
       setError(null);
 
+      // Ensure signed in, but avoid cross-calling connect->sync->connect cycles
       if (!googleCalendarService.isSignedIn()) {
-        await connectGoogleCalendar();
-        return;
+        await googleCalendarService.signIn();
+        setIsGoogleConnected(true);
       }
 
-      // Pull just the month range from Google as well
-      const gEvents = await googleCalendarService.getEvents({
-        timeMin: new Date(monthStart.getFullYear(), monthStart.getMonth(), 1).toISOString(),
-        timeMax: new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate(), 23, 59, 59).toISOString(),
-      });
+      const timeMin = new Date(monthStart);
+      timeMin.setHours(0, 0, 0, 0);
+      const timeMax = new Date(monthEnd);
+      timeMax.setHours(23, 59, 59, 999);
+
+      const gEvents =
+        (await googleCalendarService.getEvents({
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+        })) ?? [];
+
       setGoogleEvents(gEvents);
-    } catch (e: any) {
+    } catch (e) {
       console.error('Google sync error', e);
-      setError(e?.message ?? 'Failed to sync Google Calendar');
+      setError(
+        e instanceof Error ? e.message : 'Failed to sync Google Calendar'
+      );
     } finally {
       setSyncingCalendar(false);
     }
-  }, [connectGoogleCalendar, monthStart, monthEnd]);
+  }, [isGoogleServiceReady, monthStart, monthEnd]);
 
   const disconnectGoogleCalendar = useCallback(async () => {
     try {
@@ -193,708 +219,452 @@ export function Calendar() {
     }
   }, []);
 
+  // Auto-sync when month changes (if enabled & ready)
+  useEffect(() => {
+    if (isGoogleServiceReady && mergeGoogle) {
+      void syncWithGoogleCalendar();
+    }
+  }, [isGoogleServiceReady, mergeGoogle, monthStart, monthEnd, syncWithGoogleCalendar]);
+
   // --- Derived day agenda ----------------------------------------------------
   const itemsForSelectedDate = useMemo(() => {
-    if (!selectedDate) return { events: [] as (Event | GoogleCalendarEvent)[] };
-    const d = toISODate(selectedDate);
+    if (!selectedDate) return { events: [] as (DbEvent | GoogleCalendarEvent)[] };
+    const d = toLocalISODate(selectedDate);
 
     const dayDbEvents = events.filter(ev => ev.event_date === d);
 
     const dayGoogleEvents = mergeGoogle
       ? googleEvents.filter(ge => {
-          const start = ge.start?.date ?? ge.start?.dateTime;
-          if (!start) return false;
-          const iso = (typeof start === 'string' ? new Date(start) : start).toISOString().split('T')[0];
-          return iso === d;
+          const raw = ge.start?.date ?? ge.start?.dateTime;
+          if (!raw) return false;
+          // For comparing by day only, UTC is fine here
+          const isoDay = new Date(raw).toISOString().split('T')[0];
+          return isoDay === d;
         })
       : [];
 
     const merged = [...dayDbEvents, ...dayGoogleEvents];
 
-    // sort by start (db: start_time, google: start.dateTime/date)
-    const getSortKey = (it: any) => {
-      if ('start_time' in it && it.start_time) return it.start_time;
-      const s = (it.start?.dateTime ?? it.start?.date) as string | undefined;
-      if (!s) return '23:59';
-      try {
-        const dt = new Date(s);
-        return `${dt.getHours().toString().padStart(2, '0')}:${dt
-          .getMinutes()
-          .toString()
-          .padStart(2, '0')}`;
-      } catch {
-        return '23:59';
+    const minutesKey = (it: any) => {
+      // DB row: 'HH:MM' (string)
+      if ('start_time' in it && it.start_time) {
+        const [h, m] = String(it.start_time).split(':').map((n: string) => parseInt(n, 10));
+        return (isNaN(h) ? 23 : h) * 60 + (isNaN(m) ? 59 : m);
       }
+      // Google: dateTime or all-day date
+      const s = it.start?.dateTime ?? it.start?.date;
+      if (!s) return 24 * 60;
+      const dt = new Date(s);
+      return dt.getHours() * 60 + dt.getMinutes();
     };
 
-    const sorted = merged.sort((a, b) => (getSortKey(a) > getSortKey(b) ? 1 : -1));
+    const sorted = merged.sort((a, b) => minutesKey(a) - minutesKey(b));
     return { events: sorted };
   }, [selectedDate, events, googleEvents, mergeGoogle]);
 
-  // --- Handlers --------------------------------------------------------------
-  const onEventCreated = useCallback(
-    (newEvent: Event) => {
-      // optimistic add for current month
-      const d = new Date(newEvent.event_date);
-      if (
-        d >= monthStart &&
-        d <= monthEnd &&
-        newEvent.user_id === user?.id
-      ) {
-        setEvents(prev => [...prev, newEvent]);
-      }
-      // refresh to keep in sync (handles edits/defaults)
-      loadEvents();
-    },
-    [loadEvents, monthStart, monthEnd, user?.id]
+  // --- Calendar grid helpers -------------------------------------------------
+  const monthLabel = useMemo(
+    () =>
+      currentDate.toLocaleString(undefined, {
+        month: 'long',
+        year: 'numeric',
+      }),
+    [currentDate]
   );
 
-  const onDayClick = useCallback((date: Date) => {
-    setSelectedDate(date);
+  const firstDayOfGrid = useMemo(() => {
+    const start = new Date(monthStart);
+    const weekday = start.getDay(); // 0=Sun..6=Sat
+    start.setDate(start.getDate() - weekday); // back to Sunday of the first row
+    return start;
+  }, [monthStart]);
+
+  const daysInGrid = useMemo(() => {
+    // Always render 6 weeks (6 * 7 = 42) so the grid is stable
+    const days: Date[] = [];
+    const d = new Date(firstDayOfGrid);
+    for (let i = 0; i < 42; i++) {
+      days.push(new Date(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return days;
+  }, [firstDayOfGrid]);
+
+  // --- Handlers --------------------------------------------------------------
+  const goPrevMonth = useCallback(() => {
+    setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  }, []);
+  const goNextMonth = useCallback(() => {
+    setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+  }, []);
+  const goToday = useCallback(() => {
+    const now = new Date();
+    setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    setSelectedDate(now);
   }, []);
 
-  const openCreateForDay = useCallback((date: Date) => {
-    setSelectedDate(date);
+  const onDayClick = useCallback((day: Date) => {
+    setSelectedDate(day);
     setShowEventForm(true);
   }, []);
 
-  const onEventClick = useCallback((ev: Event) => {
-    setSelectedEvent(ev);
-    setShowEventDetails(true);
-  }, []);
+  const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goPrevMonth();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goNextMonth();
+    } else if (e.key.toLowerCase() === 't') {
+      e.preventDefault();
+      goToday();
+    }
+  }, [goPrevMonth, goNextMonth, goToday]);
 
-  const closeEventDetails = useCallback(() => {
-    setSelectedEvent(null);
-    setShowEventDetails(false);
-  }, []);
+  const handleEventSaved = useCallback(() => {
+    setShowEventForm(false);
+    void loadEvents();
+  }, [loadEvents]);
 
-  const navigateMonth = useCallback((dir: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const nd = new Date(prev);
-      nd.setMonth(prev.getMonth() + (dir === 'prev' ? -1 : 1));
-      return nd;
-    });
-  }, []);
+  // --- Render helpers --------------------------------------------------------
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
 
-  const navigateToToday = useCallback(() => {
-    const today = new Date();
-    setCurrentDate(today);
-    setSelectedDate(today);
-  }, []);
-
-  // keyboard shortcuts: ← → for months, T for today
-  const headerRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') navigateMonth('prev');
-      if (e.key === 'ArrowRight') navigateMonth('next');
-      if (e.key.toLowerCase() === 't') navigateToToday();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [navigateMonth, navigateToToday]);
-
-  // reload when month changes
-  useEffect(() => {
-    if (user?.id) loadEvents();
-  }, [monthStart, monthEnd, user?.id, loadEvents]);
-
-  // --- Calendar grid ---------------------------------------------------------
-  const daysInMonth = useMemo(
-    () => new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate(),
-    [currentDate]
-  );
-  const firstDayOffset = useMemo(
-    () => new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay(),
-    [currentDate]
-  );
-
-  const hasDbItemsOn = useCallback(
-    (date: Date) => {
-      const ds = toISODate(date);
-      const dayEvents = events.filter(e => e.event_date === ds);
-      return { count: dayEvents.length, hasEvents: dayEvents.length > 0 };
+  const dayEventsCount = useCallback(
+    (day: Date) => {
+      const d = toLocalISODate(day);
+      const countDb = events.filter(ev => ev.event_date === d).length;
+      const countG =
+        mergeGoogle
+          ? googleEvents.filter(ge => {
+              const raw = ge.start?.date ?? ge.start?.dateTime;
+              if (!raw) return false;
+              return new Date(raw).toISOString().split('T')[0] === d;
+            }).length
+          : 0;
+      return countDb + countG;
     },
-    [events]
+    [events, googleEvents, mergeGoogle]
   );
 
-  const isToday = (d: Date) => new Date().toDateString() === d.toDateString();
-  const isSameDay = (d1: Date | null, d2: Date) => !!d1 && d1.toDateString() === d2.toDateString();
-
-  const monthLabel = useMemo(
-    () => currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-    [currentDate]
-  );
-
-  // --- Render ----------------------------------------------------------------
+  // --- UI --------------------------------------------------------------------
   return (
-    <div className="h-screen overflow-y-auto pb-24">
+    <div className="w-full" onKeyDown={onKeyDown} tabIndex={0} aria-label="Calendar">
       {/* Header */}
-      <div className="bg-white p-6 border-b border-gray-200" ref={headerRef}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-            <p className="text-gray-600">{monthLabel}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Merge toggle */}
-            <label className="flex items-center gap-2 text-sm text-gray-700 mr-2 select-none">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                checked={mergeGoogle}
-                onChange={(e) => setMergeGoogle(e.target.checked)}
-              />
-              Merge Google events
-            </label>
-
-            <button
-              onClick={syncWithGoogleCalendar}
-              disabled={syncingCalendar}
-              title={isGoogleConnected ? 'Sync Google Calendar' : 'Connect Google Calendar'}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 ${
-                isGoogleConnected ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {syncingCalendar ? <Sync className="w-5 h-5 animate-spin" /> : <CalendarIcon className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={() => setShowWhatsAppForm(true)}
-              className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors"
-              title="Parse WhatsApp Message"
-            >
-              <Smartphone className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowEventForm(true)}
-              className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors"
-              title="Add Event"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <button
+            className="p-2 rounded hover:bg-gray-100"
+            aria-label="Previous month"
+            onClick={goPrevMonth}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5" />
+            {monthLabel}
+          </h2>
+          <button
+            className="p-2 rounded hover:bg-gray-100"
+            aria-label="Next month"
+            onClick={goNextMonth}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+          <button
+            className="ml-2 px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm"
+            onClick={goToday}
+            aria-label="Go to today"
+          >
+            Today (T)
+          </button>
         </div>
 
-        {/* Google status card */}
-        <div
-          className={`p-4 rounded-xl border-2 mb-4 ${
-            isGoogleConnected ? 'bg-green-50 border-green-200' : error ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <CalendarIcon
-                className={`w-5 h-5 ${isGoogleConnected ? 'text-green-600' : error ? 'text-red-600' : 'text-blue-600'}`}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowEventForm(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+          >
+            <Plus className="w-4 h-4" /> New Event
+          </button>
+
+          <button
+            onClick={() => setShowWhatsAppForm(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+            title="WhatsApp Integration"
+          >
+            <Smartphone className="w-4 h-4" /> WhatsApp
+          </button>
+
+          <div className="flex items-center gap-2 ml-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={mergeGoogle}
+                onChange={e => setMergeGoogle(e.target.checked)}
               />
-              <div>
-                <h3
-                  className={`font-medium ${isGoogleConnected ? 'text-green-900' : error ? 'text-red-900' : 'text-blue-900'}`}
-                >
-                  Google Calendar {isGoogleConnected ? 'Connected' : error ? 'Error' : 'Integration'}
-                </h3>
-                <p className={`${isGoogleConnected ? 'text-green-700' : error ? 'text-red-700' : 'text-blue-700'} text-sm`}>
-                  {isGoogleConnected
-                    ? 'Your events sync automatically with Google Calendar'
-                    : error
-                    ? error
-                    : 'Connect to sync your events with Google Calendar'}
-                </p>
-              </div>
-            </div>
+              Merge Google
+            </label>
+
             {isGoogleConnected ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={syncWithGoogleCalendar}
-                  disabled={syncingCalendar}
-                  className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-1"
-                >
-                  {syncingCalendar ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>Syncing…</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sync className="w-3 h-3" />
-                      <span>Sync</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={disconnectGoogleCalendar}
-                  className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
-                >
-                  Disconnect
-                </button>
-              </div>
+              <button
+                onClick={disconnectGoogleCalendar}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                title="Disconnect Google"
+              >
+                <X className="w-4 h-4" /> Disconnect
+              </button>
             ) : (
               <button
                 onClick={connectGoogleCalendar}
-                disabled={syncingCalendar || !isGoogleServiceReady}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                title="Connect Google"
               >
-                {syncingCalendar ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Connecting…</span>
-                  </>
-                ) : !isGoogleServiceReady ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Loading…</span>
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4" />
-                    <span>Connect</span>
-                  </>
-                )}
+                <Sync className="w-4 h-4" /> Connect
               </button>
             )}
+
+            <button
+              onClick={syncWithGoogleCalendar}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md border"
+              title="Sync Google now"
+              disabled={!isGoogleServiceReady || !mergeGoogle || syncingCalendar}
+            >
+              {syncingCalendar ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Syncing…
+                </>
+              ) : (
+                <>
+                  <FolderSyncIcon /> Sync
+                </>
+              )}
+            </button>
           </div>
-        </div>
-
-        {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-yellow-800 text-xs font-bold">!</span>
-              </div>
-              <div>
-                <h3 className="font-medium text-yellow-900 mb-1">Setup Required</h3>
-                <p className="text-sm text-yellow-800 mb-2">To enable Google Calendar integration, you need to:</p>
-                <ol className="text-sm text-yellow-800 list-decimal list-inside space-y-1">
-                  <li>Create a Google Cloud Console project</li>
-                  <li>Enable the Google Calendar API</li>
-                  <li>Set up OAuth 2.0 credentials</li>
-                  <li>Add VITE_GOOGLE_CLIENT_ID to your environment variables</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Calendar Navigation */}
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => navigateMonth('prev')}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-
-          <button
-            onClick={navigateToToday}
-            className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors"
-          >
-            Today
-          </button>
-
-          <button
-            onClick={() => navigateMonth('next')}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Next month"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Month grid">
-          {WEEKDAYS_SHORT.map((d) => (
-            <div key={d} className="text-center text-sm font-medium text-gray-400 py-2" role="columnheader">
-              {d}
-            </div>
-          ))}
-
-          {/* leading blanks */}
-          {Array.from({ length: firstDayOffset }).map((_, i) => (
-            <div key={`empty-${i}`} className="aspect-square" />
-          ))}
-
-          {/* days */}
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1;
-            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-            const selected = isSameDay(selectedDate, date);
-            const today = isToday(date);
-            const { hasEvents, count } = hasDbItemsOn(date);
-
-            return (
-              <div key={day} className="relative">
-                <button
-                  onClick={() => onDayClick(date)}
-                  onDoubleClick={() => openCreateForDay(date)}
-                  className={`w-full aspect-square flex flex-col items-center justify-center text-sm rounded-lg transition-all relative focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 ${
-                    selected
-                      ? 'bg-purple-500 text-white hover:bg-purple-600'
-                      : today
-                      ? 'bg-purple-100 text-purple-700 font-semibold'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  aria-label={`Select ${date.toDateString()}`}
-                >
-                  <span className="mb-1">{day}</span>
-                  {hasEvents && (
-                    <div className="flex items-center gap-1" aria-label={`${count} events`}>
-                      <div className={`${selected ? 'bg-white' : 'bg-blue-500'} w-2 h-2 rounded-full`} />
-                      {count > 1 && (
-                        <span className={`text-[10px] ${selected ? 'text-white' : 'text-blue-700'}`}>×{count}</span>
-                      )}
-                    </div>
-                  )}
-                </button>
-                <button
-                  onClick={() => openCreateForDay(date)}
-                  className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-purple-500/80 text-white flex items-center justify-center opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity"
-                  title="Quick add"
-                  aria-label="Quick add event"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-6">
-        {/* Selected day heading */}
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {selectedDate
-              ? selectedDate.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })
-              : 'Select a date'}
-          </h2>
+      {/* Error banner */}
+      {error && (
+        <div className="mb-3 flex items-start gap-2 rounded border border-red-200 bg-red-50 p-3 text-red-800">
+          <Info className="w-4 h-4 mt-0.5" />
+          <div className="text-sm">{error}</div>
+        </div>
+      )}
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-1">
+        {WEEKDAYS_SHORT.map((wd) => (
+          <div key={wd} className="py-2">{wd}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-[1px] bg-gray-200 rounded overflow-hidden">
+        {daysInGrid.map((day, idx) => {
+          const inMonth = day.getMonth() === currentDate.getMonth();
+          const isToday = isSameDay(day, new Date());
+          const selected = selectedDate ? isSameDay(day, selectedDate) : false;
+          const count = dayEventsCount(day);
+
+          return (
+            <button
+              key={idx}
+              onClick={() => onDayClick(day)}
+              className={[
+                'relative h-24 bg-white p-2 text-left focus:outline-none focus:ring-2 focus:ring-purple-500',
+                !inMonth ? 'bg-gray-50 text-gray-400' : '',
+                selected ? 'ring-2 ring-purple-500' : '',
+              ].join(' ')}
+              aria-label={`Day ${toLocalISODate(day)} (${count} events)`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs">{day.getDate()}</span>
+                {isToday && (
+                  <span className="rounded-full bg-purple-600 text-white text-[10px] px-1.5 py-0.5">
+                    Today
+                  </span>
+                )}
+              </div>
+
+              {count > 0 && (
+                <div className="absolute bottom-1 left-1 right-1">
+                  <div className="text-[10px] text-gray-600">
+                    {count} event{count === 1 ? '' : 's'}
+                  </div>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Inline day agenda */}
+      <div className="mt-6">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-lg font-semibold">Agenda</h3>
           {selectedDate && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => openCreateForDay(selectedDate)}
-                className="px-3 py-2 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors"
-              >
-                Add Event
-              </button>
-              <button
-                onClick={() => setShowWhatsAppForm(true)}
-                className="px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
-              >
-                Parse WhatsApp
-              </button>
-            </div>
+            <span className="text-sm text-gray-500">
+              {selectedDate.toLocaleDateString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
           )}
         </div>
 
-        {/* Loading state */}
-        {loading && (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
-            <span className="ml-2 text-gray-600">Loading events…</span>
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading events…
           </div>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 mb-4 flex items-start gap-2">
-            <Info className="w-5 h-5 mt-0.5" />
-            <div>
-              <p className="font-medium">Something went wrong</p>
-              <p className="text-sm">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && selectedDate && itemsForSelectedDate.events.length === 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-            <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No events</h3>
-            <p className="text-gray-600 mb-4">No events scheduled for {selectedDate.toLocaleDateString()}</p>
-            <button
-              onClick={() => setShowEventForm(true)}
-              className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
-            >
-              Add Event
-            </button>
-          </div>
-        )}
-
-        {/* Agenda for selected day */}
-        {selectedDate && itemsForSelectedDate.events.length > 0 && (
-          <div className="space-y-3">
-            {itemsForSelectedDate.events.map((ev: any, idx: number) => {
-              const isGoogle = 'id' in ev && ev.htmlLink !== undefined; // rough check
-
-              if (isGoogle) {
-                // Google item
-                const title = ev.summary ?? 'Google Event';
-                const start = ev.start?.dateTime ?? ev.start?.date;
-                const end = ev.end?.dateTime ?? ev.end?.date;
-                const time = start ? formatTimeRange(new Date(start).toTimeString().slice(0,5), end ? new Date(end).toTimeString().slice(0,5) : undefined) : '';
-                return (
-                  <div key={`g-${idx}`} className={`p-4 rounded-xl border-2 ${getEventBadge('meeting')} hover:shadow-md transition-all`}>
-                    <div className="flex items-start justify-between">
+        ) : (
+          <div className="space-y-2">
+            {itemsForSelectedDate.events.length === 0 ? (
+              <div className="text-sm text-gray-500">No events for this day.</div>
+            ) : (
+              itemsForSelectedDate.events.map((it: any, i) => {
+                const isDb = 'id' in it && 'event_date' in it; // crude check
+                if (isDb) {
+                  const ev = it as DbEvent;
+                  return (
+                    <div
+                      key={`db-${ev.id}-${i}`}
+                      className={[
+                        'border rounded p-2 text-sm flex items-start gap-2',
+                        getEventBadge((ev as any).type),
+                      ].join(' ')}
+                    >
+                      <Clock className="w-4 h-4 mt-0.5" />
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold">{title}</h4>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Google</span>
+                        <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
+                        <div className="text-xs">
+                          {formatTimeRange(ev.start_time, ev.end_time)}
                         </div>
-                        <div className="flex items-center gap-3 text-sm opacity-75">
-                          {time && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{time}</span>
-                            </div>
-                          )}
-                          {ev.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{ev.location}</span>
-                            </div>
-                          )}
-                        </div>
+                        {ev.location && (
+                          <div className="text-xs flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {ev.location}
+                          </div>
+                        )}
+                        {ev.notes && (
+                          <div className="text-xs mt-1 text-gray-700">
+                            {ev.notes}
+                          </div>
+                        )}
                       </div>
-                      {ev.htmlLink && (
+                    </div>
+                  );
+                } else {
+                  const ge = it as GoogleCalendarEvent;
+                  const title =
+                    ge.summary || (ge.id ? `Google event (${ge.id.slice(0, 6)}…)` : 'Google event');
+                  const allDay = !!ge.start?.date && !ge.start?.dateTime;
+                  const timeRange = allDay
+                    ? 'All day'
+                    : (() => {
+                        const s = ge.start?.dateTime ?? ge.start?.date;
+                        const e = ge.end?.dateTime ?? ge.end?.date;
+                        if (!s) return '';
+                        const fmt = (v?: string) =>
+                          v
+                            ? new Date(v).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                            : '';
+                        const left = fmt(s as string);
+                        const right = fmt(e as string);
+                        return right ? `${left} - ${right}` : left;
+                      })();
+
+                  return (
+                    <div
+                      key={`g-${ge.id ?? i}`}
+                      className="border rounded p-2 text-sm flex items-start gap-2 bg-gray-100 text-gray-800 border-gray-200"
+                    >
+                      <CalendarIcon className="w-4 h-4 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="font-semibold">{title}</div>
+                        <div className="text-xs">{timeRange}</div>
+                        {ge.location && (
+                          <div className="text-xs flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {ge.location}
+                          </div>
+                        )}
+                      </div>
+                      {ge.htmlLink && (
                         <a
-                          href={ev.htmlLink}
+                          href={ge.htmlLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-600 hover:underline text-sm"
+                          className="text-xs underline inline-flex items-center gap-1"
+                          title="Open in Google Calendar"
                         >
-                          Open ↗
+                          <ExternalLink className="w-3 h-3" />
+                          Open
                         </a>
                       )}
                     </div>
-                  </div>
-                );
-              }
-
-              // DB event
-              const e = ev as Event;
-              return (
-                <div
-                  key={`e-${e.id}`}
-                  className={`p-4 rounded-xl border-2 ${getEventBadge(e.event_type || 'other')} hover:shadow-md transition-all cursor-pointer`}
-                  onClick={() => onEventClick(e)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{e.title}</h4>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Event</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm opacity-75">
-                        {e.start_time && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{formatTimeRange(e.start_time, e.end_time ?? undefined)}</span>
-                          </div>
-                        )}
-                        {e.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{e.location}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                }
+              })
+            )}
           </div>
         )}
-
-        {/* WhatsApp CTA */}
-        <div
-          className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4 cursor-pointer hover:bg-green-100 transition-colors"
-          onClick={() => setShowWhatsAppForm(true)}
-        >
-          <div className="flex items-start gap-3">
-            <MessageCircle className="w-5 h-5 text-green-600 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-green-900 mb-1">WhatsApp Integration</h3>
-              <p className="text-sm text-green-700 mb-2">Click to parse WhatsApp messages and create events automatically</p>
-              <div className="bg-white p-3 rounded-lg border border-green-200 text-sm">
-                <p className="text-gray-700 mb-2">
-                  "Hi everyone! Sophia's 7th birthday party this Saturday 2-5pm at Chuck E. Cheese on Main Street. RSVP by Thursday! 🎂🎉"
-                </p>
-                <button
-                  className="text-green-600 font-medium hover:underline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowWhatsAppForm(true);
-                  }}
-                >
-                  Parse Message
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Forms */}
-      <EventForm
-        isOpen={showEventForm}
-        onClose={() => setShowEventForm(false)}
-        onEventCreated={onEventCreated}
-      />
-
-      <WhatsAppIntegration
-        isOpen={showWhatsAppForm}
-        onClose={() => setShowWhatsAppForm(false)}
-        onEventCreated={onEventCreated}
-      />
-
-      {/* Event Details Modal */}
-      {showEventDetails && selectedEvent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-xl">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Event Details</h2>
-                <button
-                  onClick={closeEventDetails}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                  aria-label="Close details"
-                >
-                  <X className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedEvent.title}</h3>
-                  <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getEventBadge(selectedEvent.event_type || 'other')}`}>
-                    {selectedEvent.event_type?.charAt(0).toUpperCase() + selectedEvent.event_type?.slice(1) || 'Other'}
-                  </div>
-                </div>
-
-                {selectedEvent.description && (
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-1">Description</h4>
-                    <p className="text-gray-600">{selectedEvent.description}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center gap-3">
-                    <CalendarIcon className="w-5 h-5 text-purple-500" />
-                    <div>
-                      <p className="font-medium text-gray-700">Date</p>
-                      <p className="text-gray-600">
-                        {new Date(selectedEvent.event_date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {(selectedEvent.start_time || selectedEvent.end_time) && (
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <p className="font-medium text-gray-700">Time</p>
-                        <p className="text-gray-600">{formatTimeRange(selectedEvent.start_time, selectedEvent.end_time)}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedEvent.location && (
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <p className="font-medium text-gray-700">Location</p>
-                        <p className="text-gray-600">{selectedEvent.location}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {Array.isArray((selectedEvent as any).participants) && (selectedEvent as any).participants.length > 0 && (
-                    <div className="flex items-start gap-3">
-                      <Users className="w-5 h-5 text-purple-500 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-gray-700">Participants</p>
-                        <p className="text-gray-600">{(selectedEvent as any).participants.join(', ')}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(selectedEvent as any).rsvp_required && (
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <p className="font-medium text-gray-700">RSVP Status</p>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              (selectedEvent as any).rsvp_status === 'yes'
-                                ? 'bg-green-100 text-green-700'
-                                : (selectedEvent as any).rsvp_status === 'no'
-                                ? 'bg-red-100 text-red-700'
-                                : (selectedEvent as any).rsvp_status === 'maybe'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            {(selectedEvent as any).rsvp_status?.charAt(0).toUpperCase() + (selectedEvent as any).rsvp_status?.slice(1) || 'Pending'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 flex items-center justify-center">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          selectedEvent.source === 'whatsapp'
-                            ? 'bg-green-500'
-                            : selectedEvent.source === 'calendar_sync'
-                            ? 'bg-blue-500'
-                            : 'bg-purple-500'
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700">Source</p>
-                      <p className="text-gray-600 capitalize">
-                        {selectedEvent.source === 'calendar_sync' ? 'Calendar Sync' : selectedEvent.source || 'Manual'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {(selectedEvent as any).rsvp_required && (
-                  <div className="border-t pt-4 mt-6">
-                    <h4 className="font-medium text-gray-700 mb-3">Quick Actions</h4>
-                    <div className="flex gap-2">
-                      <button className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors">
-                        <MessageCircle className="w-3 h-3" />
-                        <span>RSVP Yes</span>
-                      </button>
-                      <button className="flex items-center gap-1 px-3 py-2 bg-pink-500 text-white rounded-lg text-sm hover:bg-pink-600 transition-colors">
-                        <Gift className="w-3 h-3" />
-                        <span>Buy Gift</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+      {/* Event form modal */}
+      {showEventForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold">Create / Edit Event</h4>
+              <button
+                onClick={() => setShowEventForm(false)}
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Close event form"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+            <EventForm
+              defaultDate={selectedDate ? toLocalISODate(selectedDate) : undefined}
+              event={selectedEvent ?? undefined}
+              onCancel={() => setShowEventForm(false)}
+              onSaved={handleEventSaved}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp modal */}
+      {showWhatsAppForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold">WhatsApp Integration</h4>
+              <button
+                onClick={() => setShowWhatsAppForm(false)}
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Close WhatsApp modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <WhatsAppIntegration
+              onClose={() => setShowWhatsAppForm(false)}
+            />
           </div>
         </div>
       )}
     </div>
   );
+}
+
+/** Small icon alias for consistency with label */
+function FolderSyncIcon() {
+  return <Sync className="w-4 h-4" />;
 }
