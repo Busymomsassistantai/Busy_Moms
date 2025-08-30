@@ -24,6 +24,7 @@ export class OpenAIRealtimeService {
     this.config = {
       model: 'gpt-realtime',         // ✅ current model
       voice: 'alloy',
+      speed: '1.5',
       instructions: `You are a helpful AI assistant for busy parents in the "Busy Moms Assistant" app.
 Keep responses concise, practical, empathetic, and actionable.`,
       ...config,
