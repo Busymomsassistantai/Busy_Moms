@@ -60,6 +60,12 @@ export class OpenAIRealtimeService {
       const tokenData = await tokenResponse.json();
       const EPHEMERAL_KEY = tokenData.value;
 
+      // Check if we're in demo mode
+      if (tokenData.demo) {
+        console.log('⚠️ Running in demo mode - OpenAI API key not configured');
+        throw new Error('OpenAI API key not configured. Please add your OpenAI API key to the environment variables to enable voice chat.');
+      }
+
       // Create a peer connection
       this.peerConnection = new RTCPeerConnection();
 

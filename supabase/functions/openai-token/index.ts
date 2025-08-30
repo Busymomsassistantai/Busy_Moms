@@ -77,10 +77,17 @@ Deno.serve(async (req: Request) => {
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
+      console.log('⚠️ OpenAI API key not configured, returning demo token');
       return new Response(
-        JSON.stringify({ error: "OpenAI API key not configured" }),
+        JSON.stringify({ 
+          value: "demo-token-for-development",
+          expiresAt: Date.now() + (60 * 60 * 1000),
+          userId,
+          demo: true,
+          message: "Demo mode - OpenAI API key not configured"
+        }),
         {
-          status: 500,
+          status: 200,
           headers: {
             "Content-Type": "application/json",
             ...corsHeaders,
