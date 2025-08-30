@@ -507,7 +507,6 @@ export function Calendar() {
           {selectedDate && (
             <span className="text-sm text-gray-500">
               {selectedDate.toLocaleDateString(undefined, {
-                weekday: 'short',
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-medium shadow-md hover:shadow-lg transition-all duration-200"
                 day: 'numeric',
                 year: 'numeric',
@@ -517,7 +516,6 @@ export function Calendar() {
         </div>
 
         {loading ? (
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-700 hover:text-blue-600 font-medium shadow-sm hover:shadow-md transition-all duration-200"
             <Loader2 className="w-4 h-4 animate-spin" />
             Loading events…
           </div>
