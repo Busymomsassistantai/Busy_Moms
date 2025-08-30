@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, MessageCircle, X, Loader2, Phone, PhoneOff } from 'lucide-react';
+import {
+  Mic, MicOff, MessageCircle, X, Loader2, Phone, PhoneOff
+} from 'lucide-react';
 import { openaiRealtimeService, RealtimeEvent } from '../services/openaiRealtimeService';
 import { useAuth } from '../hooks/useAuth';
 
@@ -18,109 +20,106 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [conversation, setConversation] = useState<RealtimeEvent[]>([]);
   const [currentResponse, setCurrentResponse] = useState<string>('');
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize OpenAI Realtime when component opens
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const initializingRef = useRef(false);
+
   useEffect(() => {
-    if (isOpen && user) {
-      initializeRealtimeConnection();
-    }
-    
-    return () => {
-      if (isOpen) {
-        cleanup();
+    if (!isOpen || !user) return;
+    if (initializingRef.current) return;
+
+    initializingRef.current = true;
+    setError(null);
+
+    (async () => {
+      try {
+        setIsConnecting(true);
+
+        // 1) Feature check
+        if (typeof openaiRealtimeService.isSupported === 'function') {
+          if (!openaiRealtimeService.isSupported()) {
+            throw new Error('WebRTC is not supported in this browser');
+          }
+        }
+
+        // 2) Wire event handlers BEFORE/AS initialize
+        openaiRealtimeService.onEvent(handleRealtimeEvent);
+        openaiRealtimeService.onConnectionStateChange((state) => {
+          setConnectionState(state);
+          setIsConnected(state === 'connected');
+        });
+
+        // 3) Initialize (server should mint ephemeral token, set up WebRTC)
+        await openaiRealtimeService.initialize(user.id);
+
+        // 4) Audio element from service
+        const audioEl = openaiRealtimeService.getAudioElement?.();
+        if (audioEl) audioRef.current = audioEl;
+
+        setError(null);
+        // intentionally leave isConnecting as true until state flips via onConnectionStateChange
+      } catch (e: any) {
+        console.error('❌ OpenAI Realtime initialization failed:', e);
+        setError(e?.message || 'Failed to initialize AI voice chat');
+        setIsConnecting(false);
+        initializingRef.current = false;
       }
+    })();
+
+    // Cleanup ALWAYS on unmount/close
+    return () => {
+      try {
+        openaiRealtimeService.offEvent?.(handleRealtimeEvent);
+        openaiRealtimeService.disconnect?.();
+      } catch {}
+      setIsConnected(false);
+      setConnectionState('closed');
+      setConversation([]);
+      setCurrentResponse('');
+      setIsListening(false);
+      setIsMuted(false);
+      setIsConnecting(false);
+      initializingRef.current = false;
     };
   }, [isOpen, user]);
 
-  const initializeRealtimeConnection = async () => {
-    if (!user) return;
-    
-    setIsConnecting(true);
-    setError(null);
-    
-    try {
-      // Check WebRTC support
-      if (!openaiRealtimeService.constructor.isSupported()) {
-        throw new Error('WebRTC is not supported in this browser');
-      }
-
-      // Initialize OpenAI Realtime connection
-      await openaiRealtimeService.initialize(user.id);
-
-      // Set up event handlers
-      openaiRealtimeService.onEvent((event) => {
-        handleRealtimeEvent(event);
-      });
-
-      openaiRealtimeService.onConnectionStateChange((state) => {
-        setConnectionState(state);
-        setIsConnected(state === 'connected');
-      });
-
-      // Get audio element for playback
-      const audioElement = openaiRealtimeService.getAudioElement();
-      if (audioElement) {
-        audioRef.current = audioElement;
-      }
-
-      console.log('✅ OpenAI Realtime initialized successfully');
-    } catch (error) {
-      console.error('❌ OpenAI Realtime initialization failed:', error);
-      setError(error instanceof Error ? error.message : 'Failed to initialize AI voice chat');
-    } finally {
+  // Flip connecting spinner if we reach a terminal state
+  useEffect(() => {
+    if (connectionState === 'connected' || connectionState === 'failed' || connectionState === 'closed') {
       setIsConnecting(false);
     }
-  };
+  }, [connectionState]);
 
   const handleRealtimeEvent = (event: RealtimeEvent) => {
-    console.log('📨 Realtime event:', event.type, event);
-    
+    // console.debug('📨 Realtime event:', event.type, event);
     setConversation(prev => [...prev, event]);
 
     switch (event.type) {
       case 'session.created':
-        console.log('✅ Session created');
-        break;
-        
       case 'session.updated':
-        console.log('✅ Session updated');
         break;
-        
+
       case 'conversation.item.created':
-        if (event.item?.role === 'assistant') {
-          console.log('🤖 Assistant message created');
-        }
+        // could update UI for assistant/user items here
         break;
-        
-      case 'response.audio.delta':
-        // Audio is handled automatically by WebRTC
-        break;
-        
+
       case 'response.text.delta':
-        if (event.delta) {
-          setCurrentResponse(prev => prev + event.delta);
-        }
+        if (event.delta) setCurrentResponse(prev => prev + event.delta);
         break;
-        
+
       case 'response.done':
-        console.log('✅ Response completed');
         setCurrentResponse('');
         break;
-        
+
       case 'input_audio_buffer.speech_started':
         setIsListening(true);
-        console.log('🎤 Speech started');
         break;
-        
+
       case 'input_audio_buffer.speech_stopped':
         setIsListening(false);
-        console.log('🎤 Speech stopped');
         break;
-        
+
       case 'error':
-        console.error('❌ OpenAI Realtime error:', event.error);
         setError(event.error?.message || 'An error occurred');
         break;
     }
@@ -131,51 +130,34 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
       setError('Not connected to AI. Please wait for connection.');
       return;
     }
-    
-    openaiRealtimeService.sendMessage(text);
-    
-    // Add user message to conversation display
-    setConversation(prev => [...prev, {
-      type: 'user_message',
-      content: text,
-      timestamp: Date.now()
-    }]);
+    openaiRealtimeService.sendMessage?.(text);
+    setConversation(prev => [
+      ...prev,
+      { type: 'user_message', content: text, timestamp: Date.now() } as RealtimeEvent
+    ]);
   };
 
-  const toggleMute = () => {
-    if (openaiRealtimeService['localStream']) {
-      const audioTracks = openaiRealtimeService['localStream'].getAudioTracks();
-      audioTracks.forEach(track => {
-        track.enabled = isMuted;
-      });
-      setIsMuted(!isMuted);
+  const toggleMute = async () => {
+    try {
+      if (!isConnected) return;
+      if (isMuted) {
+        await openaiRealtimeService.unmute?.();
+        setIsMuted(false);
+      } else {
+        await openaiRealtimeService.mute?.();
+        setIsMuted(true);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Could not toggle mute');
     }
   };
 
   const startVoiceConversation = () => {
-    if (isConnected) {
-      openaiRealtimeService.startConversation();
-    }
-  };
-
-  const stopVoiceConversation = () => {
-    if (isConnected) {
-      openaiRealtimeService.stopConversation();
-    }
+    if (isConnected) openaiRealtimeService.startConversation?.();
   };
 
   const interruptAI = () => {
-    if (isConnected) {
-      openaiRealtimeService.interrupt();
-    }
-  };
-
-  const cleanup = () => {
-    openaiRealtimeService.disconnect();
-    setIsConnected(false);
-    setConnectionState('closed');
-    setConversation([]);
-    setCurrentResponse('');
+    if (isConnected) openaiRealtimeService.interrupt?.();
   };
 
   const getConnectionStatusColor = () => {
@@ -229,7 +211,6 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
         {/* Conversation Area */}
         <div className="flex-1 p-4 overflow-y-auto">
-          {/* Connection Status */}
           {!isConnected && (
             <div className="text-center py-8">
               {isConnecting ? (
@@ -244,9 +225,22 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                     <X className="w-6 h-6 text-white" />
                   </div>
                   <p className="text-lg text-red-600 mb-2">Connection Error</p>
-                  <p className="text-sm text-gray-600 mb-4">{error}</p>
+                  <p className="text-sm text-gray-600 mb-4 whitespace-pre-wrap">{error}</p>
                   <button
-                    onClick={initializeRealtimeConnection}
+                    onClick={() => {
+                      setError(null);
+                      setIsConnecting(true);
+                      // re-run init
+                      (async () => {
+                        try {
+                          await openaiRealtimeService.initialize(user!.id);
+                        } catch (e: any) {
+                          setError(e?.message || 'Failed to initialize AI voice chat');
+                        } finally {
+                          setIsConnecting(false);
+                        }
+                      })();
+                    }}
                     className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
                   >
                     Retry Connection
@@ -273,7 +267,6 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                 </p>
               </div>
 
-              {/* Live Response */}
               {currentResponse && (
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <p className="text-sm text-blue-800">
@@ -282,7 +275,6 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                 </div>
               )}
 
-              {/* Listening Indicator */}
               {isListening && (
                 <div className="bg-green-50 p-3 rounded-lg flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -298,11 +290,12 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                     type="text"
                     placeholder="Type your message..."
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const input = e.target as HTMLInputElement;
-                        if (input.value.trim()) {
-                          sendTextMessage(input.value.trim());
+                        const value = input.value.trim();
+                        if (value) {
+                          sendTextMessage(value);
                           input.value = '';
                         }
                       }
@@ -310,10 +303,11 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   />
                   <button
                     onClick={(e) => {
-                      const input = (e.target as HTMLElement).parentElement?.querySelector('input') as HTMLInputElement;
-                      if (input?.value.trim()) {
-                        sendTextMessage(input.value.trim());
-                        input.value = '';
+                      const input = (e.currentTarget.parentElement?.querySelector('input')) as HTMLInputElement | null;
+                      const value = input?.value.trim();
+                      if (value) {
+                        sendTextMessage(value);
+                        if (input) input.value = '';
                       }
                     }}
                     className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
@@ -332,8 +326,8 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             onClick={toggleMute}
             disabled={!isConnected}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-              isMuted 
-                ? 'bg-red-500 text-white hover:bg-red-600' 
+              isMuted
+                ? 'bg-red-500 text-white hover:bg-red-600'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             } disabled:opacity-50`}
             title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
@@ -375,18 +369,17 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             <li>• Mute your microphone with the red button</li>
             <li>• You can also type messages in the text input above</li>
           </ul>
-          
+
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h5 className="font-medium text-yellow-900 mb-1">Setup Required:</h5>
             <p className="text-sm text-yellow-800">
-              To enable voice chat, you need to add your OpenAI API key to the environment variables. 
-              The regular text chat will continue to work normally.
+              To enable voice chat, configure the server route that mints the OpenAI Realtime session and returns an ephemeral client_secret.
             </p>
           </div>
         </div>
 
         {/* WebRTC Not Supported Warning */}
-        {!openaiRealtimeService.constructor.isSupported() && (
+        {typeof openaiRealtimeService.isSupported === 'function' && !openaiRealtimeService.isSupported() && (
           <div className="p-4 bg-yellow-50 border-t border-yellow-200">
             <p className="text-sm text-yellow-800">
               ⚠️ WebRTC is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.
