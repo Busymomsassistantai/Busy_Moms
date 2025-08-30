@@ -128,8 +128,6 @@ export function Calendar() {
           setIsGoogleServiceReady(true);
           if (googleCalendarService.isSignedIn()) {
             setIsGoogleConnected(true);
-            // Don't auto-sync on load to improve performance
-            // await syncWithGoogleCalendar();
           }
         }
       } catch (e) {
@@ -143,7 +141,6 @@ export function Calendar() {
     return () => {
       mounted = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const connectGoogleCalendar = useCallback(async () => {
@@ -746,7 +743,6 @@ export function Calendar() {
       {/* Forms */}
       <EventForm
         isOpen={showEventForm}
-        defaultDate={selectedDate ? toISODate(selectedDate) : undefined}
         onClose={() => setShowEventForm(false)}
         onEventCreated={onEventCreated}
       />

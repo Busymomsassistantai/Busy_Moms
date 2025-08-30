@@ -7,16 +7,17 @@ interface EventFormProps {
   isOpen: boolean
   onClose: () => void
   onEventCreated: (event: Event) => void
+  defaultDate?: string
   editEvent?: Event | null
 }
 
-export function EventForm({ isOpen, onClose, onEventCreated, editEvent }: EventFormProps) {
+export function EventForm({ isOpen, onClose, onEventCreated, defaultDate, editEvent }: EventFormProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: editEvent?.title || '',
     description: editEvent?.description || '',
-    event_date: editEvent?.event_date || '',
+    event_date: editEvent?.event_date || defaultDate || '',
     start_time: editEvent?.start_time || '',
     end_time: editEvent?.end_time || '',
     location: editEvent?.location || '',
@@ -25,6 +26,29 @@ export function EventForm({ isOpen, onClose, onEventCreated, editEvent }: EventF
     rsvp_required: editEvent?.rsvp_required || false,
     rsvp_status: editEvent?.rsvp_status || 'pending'
   })
+
+  // Update form data when defaultDate or editEvent changes
+  React.useEffect(() => {
+    if (editEvent) {
+      setFormData({
+        title: editEvent.title || '',
+        description: editEvent.description || '',
+        event_date: editEvent.event_date || '',
+        start_time: editEvent.start_time || '',
+        end_time: editEvent.end_time || '',
+        location: editEvent.location || '',
+        event_type: editEvent.event_type || 'other',
+        participants: editEvent.participants?.join(', ') || '',
+        rsvp_required: editEvent.rsvp_required || false,
+        rsvp_status: editEvent.rsvp_status || 'pending'
+      })
+    } else if (defaultDate) {
+      setFormData(prev => ({
+        ...prev,
+        event_date: defaultDate
+      }))
+    }
+  }, [editEvent, defaultDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
