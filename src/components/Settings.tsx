@@ -6,7 +6,6 @@ import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
-import { speechService } from '../services/speechService';
 
 export function Settings() {
   const { user, signOut } = useAuth();
@@ -22,8 +21,7 @@ export function Settings() {
     events: true,
     shopping: true,
     reminders: true,
-    whatsapp: false,
-    voiceResponses: true
+    whatsapp: false
   });
 
   // Load family members on component mount
@@ -160,14 +158,6 @@ export function Settings() {
           onClick: () => toggleNotification('whatsapp')
         },
         {
-          icon: Volume2,
-          title: 'Voice Responses',
-          description: 'AI assistant speaks responses aloud',
-          toggle: true,
-          enabled: notifications.voiceResponses,
-          onClick: () => toggleNotification('voiceResponses')
-        },
-        {
           icon: Smartphone,
           title: 'Smartwatch',
           description: 'Apple Watch connected',
@@ -218,11 +208,6 @@ export function Settings() {
       ...prev,
       [key]: !prev[key]
     }));
-    
-    // Update speech service when voice responses toggle changes
-    if (key === 'voiceResponses') {
-      speechService.setEnabled(!notifications.voiceResponses);
-    }
   };
 
   const handleFamilyMemberCreated = (newMember: FamilyMember) => {
@@ -320,8 +305,6 @@ export function Settings() {
                           onClick={() => {
                             if (item.title.includes('WhatsApp')) {
                               toggleNotification('whatsapp');
-                            } else if (item.title.includes('Voice')) {
-                              toggleNotification('voiceResponses');
                             } else if (item.title.includes('Event')) {
                               toggleNotification('events');
                             } else {
