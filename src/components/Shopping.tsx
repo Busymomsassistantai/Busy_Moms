@@ -1,12 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
-import { ShoppingItem } from '../lib/supabase';
+import { ShoppingItem, supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 export function Shopping() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('list');
   const [showShoppingForm, setShowShoppingForm] = useState(false);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchShoppingList();
+    }
+  }, [user]);
+
+  const fetchShoppingList = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('shopping_lists')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setShoppingList(data || []);
+    } catch (error) {
+      console.error('Error fetching shopping list:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleItemCreated = (newItem: ShoppingItem) => {
     setShoppingList(prev => [...prev, newItem]);
