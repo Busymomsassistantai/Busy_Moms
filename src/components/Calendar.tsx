@@ -475,7 +475,6 @@ export function Calendar() {
               onClick={() => onDayClick(day)}
               className={[
                 'relative h-24 bg-white p-3 text-left focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-gray-50 transition-all duration-200 group',
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                 selected ? 'ring-2 ring-purple-500 bg-purple-50' : '',
               ].join(' ')}
               aria-label={`Day ${toLocalISODate(day)} (${count} events)`}
