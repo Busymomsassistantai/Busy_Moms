@@ -438,7 +438,7 @@ export function Calendar() {
                 </>
               ) : (
                 <>
-                  <FolderSyncIcon /> Sync
+                  <Sync className="w-4 h-4" /> Sync
                 </>
               )}
             </button>
@@ -464,7 +464,6 @@ export function Calendar() {
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-[1px] bg-gray-200 rounded overflow-hidden">
         {daysInGrid.map((day, idx) => {
-          className="ml-2 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-purple-300 hover:bg-purple-50 text-sm font-medium text-gray-700 hover:text-purple-600 transition-all duration-200 shadow-sm"
           const isToday = isSameDay(day, new Date());
           const selected = selectedDate ? isSameDay(day, selectedDate) : false;
           const count = dayEventsCount(day);
@@ -481,7 +480,7 @@ export function Calendar() {
             >
               <div className="flex items-center justify-between">
                 <span className={`text-sm font-medium ${selected ? 'text-purple-700' : 'text-gray-700'} group-hover:text-purple-600 transition-colors`}>{day.getDate()}</span>
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                {isToday && (
                   <span className="rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] px-2 py-1 font-medium shadow-sm">
                     Today
                   </span>
@@ -500,13 +499,14 @@ export function Calendar() {
         })}
       </div>
 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+      {/* Agenda */}
       <div className="mt-6">
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-lg font-semibold">Agenda</h3>
           {selectedDate && (
             <span className="text-sm text-gray-500">
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+              {selectedDate.toLocaleDateString(undefined, {
+                weekday: 'short',
                 day: 'numeric',
                 year: 'numeric',
               })}
@@ -517,7 +517,7 @@ export function Calendar() {
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Loading events…
+            <span>Loading events…</span>
           </div>
         ) : (
           <div className="space-y-2">
@@ -659,9 +659,4 @@ export function Calendar() {
       )}
     </div>
   );
-}
-
-/** Small icon alias for consistency with label */
-function FolderSyncIcon() {
-  return <Sync className="w-4 h-4" />;
 }
