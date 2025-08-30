@@ -366,7 +366,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         </div>
 
         {/* Instructions */}
-        <div className="p-4 bg-blue-50 border-t border-blue-200">
+        <div className="bg-blue-50 border-t border-blue-200 p-4">
           <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
           <ul className="text-sm text-blue-700 space-y-1">
             <li>• Click the green phone button to start voice conversation</li>
@@ -375,6 +375,14 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             <li>• Mute your microphone with the red button</li>
             <li>• You can also type messages in the text input above</li>
           </ul>
+          
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h5 className="font-medium text-yellow-900 mb-1">Setup Required:</h5>
+            <p className="text-sm text-yellow-800">
+              To enable voice chat, you need to add your OpenAI API key to the environment variables. 
+              The regular text chat will continue to work normally.
+            </p>
+          </div>
         </div>
 
         {/* WebRTC Not Supported Warning */}

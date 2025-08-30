@@ -137,8 +137,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     { icon: Car, title: 'Schedule Ride', desc: 'To soccer practice', color: 'from-blue-400 to-cyan-400', action: null },
     { icon: ShoppingBag, title: 'Grocery Run', desc: '8 items needed', color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
     { icon: Smartphone, title: 'Parse WhatsApp', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) },
-    { icon: Phone, title: 'Family Voice Chat', desc: 'Connect with family members', color: 'from-purple-400 to-indigo-400', action: () => setIsVoiceChatOpen(true) },
-    { icon: MessageCircle, title: 'AI Voice Chat', desc: 'Talk directly with AI assistant', color: 'from-orange-400 to-red-400', action: () => setIsAIVoiceChatOpen(true) }
+    { icon: Phone, title: 'Family Voice Chat', desc: 'Connect with family members', color: 'from-purple-400 to-indigo-400', action: () => setIsVoiceChatOpen(true) }
   ];
 
   const sampleReminders = [
