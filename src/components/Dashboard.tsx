@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut, Smartphone, Phone } from 'lucide-react';
 import { AIChat } from './AIChat';
+import { AIVoiceChat } from './AIVoiceChat';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { VoiceChat } from './VoiceChat';
 import { useAuth } from '../hooks/useAuth';
@@ -15,6 +16,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { signOut } = useAuth();
   const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
+  const [isAIVoiceChatOpen, setIsAIVoiceChatOpen] = React.useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = React.useState(false);
   const [isVoiceChatOpen, setIsVoiceChatOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
@@ -135,7 +137,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     { icon: Car, title: 'Schedule Ride', desc: 'To soccer practice', color: 'from-blue-400 to-cyan-400', action: null },
     { icon: ShoppingBag, title: 'Grocery Run', desc: '8 items needed', color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
     { icon: Smartphone, title: 'Parse WhatsApp', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) },
-    { icon: Phone, title: 'Family Voice Chat', desc: 'Connect with family members', color: 'from-purple-400 to-indigo-400', action: () => setIsVoiceChatOpen(true) }
+    { icon: Phone, title: 'Family Voice Chat', desc: 'Connect with family members', color: 'from-purple-400 to-indigo-400', action: () => setIsVoiceChatOpen(true) },
+    { icon: MessageCircle, title: 'AI Voice Chat', desc: 'Talk directly with AI assistant', color: 'from-orange-400 to-red-400', action: () => setIsAIVoiceChatOpen(true) }
   ];
 
   const sampleReminders = [
@@ -327,6 +330,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       </div>
 
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <AIVoiceChat isOpen={isAIVoiceChatOpen} onClose={() => setIsAIVoiceChatOpen(false)} />
       <WhatsAppIntegration 
         isOpen={isWhatsAppOpen} 
         onClose={() => setIsWhatsAppOpen(false)}

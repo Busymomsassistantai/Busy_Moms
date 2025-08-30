@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, MessageCircle, X, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { aiService, ChatMessage } from '../services/openai';
+import { AIVoiceChat } from './AIVoiceChat';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile } from '../lib/supabase';
 import { speechService } from '../services/speechService';
@@ -25,6 +26,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showVoiceChat, setShowVoiceChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load user profile
@@ -460,6 +462,16 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
 
         {/* Input */}
         <div className="p-4 border-t border-gray-200">
+          <div className="mb-3 text-center">
+            <button
+              onClick={() => setShowVoiceChat(true)}
+              className="px-4 py-2 bg-gradient-to-r from-orange-400 to-red-400 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2 mx-auto"
+            >
+              <Phone className="w-4 h-4" />
+              <span>Switch to Voice Chat</span>
+            </button>
+            <p className="text-xs text-gray-500 mt-1">Real-time voice conversation with AI</p>
+          </div>
           <div className="flex items-center space-x-2">
             <button
               onClick={toggleSpeech}
@@ -541,6 +553,11 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
           )}
         </div>
       </div>
+      
+      <AIVoiceChat 
+        isOpen={showVoiceChat} 
+        onClose={() => setShowVoiceChat(false)} 
+      />
     </div>
   );
 }
