@@ -77,11 +77,11 @@ export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormPr
       }
 
       let result
-      if (editEvent) {
+      if (event) {
         result = await supabase
           .from('events')
           .update(eventData)
-          .eq('id', editEvent.id)
+          .eq('id', event.id)
           .select()
           .single()
       } else {
@@ -94,20 +94,7 @@ export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormPr
 
       if (result.error) throw result.error
 
-      onEventCreated(result.data)
-      onClose()
-      setFormData({
-        title: '',
-        description: '',
-        event_date: '',
-        start_time: '',
-        end_time: '',
-        location: '',
-        event_type: 'other',
-        participants: '',
-        rsvp_required: false,
-        rsvp_status: 'pending'
-      })
+      onSaved()
     } catch (error) {
       console.error('Error saving event:', error)
       alert('Error saving event. Please try again.')
@@ -116,25 +103,8 @@ export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormPr
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">
-              {editEvent ? 'Edit Event' : 'Create Event'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-            >
-              <X className="w-4 h-4 text-gray-600" />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Event Title *
@@ -279,7 +249,7 @@ export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormPr
             <div className="flex space-x-3 pt-4">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={onCancel}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
@@ -289,12 +259,9 @@ export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormPr
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
               >
-                {loading ? 'Saving...' : editEvent ? 'Update Event' : 'Create Event'}
+                {loading ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    </form>
   )
 }
