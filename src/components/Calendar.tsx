@@ -515,6 +515,7 @@ export function Calendar() {
         </div>
 
         {loading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" />
             Loading events…
           </div>
