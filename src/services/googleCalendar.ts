@@ -20,6 +20,7 @@ export interface GoogleCalendarEvent {
   };
   location?: string;
   attendees?: Array<{ email: string; displayName?: string }>;
+  htmlLink?: string;
 }
 
 export class GoogleCalendarService {
@@ -29,16 +30,21 @@ export class GoogleCalendarService {
   
   // Google Calendar API configuration
   private readonly DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-  private readonly SCOPES = 'https://www.googleapis.com/auth/calendar';
+  private readonly SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
   constructor() {
     if (!this.clientId) {
-      console.warn('Google Client ID not found. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.');
+      console.warn('Google Client ID not found. Google Calendar integration will be disabled.');
     }
   }
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) return true;
+    
+    if (!this.clientId) {
+      console.warn('Google Client ID not configured');
+      return false;
+    }
     
     try {
       // Wait for Google APIs to load
@@ -58,6 +64,7 @@ export class GoogleCalendarService {
       });
 
       this.isInitialized = true;
+      console.log('✅ Google Calendar service initialized');
       return true;
     } catch (error) {
       console.error('Failed to initialize Google Calendar API:', error);
@@ -67,11 +74,11 @@ export class GoogleCalendarService {
 
   private waitForGoogleAPIs(): Promise<void> {
     return new Promise((resolve, reject) => {
-      let attempts = 0
-      const maxAttempts = 50 // 5 seconds max
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max
       
       const checkAPIs = () => {
-        attempts++
+        attempts++;
         if (window.google && window.gapi) {
           resolve();
         } else if (attempts < maxAttempts) {
@@ -90,12 +97,18 @@ export class GoogleCalendarService {
       throw new Error('Google Client ID is required. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
     }
 
+    if (!this.isInitialized) {
+      const initialized = await this.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize Google Calendar service');
+      }
+    }
+
     return new Promise((resolve, reject) => {
       try {
-        window.google.accounts.oauth2.initTokenClient({
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: this.clientId,
           scope: this.SCOPES,
-          redirect_uri: window.location.origin,
           callback: (response: any) => {
             if (response.error) {
               console.error('Google OAuth error:', response.error);
@@ -105,9 +118,12 @@ export class GoogleCalendarService {
             
             this.accessToken = response.access_token;
             window.gapi.client.setToken({ access_token: this.accessToken });
+            console.log('✅ Google Calendar signed in successfully');
             resolve(true);
           },
-        }).requestAccessToken();
+        });
+        
+        tokenClient.requestAccessToken();
       } catch (error) {
         console.error('Google sign-in failed:', error);
         reject(error);
@@ -117,9 +133,14 @@ export class GoogleCalendarService {
 
   async signOut(): Promise<void> {
     if (this.accessToken) {
-      window.google.accounts.oauth2.revoke(this.accessToken);
+      try {
+        window.google.accounts.oauth2.revoke(this.accessToken);
+      } catch (error) {
+        console.warn('Error revoking Google token:', error);
+      }
       this.accessToken = null;
       window.gapi.client.setToken(null);
+      console.log('✅ Google Calendar signed out');
     }
   }
 
@@ -127,27 +148,37 @@ export class GoogleCalendarService {
     return !!this.accessToken;
   }
 
-  async getEvents(timeMin?: string, timeMax?: string): Promise<GoogleCalendarEvent[]> {
+  async getEvents(options?: {
+    timeMin?: string;
+    timeMax?: string;
+  }): Promise<GoogleCalendarEvent[]> {
     if (!this.isSignedIn()) {
       throw new Error('Not signed in to Google Calendar');
     }
 
     try {
       const now = new Date();
+      const timeMin = options?.timeMin || now.toISOString();
+      const timeMax = options?.timeMax || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      console.log('📅 Fetching Google Calendar events from', timeMin, 'to', timeMax);
+
       const response = await window.gapi.client.calendar.events.list({
         calendarId: 'primary',
-        timeMin: timeMin || now.toISOString(),
-        timeMax: timeMax || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        timeMin,
+        timeMax,
         showDeleted: false,
         singleEvents: true,
         maxResults: 50,
         orderBy: 'startTime',
       });
 
-      return response.result.items || [];
+      const events = response.result.items || [];
+      console.log(`✅ Fetched ${events.length} Google Calendar events`);
+      return events;
     } catch (error) {
       console.error('Failed to fetch Google Calendar events:', error);
-      throw error;
+      throw new Error('Failed to fetch Google Calendar events. Please try reconnecting.');
     }
   }
 
