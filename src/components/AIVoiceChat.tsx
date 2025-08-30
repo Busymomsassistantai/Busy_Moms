@@ -3,6 +3,7 @@ import {
   Mic, MicOff, MessageCircle, X, Loader2, Phone, PhoneOff
 } from 'lucide-react';
 import { openaiRealtimeService, RealtimeEvent } from '../services/openaiRealtimeService';
+import { aiAssistantService } from '../services/aiAssistantService';
 import { useAuth } from '../hooks/useAuth';
 
 interface AIVoiceChatProps {
@@ -149,7 +150,22 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
       setError('Not connected to AI. Please wait for connection.');
       return;
     }
-    openaiRealtimeService.sendMessage?.(text);
+    
+    // Process through AI assistant service first
+    if (user?.id) {
+      aiAssistantService.processUserMessage(text, user.id)
+        .then(result => {
+          // Send the AI assistant's response to the voice AI
+          openaiRealtimeService.sendMessage?.(result.message);
+        })
+        .catch(error => {
+          console.error('Error processing message:', error);
+          openaiRealtimeService.sendMessage?.(text);
+        });
+    } else {
+      openaiRealtimeService.sendMessage?.(text);
+    }
+    
     setConversation(prev => [
       ...prev,
       { type: 'user_message', content: text, timestamp: Date.now() } as RealtimeEvent
@@ -218,17 +234,19 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col">
+              <li>• Once activated, you can ask me to manage your calendar, reminders, and shopping list</li>
+              <li>• Try: "Add dentist appointment tomorrow at 2pm" or "Remind me to buy milk"</li>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+              <li>• You can also type messages for calendar, reminders, and shopping management</li>
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">AI Voice Assistant</h3>
+              <h5 className="font-medium text-green-900 mb-1">Smart Assistant Features:</h5>
               <p className={`text-sm ${getConnectionStatusColor()}`}>
-                {getConnectionStatusText()}
+                I can help you manage your calendar, set reminders, and update your shopping list through voice commands or text. 
+                Say "Hey, Sarah" followed by commands like "add meeting tomorrow" or "remind me to call the doctor".
               </p>
             </div>
           </div>

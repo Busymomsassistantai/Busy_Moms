@@ -24,6 +24,7 @@ export class OpenAIRealtimeService {
   private isListeningForWakeWord: boolean = false;
   private wakeWordRecognition: SpeechRecognition | null = null;
   private onWakeWordDetectedCb?: () => void;
+  private currentUserId: string | null = null;
 
   constructor(config: OpenAIRealtimeConfig = {}) {
     this.config = {
@@ -119,6 +120,8 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
   }
 
   async initialize(userId: string): Promise<void> {
+    this.currentUserId = userId;
+    
     // 1) Get ephemeral token from your (server-side) function
     const tokenResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-token`, {
       method: 'POST',
@@ -200,7 +203,16 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
       type: 'session.update',
       session: {
         voice: this.config.voice,
-        instructions: this.config.instructions,
+        instructions: `${this.config.instructions}
+
+You can help users with:
+1. Calendar management - creating events, viewing schedule
+2. Reminders - setting up tasks and notifications  
+3. Shopping lists - adding items, viewing lists
+4. General assistance - answering questions
+
+When users ask you to perform actions like "add to calendar", "remind me", or "add to shopping list", 
+you should acknowledge the request and let them know you're processing it. Keep responses conversational and helpful.`,
         turn_detection: {
           type: 'none', // Disable automatic voice detection
         },
@@ -256,6 +268,18 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
   }
 
   sendMessage(text: string): void {
+    // Process the message through our AI assistant service for actions
+    if (this.currentUserId) {
+      aiAssistantService.processUserMessage(text, this.currentUserId)
+        .then(result => {
+          console.log('🤖 AI Assistant processed message:', result);
+          // The result will be handled by the voice response
+        })
+        .catch(error => {
+          console.error('Error processing message through AI assistant:', error);
+        });
+    }
+    
     this.sendEvent({
       type: 'conversation.item.create',
       item: {
@@ -265,6 +289,27 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
       },
     });
     this.sendEvent({ type: 'response.create' });
+  }
+
+  async sendVoiceCommand(command: string): Promise<void> {
+    if (this.currentUserId) {
+      try {
+        const response = await aiAssistantService.processVoiceCommand(command, this.currentUserId);
+        
+        // Send the processed response to the AI for voice output
+        this.sendEvent({
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'assistant',
+            content: [{ type: 'input_text', text: response }],
+          },
+        });
+        this.sendEvent({ type: 'response.create' });
+      } catch (error) {
+        console.error('Error processing voice command:', error);
+      }
+    }
   }
 
   startConversation(): void {
@@ -344,3 +389,4 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
 
 // Singleton
 export const openaiRealtimeService = new OpenAIRealtimeService();
+import { aiAssistantService } from './aiAssistantService';

@@ -290,7 +290,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 }}
                 className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
               >
-                Add reminder
+                Add reminder for tomorrow
               </button>
               <button 
                 onClick={(e) => {
@@ -299,7 +299,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 }}
                 className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
               >
-                Schedule event
+                Schedule dentist appointment
               </button>
               <button 
                 onClick={(e) => {
@@ -308,7 +308,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 }}
                 className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
               >
-                Shopping list
+                Add milk to shopping list
               </button>
             </div>
           </div>

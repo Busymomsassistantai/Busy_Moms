@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, MessageCircle, X, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { aiService, ChatMessage } from '../services/openai';
+import { ChatMessage } from '../services/openai';
+import { aiAssistantService } from '../services/aiAssistantService';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile } from '../lib/supabase';
 
@@ -108,146 +109,12 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
     setIsLoading(true);
 
     try {
-      // Check if the message is about adding a reminder
-      const isReminderRequest = inputMessage.toLowerCase().includes('add reminder') || 
-                               inputMessage.toLowerCase().includes('remind me') ||
-                               inputMessage.toLowerCase().includes('create reminder');
-      
-      if (isReminderRequest && user?.id) {
-        // Try to extract reminder details from the message
-        const reminderDetails = await extractReminderDetails(inputMessage);
-        
-        console.log('🔍 Reminder request detected');
-        console.log('📝 User ID:', user.id);
-        console.log('📋 Extracted details:', reminderDetails);
-        
-        if (reminderDetails) {
-          // Check if no time was specified and ask for clarification
-          if (!reminderDetails.time) {
-            console.log('⏰ No time specified, asking for clarification');
-            const clarificationMessage: ChatMessage = {
-              role: 'assistant',
-              content: 'Is there a certain time or is it all day?'
-            };
-            setMessages(prev => [...prev, clarificationMessage]);
-            setIsLoading(false);
-            return;
-          }
-          
-          try {
-            console.log('💾 Creating reminder with details:', reminderDetails);
-            console.log('🔑 User ID for reminder:', user.id);
-            
-            const reminderData = {
-              user_id: user.id,
-              title: reminderDetails.title,
-              description: reminderDetails.description || '',
-              reminder_date: reminderDetails.date,
-              reminder_time: reminderDetails.time,
-              priority: reminderDetails.priority || 'medium',
-              completed: false,
-              recurring: false
-            };
-            
-            console.log('📤 Sending to Supabase:', reminderData);
-            
-            const { data: newReminder, error } = await supabase
-              .from('reminders')
-              .insert([reminderData])
-              .select()
-              .single();
-
-            if (error) {
-              console.error('❌ Supabase error creating reminder:', error);
-              console.error('❌ Error details:', {
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                code: error.code
-              });
-              throw error;
-            }
-
-            console.log('✅ Reminder created successfully:', newReminder);
-            
-            // Also create a calendar event for the reminder
-            try {
-              const eventData = {
-                user_id: user.id,
-                title: reminderDetails.title,
-                description: reminderDetails.description || 'Reminder',
-                event_date: reminderDetails.date,
-                start_time: reminderDetails.time,
-                end_time: reminderDetails.time ? (() => {
-                  try {
-                    const startTime = new Date(`2000-01-01T${reminderDetails.time}`);
-                    const endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
-                    return endTime.toTimeString().slice(0, 5);
-                  } catch {
-                    return null;
-                  }
-                })() : null,
-                location: '',
-                event_type: 'other' as const,
-                participants: [],
-                rsvp_required: false,
-                rsvp_status: 'pending' as const,
-                source: 'manual' as const
-              };
-
-              console.log('Creating calendar event with data:', eventData);
-              const { data: newEvent, error: eventError } = await supabase
-                .from('events')
-                .insert([eventData])
-                .select()
-                .single();
-
-              if (eventError) {
-                console.error('❌ Error creating calendar event for reminder:', eventError);
-                // Don't fail the whole operation if calendar event creation fails
-              } else {
-                console.log('✅ Calendar event created for reminder:', newEvent);
-              }
-            } catch (eventCreationError) {
-              console.error('❌ Error creating calendar event:', eventCreationError);
-            }
-            
-            const assistantMessage: ChatMessage = {
-              role: 'assistant',
-              content: `✅ Perfect! I've added a reminder for "${reminderDetails.title}" on ${reminderDetails.date}${reminderDetails.time ? ` at ${reminderDetails.time}` : ''}. I've also added it to your calendar so you can see it there too!`
-            };
-
-            setMessages(prev => [...prev, assistantMessage]);
-            setIsLoading(false);
-            return;
-          } catch (error) {
-            console.error('❌ Error creating reminder:', error);
-            console.error('❌ Full error object:', JSON.stringify(error, null, 2));
-            const errorMessage: ChatMessage = {
-              role: 'assistant',
-              content: `I had trouble saving that reminder to your list. Error: ${(error as any)?.message || 'Unknown error'}. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?`
-            };
-            setMessages(prev => [...prev, errorMessage]);
-            setIsLoading(false);
-            return;
-          }
-        } else {
-          console.log('❌ Could not extract reminder details from message:', inputMessage);
-          const errorMessage: ChatMessage = {
-            role: 'assistant',
-            content: 'I had trouble understanding the reminder details. Could you try again with more specific details like "Remind me to pick up groceries tomorrow at 3pm"?'
-          };
-          setMessages(prev => [...prev, errorMessage]);
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      const response = await aiService.chat([...messages, userMessage]);
+      // Use the enhanced AI assistant service
+      const result = await aiAssistantService.processUserMessage(userMessage.content, user.id);
       
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: response
+        content: result.message
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -259,64 +126,6 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const extractReminderDetails = async (message: string): Promise<{
-    title: string;
-    description?: string;
-    date: string;
-    time?: string;
-    priority?: 'low' | 'medium' | 'high';
-  } | null> => {
-    try {
-      console.log('🔍 Extracting reminder details from message:', message);
-      
-      // Use AI to extract structured reminder data
-      const extractionPrompt = `Extract reminder details from this message: "${message}"
-      
-      Respond ONLY with valid JSON in this exact format:
-      {
-        "title": "brief reminder title",
-        "description": "optional longer description",
-        "date": "YYYY-MM-DD format",
-        "time": "HH:MM format (24-hour) or null",
-        "priority": "low, medium, or high"
-      }
-      
-      If no specific date is mentioned, use tomorrow's date. If "today" is mentioned, use today's date.
-      Today is ${new Date().toISOString().split('T')[0]}.
-      Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}.`;
-
-      const response = await aiService.chat([
-        { role: 'user', content: extractionPrompt }
-      ]);
-
-      console.log('🤖 AI response for reminder extraction:', response);
-
-      // Try to parse the JSON response
-      // Clean the response by removing markdown code block syntax
-      const cleanedResponse = response.trim()
-        .replace(/^```json\s*/, '')  // Remove opening ```json
-        .replace(/^```\s*/, '')      // Remove opening ```
-        .replace(/\s*```$/, '');     // Remove closing ```
-      
-      console.log('🧹 Cleaned response:', cleanedResponse);
-      
-      const parsed = JSON.parse(cleanedResponse);
-      console.log('📋 Parsed reminder details:', parsed);
-      
-      // Validate required fields
-      if (parsed.title && parsed.date) {
-        console.log('✅ Reminder details validated successfully');
-        return parsed;
-      }
-      
-      console.log('❌ Reminder details validation failed - missing title or date');
-      return null;
-    } catch (error) {
-      console.error('❌ Error extracting reminder details:', error);
-      return null;
     }
   };
 
@@ -340,10 +149,12 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   };
 
   const quickActions = [
-    'Add reminder for tomorrow',
-    'Create shopping list',
-    'Suggest birthday gift ideas',
-    'Help me plan this week'
+    'Add reminder for tomorrow at 3pm',
+    'Add milk to shopping list',
+    'Show my upcoming events',
+    'What\'s on my shopping list?',
+    'Schedule dentist appointment next week',
+    'Remind me to call mom tonight'
   ];
 
   if (!isOpen) return null;
