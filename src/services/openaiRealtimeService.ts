@@ -38,7 +38,7 @@ export class OpenAIRealtimeService {
     };
   }
 
-  async initialize(): Promise<void> {
+  async initialize(userId: string): Promise<void> {
     try {
       // Get ephemeral token from our edge function
       const tokenResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-token`, {
@@ -48,7 +48,7 @@ export class OpenAIRealtimeService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          userId: crypto.randomUUID(),
+          userId: userId,
           sessionId: `session-${Date.now()}`
         })
       });

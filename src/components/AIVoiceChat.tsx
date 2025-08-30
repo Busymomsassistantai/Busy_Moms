@@ -47,7 +47,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
       }
 
       // Initialize OpenAI Realtime connection
-      await openaiRealtimeService.initialize();
+      await openaiRealtimeService.initialize(user.id);
 
       // Set up event handlers
       openaiRealtimeService.onEvent((event) => {
