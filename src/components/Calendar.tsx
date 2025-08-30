@@ -506,7 +506,6 @@ export function Calendar() {
           <h3 className="text-lg font-semibold">Agenda</h3>
           {selectedDate && (
             <span className="text-sm text-gray-500">
-              {selectedDate.toLocaleDateString(undefined, {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 font-medium shadow-md hover:shadow-lg transition-all duration-200"
                 day: 'numeric',
                 year: 'numeric',
