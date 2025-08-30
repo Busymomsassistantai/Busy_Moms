@@ -16,7 +16,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: `Hi${profile?.full_name ? ` ${profile.full_name}` : ''}! I'm your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?`
+      content: `Hi there! I'm your AI assistant. I can help you manage your family schedule, create shopping lists, suggest gifts, and much more. What can I help you with today?`
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
@@ -275,7 +275,11 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       
       // Speak error message if speech is enabled
       if (isSpeechEnabled && speechService.isSupported()) {
-        speechService.speakAIResponse(errorMessage.content);
+        try {
+          await speechService.speakAIResponse(errorMessage.content);
+        } catch (error) {
+          console.error('Error speaking error message:', error);
+        }
       }
     } finally {
       setIsLoading(false);

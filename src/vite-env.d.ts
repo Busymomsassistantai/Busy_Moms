@@ -109,4 +109,18 @@ declare var SpeechSynthesisUtterance: {
 
 interface Window {
   speechSynthesis: SpeechSynthesis;
+  RTCPeerConnection: typeof RTCPeerConnection;
+}
+
+// WebRTC types
+interface RTCIceServer {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
+interface RTCConfiguration {
+  iceServers?: RTCIceServer[];
+  iceTransportPolicy?: 'all' | 'relay';
+  bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle';
 }
