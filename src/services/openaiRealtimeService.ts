@@ -3,6 +3,7 @@ export interface OpenAIRealtimeConfig {
   model?: string;
   voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
   instructions?: string;
+  wakeWord?: string;
 }
 
 export interface RealtimeEvent {
@@ -19,20 +20,102 @@ export class OpenAIRealtimeService {
   private config: OpenAIRealtimeConfig;
   private onEventCb?: (event: RealtimeEvent) => void;
   private onConnStateCb?: (state: RTCPeerConnectionState) => void;
+  private wakeWordDetection: boolean = false;
+  private isListeningForWakeWord: boolean = false;
+  private wakeWordRecognition: SpeechRecognition | null = null;
+  private onWakeWordDetectedCb?: () => void;
 
   constructor(config: OpenAIRealtimeConfig = {}) {
     this.config = {
       model: 'gpt-4o-mini-tts',         // ✅ current model
       voice: 'onyx',
       speed: '2.0',
+      wakeWord: 'Hey Sarah',
       instructions: `You are a helpful AI assistant for busy parents in the "Busy Moms Assistant" app.
 Keep responses concise, practical, empathetic, and actionable. Speak in a cheerful and positive tone.`,
       ...config,
     };
+    
+    // Initialize wake word detection
+    this.initializeWakeWordDetection();
   }
 
   static isSupported(): boolean {
     return !!(window.RTCPeerConnection && navigator.mediaDevices?.getUserMedia);
+  }
+
+  private initializeWakeWordDetection() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.wakeWordRecognition = new SpeechRecognition();
+      
+      this.wakeWordRecognition.continuous = true;
+      this.wakeWordRecognition.interimResults = false;
+      this.wakeWordRecognition.lang = 'en-US';
+      
+      this.wakeWordRecognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+        console.log('🎤 Wake word detection heard:', transcript);
+        
+        if (transcript.includes(this.config.wakeWord?.toLowerCase() || 'hey sarah')) {
+          console.log('✅ Wake word detected!');
+          this.onWakeWordDetected();
+        }
+      };
+      
+      this.wakeWordRecognition.onerror = (event) => {
+        console.error('Wake word recognition error:', event.error);
+        // Restart wake word detection on error
+        setTimeout(() => this.startWakeWordDetection(), 1000);
+      };
+      
+      this.wakeWordRecognition.onend = () => {
+        // Restart wake word detection if it stops
+        if (this.wakeWordDetection && this.isListeningForWakeWord) {
+          setTimeout(() => this.startWakeWordDetection(), 100);
+        }
+      };
+    }
+  }
+
+  private onWakeWordDetected() {
+    this.onWakeWordDetectedCb?.();
+    // Temporarily stop wake word detection while in conversation
+    this.stopWakeWordDetection();
+  }
+
+  startWakeWordDetection() {
+    if (this.wakeWordRecognition && !this.isListeningForWakeWord) {
+      try {
+        this.wakeWordDetection = true;
+        this.isListeningForWakeWord = true;
+        this.wakeWordRecognition.start();
+        console.log('🎤 Started listening for wake word:', this.config.wakeWord);
+      } catch (error) {
+        console.error('Failed to start wake word detection:', error);
+      }
+    }
+  }
+
+  stopWakeWordDetection() {
+    if (this.wakeWordRecognition && this.isListeningForWakeWord) {
+      try {
+        this.wakeWordDetection = false;
+        this.isListeningForWakeWord = false;
+        this.wakeWordRecognition.stop();
+        console.log('🔇 Stopped listening for wake word');
+      } catch (error) {
+        console.error('Failed to stop wake word detection:', error);
+      }
+    }
+  }
+
+  onWakeWordDetected(callback: () => void) {
+    this.onWakeWordDetectedCb = callback;
+  }
+
+  isListeningForWakeWord(): boolean {
+    return this.isListeningForWakeWord;
   }
 
   async initialize(userId: string): Promise<void> {
@@ -118,15 +201,14 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
       session: {
         voice: this.config.voice,
         instructions: this.config.instructions,
-        // For WebRTC, let audio formats default (OPUS). Avoid pcm16 fields here.
         turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
+          type: 'none', // Disable automatic voice detection
         },
       },
     });
+    
+    // Start wake word detection after initialization
+    this.startWakeWordDetection();
   }
 
   private setupDataChannelHandlers() {
@@ -186,13 +268,34 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
   }
 
   startConversation(): void {
-    // If you plan to stream mic frames via events, use input_audio_buffer.* events.
-    // With pure WebRTC mic track, you can just speak; this is a no-op or keep as a hint.
+    // Enable voice activity detection for the conversation
+    this.sendEvent({
+      type: 'session.update',
+      session: {
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 1000,
+        },
+      },
+    });
     this.sendEvent({ type: 'input_audio_buffer.commit' });
   }
 
   stopConversation(): void {
+    // Disable voice activity detection
+    this.sendEvent({
+      type: 'session.update',
+      session: {
+        turn_detection: {
+          type: 'none',
+        },
+      },
+    });
     this.sendEvent({ type: 'input_audio_buffer.clear' });
+    // Restart wake word detection
+    setTimeout(() => this.startWakeWordDetection(), 500);
   }
 
   interrupt(): void {
@@ -221,6 +324,7 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
 
   disconnect(): void {
     try {
+      this.stopWakeWordDetection();
       this.micStream?.getTracks().forEach(t => t.stop());
       this.micStream = null;
       this.dc?.close();

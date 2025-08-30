@@ -20,6 +20,8 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   const [error, setError] = useState<string | null>(null);
   const [conversation, setConversation] = useState<RealtimeEvent[]>([]);
   const [currentResponse, setCurrentResponse] = useState<string>('');
+  const [isWaitingForWakeWord, setIsWaitingForWakeWord] = useState(false);
+  const [inConversation, setInConversation] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const initializingRef = useRef(false);
@@ -47,6 +49,17 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         openaiRealtimeService.onConnectionStateChange((state) => {
           setConnectionState(state);
           setIsConnected(state === 'connected');
+          if (state === 'connected') {
+            setIsWaitingForWakeWord(true);
+          }
+        });
+
+        // 3) Set up wake word detection
+        openaiRealtimeService.onWakeWordDetected(() => {
+          console.log('🎤 Wake word detected, starting conversation');
+          setIsWaitingForWakeWord(false);
+          setInConversation(true);
+          openaiRealtimeService.startConversation?.();
         });
 
         // 3) Initialize (server should mint ephemeral token, set up WebRTC)
@@ -109,6 +122,12 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
       case 'response.done':
         setCurrentResponse('');
+        // End conversation and return to wake word detection
+        setTimeout(() => {
+          setInConversation(false);
+          setIsWaitingForWakeWord(true);
+          openaiRealtimeService.stopConversation?.();
+        }, 1000);
         break;
 
       case 'input_audio_buffer.speech_started':
@@ -153,7 +172,19 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   };
 
   const startVoiceConversation = () => {
-    if (isConnected) openaiRealtimeService.startConversation?.();
+    if (isConnected && !inConversation) {
+      setIsWaitingForWakeWord(false);
+      setInConversation(true);
+      openaiRealtimeService.startConversation?.();
+    }
+  };
+
+  const endConversation = () => {
+    if (isConnected) {
+      setInConversation(false);
+      setIsWaitingForWakeWord(true);
+      openaiRealtimeService.stopConversation?.();
+    }
   };
 
   const interruptAI = () => {
@@ -258,15 +289,36 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             </div>
           )}
 
-          {/* Conversation Display */}
-          {isConnected && (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
-                <p className="text-purple-800 font-medium">
-                  🎤 Voice conversation active! Just start talking - I can hear you and will respond with voice.
+          {/* Wake Word Status */}
+          {isConnected && isWaitingForWakeWord && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Mic className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-lg text-gray-700 mb-2">Listening for wake word</p>
+              <p className="text-sm text-gray-500 mb-4">Say <strong>"Hey, Sarah"</strong> to start a conversation</p>
+              <div className="bg-purple-50 p-3 rounded-lg">
+                <p className="text-sm text-purple-800">
+                  💡 The AI is waiting for you to say the wake word before it starts listening to your requests
                 </p>
               </div>
+            </div>
+          )}
 
+          {/* Active Conversation */}
+          {isConnected && inConversation && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-lg text-gray-700 mb-2">Conversation Active</p>
+              <p className="text-sm text-gray-500">I'm listening and ready to help!</p>
+            </div>
+          )}
+
+          {/* Conversation Display */}
+          {isConnected && inConversation && (
+            <div className="space-y-4">
               {currentResponse && (
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <p className="text-sm text-blue-800">
@@ -337,7 +389,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
           <button
             onClick={startVoiceConversation}
-            disabled={!isConnected}
+            disabled={!isConnected || inConversation}
             className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors disabled:opacity-50"
             title="Start voice conversation"
           >
@@ -345,17 +397,19 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           </button>
 
           <button
-            onClick={interruptAI}
-            disabled={!isConnected}
-            className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors disabled:opacity-50"
-            title="Interrupt AI response"
+            onClick={endConversation}
+            disabled={!isConnected || !inConversation}
+            className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50"
+            title="End conversation"
           >
             <PhoneOff className="w-5 h-5" />
           </button>
 
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <MessageCircle className="w-4 h-4" />
-            <span>Real-time AI Voice</span>
+            <span>
+              {isWaitingForWakeWord ? 'Say "Hey, Sarah"' : inConversation ? 'In conversation' : 'Real-time AI Voice'}
+            </span>
           </div>
         </div>
 
@@ -363,12 +417,20 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         <div className="bg-blue-50 border-t border-blue-200 p-4">
           <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
           <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Click the green phone button to start voice conversation</li>
-            <li>• Just start talking - the AI will hear you and respond with voice</li>
-            <li>• Use the orange button to interrupt the AI if needed</li>
+            <li>• Say <strong>"Hey, Sarah"</strong> to activate the AI assistant</li>
+            <li>• Once activated, just start talking - the AI will hear you and respond</li>
+            <li>• Click the green phone button to manually start a conversation</li>
+            <li>• Use the red button to end the conversation and return to wake word mode</li>
             <li>• Mute your microphone with the red button</li>
             <li>• You can also type messages in the text input above</li>
           </ul>
+
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <h5 className="font-medium text-green-900 mb-1">Wake Word Active:</h5>
+            <p className="text-sm text-green-800">
+              The AI is now listening for "Hey, Sarah" to start conversations automatically. This prevents always-on listening while still providing hands-free activation.
+            </p>
+          </div>
 
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h5 className="font-medium text-yellow-900 mb-1">Setup Required:</h5>
