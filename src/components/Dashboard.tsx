@@ -4,6 +4,7 @@ import { AIChat } from './AIChat';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
+import { speechService } from '../services/speechService'
 
 interface DashboardProps {
   onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat') => void;
@@ -22,6 +23,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [welcomeSpoken, setWelcomeSpoken] = React.useState(false)
 
   // Load user profile
   React.useEffect(() => {
@@ -55,6 +57,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     
     loadProfile();
   }, [user]);
+
+  // Welcome message when user first loads dashboard
+  React.useEffect(() => {
+    if (profile && !welcomeSpoken && speechService.isSupported()) {
+      const welcomeMessage = `Welcome back, ${profile.full_name || 'there'}! I'm ready to help you manage your day.`;
+      speechService.speakNotification(welcomeMessage);
+      setWelcomeSpoken(true);
+    }
+  }, [profile, welcomeSpoken]);
 
   // Load events, tasks, and reminders
   const loadDashboardData = async () => {

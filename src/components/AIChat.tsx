@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, MessageCircle, X, Mic, MicOff } from 'lucide-react';
+import { Send, Loader2, MessageCircle, X, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { aiService, ChatMessage } from '../services/openai';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile } from '../lib/supabase';
+import { speechService } from '../services/speechService';
 
 interface AIChatProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load user profile
@@ -251,12 +254,29 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Speak the AI response if speech is enabled
+      if (isSpeechEnabled && speechService.isSupported()) {
+        setIsSpeaking(true);
+        try {
+          await speechService.speakAIResponse(response);
+        } catch (error) {
+          console.error('Error speaking response:', error);
+        } finally {
+          setIsSpeaking(false);
+        }
+      }
     } catch (error) {
       const errorMessage: ChatMessage = {
         role: 'assistant',
         content: 'I apologize, but I\'m having trouble connecting right now. Please try again in a moment.'
       };
       setMessages(prev => [...prev, errorMessage]);
+      
+      // Speak error message if speech is enabled
+      if (isSpeechEnabled && speechService.isSupported()) {
+        speechService.speakAIResponse(errorMessage.content);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -337,6 +357,22 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const toggleSpeech = () => {
+    const newEnabled = !isSpeechEnabled;
+    setIsSpeechEnabled(newEnabled);
+    speechService.setEnabled(newEnabled);
+    
+    if (!newEnabled) {
+      speechService.stop();
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSpeaking = () => {
+    speechService.stop();
+    setIsSpeaking(false);
   };
 
   const quickActions = [
@@ -422,6 +458,30 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-2">
             <button
+              onClick={toggleSpeech}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                isSpeechEnabled
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              title={isSpeechEnabled ? 'Disable voice responses' : 'Enable voice responses'}
+            >
+              {isSpeechEnabled ? (
+                <Volume2 className="w-4 h-4" />
+              ) : (
+                <VolumeX className="w-4 h-4" />
+              )}
+            </button>
+            {isSpeaking && (
+              <button
+                onClick={stopSpeaking}
+                className="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                title="Stop speaking"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <button
               onClick={isListening ? stopListening : startListening}
               disabled={isLoading || !recognition}
               className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -451,9 +511,30 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               disabled={!inputMessage.trim() || isLoading || isListening}
               className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send className="w-4 h-4" />
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </button>
           </div>
+          
+          {/* Speech Status */}
+          {(isSpeaking || !speechService.isSupported()) && (
+            <div className="mt-2 text-center">
+              {isSpeaking && (
+                <div className="flex items-center justify-center space-x-2 text-blue-600">
+                  <Volume2 className="w-4 h-4 animate-pulse" />
+                  <span className="text-sm">Speaking...</span>
+                </div>
+              )}
+              {!speechService.isSupported() && (
+                <div className="text-xs text-gray-500">
+                  Text-to-speech not supported in this browser
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
