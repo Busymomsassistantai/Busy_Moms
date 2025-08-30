@@ -41,11 +41,8 @@ function App() {
           setShowOnboarding(true)
         }
       } catch (error) {
-        if (!error && profile) {
-        } else {
-          // If no profile exists or error, show onboarding
-          setShowOnboarding(true)
-        }
+        // If no profile exists or error, show onboarding
+        setShowOnboarding(true)
       } finally {
         setCheckingOnboarding(false)
       }
