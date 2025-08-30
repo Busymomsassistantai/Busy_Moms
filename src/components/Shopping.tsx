@@ -97,48 +97,72 @@ export function Shopping() {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {shoppingList.map((item) => (
-                <div
-                  key={item.id}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    item.completed
-                      ? 'bg-gray-50 border-gray-200 opacity-75'
-                      : item.urgent
-                      ? 'bg-red-50 border-red-200'
-                      : 'bg-white border-gray-200 hover:border-green-300'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={item.completed}
-                      onChange={() => toggleItemCompleted(item.id)}
-                      className="w-5 h-5 text-green-500 rounded focus:ring-green-500"
-                    />
-                    <div className="flex-1">
-                      <h3 className={`font-medium ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                        {item.item}
-                      </h3>
-                      <p className={`text-sm ${item.completed ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
-                      </p>
-                    </div>
-                    {item.urgent && !item.completed && (
-                      <div className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                        Urgent
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                <span className="ml-2 text-gray-600">Loading shopping list...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {shoppingList.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      item.completed
+                        ? 'bg-gray-50 border-gray-200 opacity-75'
+                        : item.urgent
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-white border-gray-200 hover:border-green-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={item.completed || false}
+                        onChange={() => toggleItemCompleted(item.id)}
+                        className="w-5 h-5 text-green-500 rounded focus:ring-green-500"
+                      />
+                      <div className="flex-1">
+                        <h3 className={`font-medium ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                          {item.item}
+                        </h3>
+                        <p className={`text-sm ${item.completed ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
+                        </p>
                       </div>
-                    )}
+                      {item.urgent && !item.completed && (
+                        <div className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                          Urgent
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
-            <button className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-green-400 hover:text-green-600 transition-all">
-              <span onClick={() => setShowShoppingForm(true)}>
+            {!loading && (
+              <button 
+                onClick={() => setShowShoppingForm(true)}
+                className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-green-400 hover:text-green-600 transition-all"
+              >
                 + Add Item
-              </span>
-            </button>
+              </button>
+            )}
+
+            {!loading && shoppingList.length === 0 && (
+              <div className="text-center py-12">
+                <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Your shopping list is empty</h3>
+                <p className="text-gray-600 mb-4">Add items to get started with smart shopping</p>
+                <button
+                  onClick={() => setShowShoppingForm(true)}
+                  className="px-6 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+                >
+                  Add First Item
+                </button>
+              </div>
+            )}
           </div>
         )}
 
