@@ -27,3 +27,15 @@ export async function insertEvent(event: any) {
   if (!res.ok) throw new Error(`Insert error: ${res.status}`);
   return await res.json();
 }
+
+class GoogleCalendarService {
+  async listUpcoming(maxResults = 10) {
+    return listUpcoming(maxResults);
+  }
+
+  async insertEvent(event: any) {
+    return insertEvent(event);
+  }
+}
+
+export const googleCalendarService = new GoogleCalendarService();
