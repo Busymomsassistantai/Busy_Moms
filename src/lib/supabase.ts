@@ -11,11 +11,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase is not properly configured. Please click "Connect to Supabase" in the top right to set up your database connection.')
 }
 
-if (!supabaseUrl.includes('.supabase.co') || supabaseUrl.includes('xmwavumggnlffdtedjdb')) {
-  console.error('Invalid Supabase URL:', supabaseUrl)
-  throw new Error('Invalid Supabase URL. Please check your Supabase project configuration.')
-}
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
