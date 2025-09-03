@@ -61,37 +61,43 @@ export function useAuth() {
 
   const handleUserProfile = async (user: User) => {
     console.log('Checking profile for user:', user.id)
-    // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id
-    const { data: existing, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle()
+    
+    try {
+      // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id
+      const { data: existing, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
 
-    // Ignore "no rows" code (PGRST116)
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Profile check error:', checkError)
-      return
-    }
-
-    if (!existing) {
-      const profileData = {
-        id: user.id,
-        email: user.email ?? '',
-        full_name:
-          (user.user_metadata?.full_name ??
-           user.user_metadata?.name ??
-           user.email?.split('@')[0]) || 'User',
-        user_type: 'Mom' as const,
-        onboarding_completed: false,
-        ai_personality: 'Friendly' as const,
+      // Ignore "no rows" code (PGRST116)
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Profile check error:', checkError)
+        return
       }
 
-      const { error: createError } = await supabase.from('profiles').insert([profileData])
-      if (createError) console.error('Profile create error:', createError)
-      else console.log('Profile created:', profileData.full_name)
-    } else {
-      console.log('Profile exists for user:', user.id)
+      if (!existing) {
+        const profileData = {
+          id: user.id,
+          email: user.email ?? '',
+          full_name:
+            (user.user_metadata?.full_name ??
+             user.user_metadata?.name ??
+             user.email?.split('@')[0]) || 'User',
+          user_type: 'Mom' as const,
+          onboarding_completed: false,
+          ai_personality: 'Friendly' as const,
+        }
+
+        const { error: createError } = await supabase.from('profiles').insert([profileData])
+        if (createError) console.error('Profile create error:', createError)
+        else console.log('Profile created:', profileData.full_name)
+      } else {
+        console.log('Profile exists for user:', user.id)
+      }
+    } catch (error) {
+      console.error('Network error during profile check:', error)
+      // Don't throw - let the app continue to work even if profile check fails
     }
   }
 
