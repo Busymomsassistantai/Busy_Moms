@@ -29,6 +29,11 @@ export async function insertEvent(event: any) {
 }
 
 class GoogleCalendarService {
+  async initialize() {
+    // No-op: Google Calendar integration uses Supabase Edge Functions
+    // No client-side initialization required
+  }
+
   async listUpcoming(maxResults = 10) {
     return listUpcoming(maxResults);
   }

@@ -61,37 +61,43 @@ export function useAuth() {
 
   const handleUserProfile = async (user: User) => {
     console.log('Checking profile for user:', user.id)
-    // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id
-    const { data: existing, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle()
+    
+    try {
+      // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id
+      const { data: existing, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
 
-    // Ignore "no rows" code (PGRST116)
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Profile check error:', checkError)
-      return
-    }
-
-    if (!existing) {
-      const profileData = {
-        id: user.id,
-        email: user.email ?? '',
-        full_name:
-          (user.user_metadata?.full_name ??
-           user.user_metadata?.name ??
-           user.email?.split('@')[0]) || 'User',
-        user_type: 'Mom' as const,
-        onboarding_completed: false,
-        ai_personality: 'Friendly' as const,
+      // Ignore "no rows" code (PGRST116)
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Profile check error:', checkError)
+        return
       }
 
-      const { error: createError } = await supabase.from('profiles').insert([profileData])
-      if (createError) console.error('Profile create error:', createError)
-      else console.log('Profile created:', profileData.full_name)
-    } else {
-      console.log('Profile exists for user:', user.id)
+      if (!existing) {
+        const profileData = {
+          id: user.id,
+          email: user.email ?? '',
+          full_name:
+            (user.user_metadata?.full_name ??
+             user.user_metadata?.name ??
+             user.email?.split('@')[0]) || 'User',
+          user_type: 'Mom' as const,
+          onboarding_completed: false,
+          ai_personality: 'Friendly' as const,
+        }
+
+        const { error: createError } = await supabase.from('profiles').insert([profileData])
+        if (createError) console.error('Profile create error:', createError)
+        else console.log('Profile created:', profileData.full_name)
+      } else {
+        console.log('Profile exists for user:', user.id)
+      }
+    } catch (error) {
+      console.error('Network error during profile check:', error)
+      // Don't throw - let the app continue to work even if profile check fails
     }
   }
 
@@ -114,16 +120,25 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        // Prefer a dedicated callback route:
-        // redirectTo: `${window.location.origin}/auth/callback`
-        redirectTo: window.location.origin
+    try {
+      // Check if Supabase is properly configured before attempting OAuth
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (!supabaseUrl || !supabaseUrl.includes('.supabase.co')) {
+        throw new Error('Supabase is not properly configured. Please check your environment variables.')
       }
-    })
-    if (error) console.error('Google sign-in error:', error.message)
-    return { data, error }
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+      if (error) throw error
+      return { data, error: null }
+    } catch (error: any) {
+      console.error('Google sign-in error:', error.message)
+      return { data: null, error }
+    }
   }
 
   return { user, loading, signUp, signIn, signOut, signInWithGoogle }

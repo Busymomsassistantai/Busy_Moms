@@ -1,7 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xmwavumggnlffdtedjdb.supabase.co'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rtvwcyrksplhsgycyfzo.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables:', {
+    url: supabaseUrl ? 'Set' : 'Missing',
+    key: supabaseAnonKey ? 'Set' : 'Missing'
+  })
+  throw new Error('Supabase is not properly configured. Please click "Connect to Supabase" in the top right to set up your database connection.')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
