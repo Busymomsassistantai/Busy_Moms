@@ -30,7 +30,7 @@ export class OpenAIRealtimeService {
     this.config = {
       model: 'gpt-4o-mini-tts',         // ✅ current model
       voice: 'onyx',
-      speed: '2.0',
+      speed: '3.0',
       wakeWord: 'Hey Sarah',
       instructions: `You are a helpful AI assistant for busy parents in the "Busy Moms Assistant" app.
 Keep responses concise, practical, empathetic, and actionable. Speak in a cheerful and positive tone.`,
