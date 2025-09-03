@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MessageCircle, Phone } from 'lucide-react';
 import { AuthForm } from './components/forms/AuthForm';
 import { Onboarding } from './components/Onboarding';
 import { Dashboard } from './components/Dashboard';
@@ -11,7 +12,6 @@ import { AIChat } from './components/AIChat';
 import { AIVoiceChat } from './components/AIVoiceChat';
 import { useAuth } from './hooks/useAuth';
 import { supabase, Profile } from './lib/supabase';
-import { Phone } from 'lucide-react';
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings';
 
