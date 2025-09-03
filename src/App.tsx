@@ -1,164 +1,138 @@
-import React, { useState, useEffect } from 'react';
-import { MessageCircle, Phone } from 'lucide-react';
-import { AuthForm } from './components/forms/AuthForm';
-import { Onboarding } from './components/Onboarding';
-import { Dashboard } from './components/Dashboard';
-import { Calendar } from './components/Calendar';
-import { Contacts } from './components/Contacts';
-import { Shopping } from './components/Shopping';
-import { Settings } from './components/Settings';
-import { Navigation } from './components/Navigation';
-import { AIChat } from './components/AIChat';
-import { AIVoiceChat } from './components/AIVoiceChat';
-import { useAuth } from './hooks/useAuth';
-import { supabase, Profile } from './lib/supabase';
+import { useState, useEffect } from 'react'
+import { useAuth } from './hooks/useAuth'
+import { AuthForm } from './components/forms/AuthForm'
+import { Onboarding } from './components/Onboarding'
+import { Dashboard } from './components/Dashboard'
+import { Navigation } from './components/Navigation'
+import { Calendar } from './components/Calendar'
+import { Contacts } from './components/Contacts'
+import { Shopping } from './components/Shopping'
+import { Settings } from './components/Settings'
+import { AIChat } from './components/AIChat'
+import { AIVoiceChat } from './components/AIVoiceChat'
+import { Loader2 } from 'lucide-react'
+import { supabase } from './lib/supabase'
 
-export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings';
+export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
 
-export default function App() {
-  const { user, loading } = useAuth();
-  const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
-  const [showVoiceChat, setShowVoiceChat] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
+function App() {
+  const { user, loading, signOut } = useAuth()
+  const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [checkingOnboarding, setCheckingOnboarding] = useState(false)
+  const [showVoiceChat, setShowVoiceChat] = useState(false)
 
-  // Load user profile and check onboarding status
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!user?.id) {
-        setLoadingProfile(false);
-        return;
-      }
-      
+    const checkOnboarding = async () => {
+      // Only check onboarding if we have an authenticated user
+      if (!user?.id) return
+
+      console.log('🔍 Checking onboarding status for user:', user.id)
+      setCheckingOnboarding(true)
       try {
-        const { data: profileData, error } = await supabase
+        // Check the actual profile in the database
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('onboarding_completed')
           .eq('id', user.id)
-          .maybeSingle();
-        
-        if (!error && profileData) {
-          setProfile(profileData);
-          setShowOnboarding(!profileData.onboarding_completed);
-        } else if (!profileData) {
-          // No profile exists, show onboarding
-          setShowOnboarding(true);
+          .maybeSingle()
+
+        if (!error && profile) {
+          console.log('📋 Profile found, onboarding completed:', profile.onboarding_completed)
+          setShowOnboarding(!profile.onboarding_completed)
+        } else {
+          console.log('❌ No profile found or error, showing onboarding')
+          // If no profile exists or error, show onboarding
+          setShowOnboarding(true)
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
-        setShowOnboarding(true);
+        console.error('Error checking onboarding:', error)
+        // If no profile exists or error, show onboarding
+        setShowOnboarding(true)
       } finally {
-        setLoadingProfile(false);
+        setCheckingOnboarding(false)
       }
-    };
-    
-    if (user) {
-      loadProfile();
+    }
+
+    if (user?.id) {
+      checkOnboarding()
     } else {
-      setLoadingProfile(false);
+      // No user, don't show onboarding
+      setShowOnboarding(false)
+      setCheckingOnboarding(false)
     }
-  }, [user]);
+  }, [user])
 
-  // Handle URL parameters (for OAuth callbacks)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const googleStatus = urlParams.get('google');
-    
-    if (googleStatus === 'connected') {
-      console.log('✅ Google Calendar connected successfully');
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (googleStatus === 'error') {
-      const reason = urlParams.get('reason');
-      console.error('❌ Google Calendar connection failed:', reason);
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    setCurrentScreen('dashboard');
-  };
-
-  const handleSignOut = async () => {
-    setCurrentScreen('dashboard');
-    setProfile(null);
-    setShowOnboarding(false);
-  };
-
-  // Loading state
-  if (loading || loadingProfile) {
+  // Show loading only when we're checking auth or onboarding for authenticated users
+  if (loading || (user && checkingOnboarding)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your assistant...</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">
+            {loading ? 'Loading...' : checkingOnboarding ? 'Checking your profile...' : 'Loading...'}
+          </p>
         </div>
       </div>
-    );
+    )
   }
 
-  // Not authenticated
+  // Show sign-in form if no user is authenticated
   if (!user) {
-    return <AuthForm onAuthSuccess={() => {}} />;
+    console.log('🔐 No user authenticated, showing sign-in form')
+    return (
+      <AuthForm 
+        onAuthSuccess={() => {
+          console.log('✅ Auth success callback triggered')
+          // The useEffect will handle checking onboarding status
+        }} 
+      />
+    )
   }
 
-  // Show onboarding for new users
+  // Show onboarding if user exists but hasn't completed onboarding
   if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+    console.log('📚 Showing onboarding for user:', user.id)
+    return <Onboarding onComplete={() => setShowOnboarding(false)} />
   }
 
-  // Main app with navigation
-  const renderScreen = () => {
-    switch (currentScreen) {
-      case 'dashboard':
-        return <Dashboard onNavigate={setCurrentScreen} />;
-      case 'calendar':
-        return <Calendar />;
-      case 'contacts':
-        return <Contacts />;
-      case 'shopping':
-        return <Shopping />;
-      case 'settings':
-        return <Settings />;
-      default:
-        return <Dashboard onNavigate={setCurrentScreen} />;
-    }
-  };
-
+  console.log('🏠 Showing main app for user:', user.id)
+  // Show main app if user is authenticated and has completed onboarding
   return (
     <div className="min-h-screen bg-gray-50">
-      {renderScreen()}
-      
-      <Navigation
+      <Navigation 
         currentScreen={currentScreen}
         onScreenChange={setCurrentScreen}
-        onSignOut={handleSignOut}
+        onSignOut={signOut}
+        onVoiceChatOpen={() => setShowVoiceChat(true)}
       />
-
-      {/* Floating AI Chat Button */}
-      <button
-        onClick={() => setShowAIChat(true)}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all z-40 flex items-center justify-center"
-        title="Open AI Chat"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
-
-      {/* Floating Voice Chat Button */}
-      <button
-        onClick={() => setShowVoiceChat(true)}
-        className="fixed bottom-24 right-24 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all z-40 flex items-center justify-center"
-        title="Open Voice Chat"
-      >
-        <Phone className="w-6 h-6" />
-      </button>
-
-      <AIChat isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
-      <AIVoiceChat isOpen={showVoiceChat} onClose={() => setShowVoiceChat(false)} />
+      <main className="pb-20">
+        {(() => {
+          switch (currentScreen) {
+            case 'dashboard':
+              return <Dashboard onNavigate={setCurrentScreen} />
+            case 'calendar':
+              return <Calendar />
+            case 'contacts':
+              return <Contacts />
+            case 'shopping':
+              return <Shopping />
+            case 'settings':
+              return <Settings />
+            case 'ai-chat':
+              return <AIChat />
+            default:
+              return <Dashboard onNavigate={setCurrentScreen} />
+          }
+        })()}
+      </main>
+      
+      <AIVoiceChat 
+        isOpen={showVoiceChat} 
+        onClose={() => setShowVoiceChat(false)} 
+      />
     </div>
-  );
+  )
 }
+
+export default App

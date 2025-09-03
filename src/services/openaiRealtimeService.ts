@@ -196,12 +196,6 @@ Keep responses concise, practical, empathetic, and actionable. Speak in a cheerf
     }
 
     const answerSdp = await res.text();
-    
-    // Check if peer connection is still valid before setting remote description
-    if (!this.pc) {
-      throw new Error('Peer connection was closed during initialization');
-    }
-    
     await this.pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
     // 4) Send initial session settings

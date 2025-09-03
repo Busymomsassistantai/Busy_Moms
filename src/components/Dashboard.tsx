@@ -266,6 +266,53 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </div>
         </div>
 
+        {/* AI Assistant */}
+        <div 
+          className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100 cursor-pointer hover:shadow-md transition-all"
+          onClick={() => setIsChatOpen(true)}
+        >
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Your AI Assistant</h3>
+              <p className="text-sm text-gray-600">Ask me anything!</p>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <p className="text-gray-700 mb-3">"What can I help you with today?"</p>
+            <div className="flex flex-wrap gap-2">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsChatOpen(true);
+                }}
+                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
+              >
+                Add reminder for tomorrow
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsChatOpen(true);
+                }}
+                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
+              >
+                Schedule dentist appointment
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsChatOpen(true);
+                }}
+                className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
+              >
+                Add milk to shopping list
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
