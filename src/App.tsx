@@ -8,7 +8,7 @@ import { AIChat } from './components/AIChat';
 import { FamilyMember, Profile, supabase } from './lib/supabase';
 import { useAuth } from './hooks/useAuth';
 
-export function Settings() {
+export default function Settings() {
   const { user, signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
