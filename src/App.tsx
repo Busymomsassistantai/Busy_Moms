@@ -5,8 +5,8 @@ import { ProfileForm } from './components/forms/ProfileForm';
 import { ConnectionTest } from './components/ConnectionTest';
 import { AuthTest } from './components/AuthTest';
 import { AIChat } from './components/AIChat';
-import { FamilyMember, Profile, supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
+import { FamilyMember, Profile, supabase } from './lib/supabase';
+import { useAuth } from './hooks/useAuth';
 
 export function Settings() {
   const { user, signOut } = useAuth();
