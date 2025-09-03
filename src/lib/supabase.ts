@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rtvwcyrksplhsgycyfzo.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -11,7 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase is not properly configured. Please click "Connect to Supabase" in the top right to set up your database connection.')
 }
 
-if (!supabaseUrl.includes('.supabase.co')) {
+if (!supabaseUrl.includes('.supabase.co') || supabaseUrl.includes('xmwavumggnlffdtedjdb')) {
   console.error('Invalid Supabase URL:', supabaseUrl)
   throw new Error('Invalid Supabase URL. Please check your Supabase project configuration.')
 }
