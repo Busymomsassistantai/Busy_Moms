@@ -13,37 +13,41 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
     { id: 'calendar' as Screen, icon: Calendar, label: 'Calendar' },
+    { id: 'ai-chat' as Screen, icon: MessageCircle, label: 'AI Chat' },
     { id: 'shopping' as Screen, icon: ShoppingBag, label: 'Shopping' },
     { id: 'contacts' as Screen, icon: Users, label: 'Contacts' },
     { id: 'settings' as Screen, icon: Settings, label: 'Settings' }
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex items-center justify-around py-2 relative">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
+      <div className="flex items-center justify-around py-3 px-2">
         {navItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onScreenChange(item.id)}
-            className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-all ${
+            onClick={() => {
+              if (item.id === 'ai-chat') {
+                onVoiceChatOpen?.();
+              } else {
+                onScreenChange(item.id);
+              }
+            }}
+            className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-xl transition-all min-w-0 flex-1 ${
               currentScreen === item.id
-                ? 'text-purple-600 bg-purple-50'
-                : 'text-gray-400 hover:text-gray-600'
+                ? 'text-purple-600 bg-purple-50 scale-105'
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <item.icon className="w-5 h-5" />
-            <span className="text-xs font-medium">{item.label}</span>
+            <div className={`p-1 rounded-lg transition-all ${
+              item.id === 'ai-chat' 
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md' 
+                : ''
+            }`}>
+              <item.icon className={`w-5 h-5 ${item.id === 'ai-chat' ? 'text-white' : ''}`} />
+            </div>
+            <span className="text-xs font-medium truncate">{item.label}</span>
           </button>
         ))}
-        
-        {/* Voice Chat Button - Floating */}
-        <button
-          onClick={onVoiceChatOpen}
-          className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
-          title="AI Voice Assistant"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </button>
       </div>
     </div>
   );
