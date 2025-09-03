@@ -10,7 +10,7 @@ import { Shopping } from './components/Shopping'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
-import { Loader2 } from 'lucide-react'
+import { Loader2, MessageCircle } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
@@ -100,13 +100,27 @@ function App() {
   // Show main app if user is authenticated and has completed onboarding
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header with AI Chat button */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-lg font-semibold text-gray-900">Busy Moms Assistant</h1>
+        </div>
+        <button
+          onClick={() => setCurrentScreen('ai-chat')}
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:shadow-lg transition-all"
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span className="font-medium">AI Chat</span>
+        </button>
+      </div>
+      
       <Navigation 
         currentScreen={currentScreen}
         onScreenChange={setCurrentScreen}
         onSignOut={signOut}
         onVoiceChatOpen={() => setShowVoiceChat(true)}
       />
-      <main className="pb-20">
+      <main className="pb-20 pt-0">
         {(() => {
           switch (currentScreen) {
             case 'dashboard':

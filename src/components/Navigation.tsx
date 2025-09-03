@@ -13,7 +13,6 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
     { id: 'calendar' as Screen, icon: Calendar, label: 'Calendar' },
-    { id: 'ai-chat' as Screen, icon: MessageCircle, label: 'AI Chat' },
     { id: 'shopping' as Screen, icon: ShoppingBag, label: 'Shopping' },
     { id: 'contacts' as Screen, icon: Users, label: 'Contacts' },
     { id: 'settings' as Screen, icon: Settings, label: 'Settings' }
@@ -26,11 +25,7 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
           <button
             key={item.id}
             onClick={() => {
-              if (item.id === 'ai-chat') {
-                onVoiceChatOpen?.();
-              } else {
-                onScreenChange(item.id);
-              }
+              onScreenChange(item.id);
             }}
             className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-xl transition-all min-w-0 flex-1 ${
               currentScreen === item.id
@@ -38,13 +33,7 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <div className={`p-1 rounded-lg transition-all ${
-              item.id === 'ai-chat' 
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md' 
-                : ''
-            }`}>
-              <item.icon className={`w-5 h-5 ${item.id === 'ai-chat' ? 'text-white' : ''}`} />
-            </div>
+            <item.icon className="w-5 h-5" />
             <span className="text-xs font-medium truncate">{item.label}</span>
           </button>
         ))}
