@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, Edit, Volume2 } from 'lucide-react';
-import { FamilyMemberForm } from './forms/FamilyMemberForm';
-import { ProfileForm } from './forms/ProfileForm';
-import { ConnectionTest } from './ConnectionTest';
-import { AuthTest } from './AuthTest';
+import { FamilyMemberForm } from './components/forms/FamilyMemberForm';
+import { ProfileForm } from './components/forms/ProfileForm';
+import { ConnectionTest } from './components/ConnectionTest';
+import { AuthTest } from './components/AuthTest';
+import { AIChat } from './components/AIChat';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
