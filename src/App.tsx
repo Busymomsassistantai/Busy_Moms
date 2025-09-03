@@ -11,6 +11,7 @@ import { AIChat } from './components/AIChat';
 import { AIVoiceChat } from './components/AIVoiceChat';
 import { useAuth } from './hooks/useAuth';
 import { supabase, Profile } from './lib/supabase';
+import { Phone } from 'lucide-react';
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings';
 
