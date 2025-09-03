@@ -14,6 +14,7 @@ export function Settings() {
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
@@ -105,6 +106,25 @@ export function Settings() {
     } catch (error) {
       console.error('Error deleting family member:', error);
       alert('Error deleting family member. Please try again.');
+    }
+  };
+
+  const updateAIPersonality = async (personality: 'Friendly' | 'Professional' | 'Humorous') => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ai_personality: personality })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setCurrentProfile(prev => prev ? { ...prev, ai_personality: personality } : null);
+    } catch (error) {
+      console.error('Error updating AI personality:', error);
     }
   };
 
@@ -278,7 +298,13 @@ export function Settings() {
                 {personality}
               </button>
             ))}
-          onClick={() => setShowAIChat(true)}
+          </div>
+          <button
+            onClick={() => setShowAIChat(true)}
+            className="mt-3 px-4 py-2 bg-purple-500 text-white rounded-lg text-sm hover:bg-purple-600 transition-colors"
+          >
+            Test AI Chat
+          </button>
         </div>
 
         {/* Settings Sections */}
@@ -320,19 +346,17 @@ export function Settings() {
                           }`}></div>
                         </button>
                       ) : (
-                        <button className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors">
-                          <button 
-                            onClick={() => {
-                              if (item.title === 'Family Members') {
-                                setShowFamilyForm(true);
-                              } else if (item.onClick) {
-                                item.onClick();
-                              }
-                            }}
-                            className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                          >
-                            {item.action}
-                          </button>
+                        <button
+                          onClick={() => {
+                            if (item.title === 'Family Members') {
+                              setShowFamilyForm(true);
+                            } else if (item.onClick) {
+                              item.onClick();
+                            }
+                          }}
+                          className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                        >
+                          {item.action}
                         </button>
                       )}
                       
@@ -501,13 +525,14 @@ export function Settings() {
       <ConnectionTest
         isOpen={showConnectionTest}
         onClose={() => setShowConnectionTest(false)}
+      />
+
       <AuthTest
         isOpen={showAuthTest}
         onClose={() => setShowAuthTest(false)}
       />
 
       <ProfileForm
-      <AIChat isOpen={showAIChat} onClose={() => setShowAIChat(false)} />
         isOpen={showProfileForm}
         onClose={() => setShowProfileForm(false)}
         onProfileUpdated={handleProfileUpdated}
