@@ -120,14 +120,25 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://chic-duckanoo-b6e66f.netlify.app'
+    try {
+      // Check if Supabase is properly configured before attempting OAuth
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (!supabaseUrl || !supabaseUrl.includes('.supabase.co')) {
+        throw new Error('Supabase is not properly configured. Please check your environment variables.')
       }
-    })
-    if (error) console.error('Google sign-in error:', error.message)
-    return { data, error }
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+      if (error) throw error
+      return { data, error: null }
+    } catch (error: any) {
+      console.error('Google sign-in error:', error.message)
+      return { data: null, error }
+    }
   }
 
   return { user, loading, signUp, signIn, signOut, signInWithGoogle }

@@ -4,7 +4,16 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.')
+  console.error('Missing Supabase environment variables:', {
+    url: supabaseUrl ? 'Set' : 'Missing',
+    key: supabaseAnonKey ? 'Set' : 'Missing'
+  })
+  throw new Error('Supabase is not properly configured. Please click "Connect to Supabase" in the top right to set up your database connection.')
+}
+
+if (!supabaseUrl.includes('.supabase.co')) {
+  console.error('Invalid Supabase URL:', supabaseUrl)
+  throw new Error('Invalid Supabase URL. Please check your Supabase project configuration.')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
