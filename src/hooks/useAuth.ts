@@ -123,9 +123,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Prefer a dedicated callback route:
-        // redirectTo: `${window.location.origin}/auth/callback`
-        redirectTo: window.location.origin
+        redirectTo: 'https://chic-duckanoo-b6e66f.netlify.app'
       }
     })
     if (error) console.error('Google sign-in error:', error.message)
