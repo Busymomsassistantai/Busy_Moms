@@ -151,20 +151,9 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
       return;
     }
     
-    // Process through AI assistant service first
-    if (user?.id) {
-      aiAssistantService.processUserMessage(text, user.id)
-        .then(result => {
-          // Send the AI assistant's response to the voice AI
-          openaiRealtimeService.sendMessage?.(result.message);
-        })
-        .catch(error => {
-          console.error('Error processing message:', error);
-          openaiRealtimeService.sendMessage?.(text);
-        });
-    } else {
-      openaiRealtimeService.sendMessage?.(text);
-    }
+    // Send message directly to OpenAI Realtime API
+    // The service will handle shopping list processing internally
+    openaiRealtimeService.sendMessage?.(text);
     
     setConversation(prev => [
       ...prev,

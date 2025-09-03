@@ -1,4 +1,6 @@
 // OpenAI Realtime API service using WebRTC
+import { aiAssistantService } from './aiAssistantService';
+
 export interface OpenAIRealtimeConfig {
   model?: string;
   voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
@@ -212,7 +214,18 @@ You can help users with:
 4. General assistance - answering questions
 
 When users ask you to perform actions like "add to calendar", "remind me", or "add to shopping list", 
-you should acknowledge the request and let them know you're processing it. Keep responses conversational and helpful.`,
+you should acknowledge the request and let them know you're processing it. Keep responses conversational and helpful.
+
+For shopping list commands specifically:
+- When someone says "add [item] to shopping list" or "I need to buy [item]", confirm you're adding it
+- When someone asks "what's on my shopping list" or "show my shopping list", let them know you're checking
+- When someone says "remove [item]" or "mark [item] as bought", confirm the action
+- Always be specific about what item you're adding/removing/checking
+
+Examples:
+- "I'll add milk to your shopping list right away!"
+- "Let me check what's on your shopping list for you."
+- "I've marked bread as completed on your shopping list."`,
         turn_detection: {
           type: 'none', // Disable automatic voice detection
         },
@@ -233,6 +246,7 @@ you should acknowledge the request and let them know you're processing it. Keep 
     this.dc.onmessage = (ev) => {
       try {
         const evt = JSON.parse(ev.data);
+        this.handleRealtimeEvent(evt);
         this.onEventCb?.(evt);
       } catch (e) {
         // console.warn('bad event', e);
@@ -248,6 +262,45 @@ you should acknowledge the request and let them know you're processing it. Keep 
     };
   }
 
+  private async handleRealtimeEvent(event: RealtimeEvent) {
+    // Handle specific events that might contain shopping list commands
+    if (event.type === 'conversation.item.created' && event.item?.role === 'user') {
+      const userMessage = event.item.content?.[0]?.text;
+      if (userMessage && this.currentUserId) {
+        // Check if this is a shopping list command
+        if (this.isShoppingListCommand(userMessage)) {
+          try {
+            const result = await aiAssistantService.processUserMessage(userMessage, this.currentUserId);
+            console.log('🛒 Shopping list action processed:', result);
+          } catch (error) {
+            console.error('Error processing shopping list command:', error);
+          }
+        }
+      }
+    }
+  }
+
+  private isShoppingListCommand(message: string): boolean {
+    const lowerMessage = message.toLowerCase();
+    const shoppingKeywords = [
+      'add to shopping list',
+      'shopping list',
+      'buy',
+      'need to get',
+      'pick up',
+      'grocery',
+      'groceries',
+      'milk',
+      'bread',
+      'eggs',
+      'remove from shopping',
+      'delete from shopping',
+      'mark as bought',
+      'completed shopping'
+    ];
+    
+    return shoppingKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
   // === Public API ===
   onEvent(cb: (event: RealtimeEvent) => void) {
     this.onEventCb = cb;
@@ -268,18 +321,6 @@ you should acknowledge the request and let them know you're processing it. Keep 
   }
 
   sendMessage(text: string): void {
-    // Process the message through our AI assistant service for actions
-    if (this.currentUserId) {
-      aiAssistantService.processUserMessage(text, this.currentUserId)
-        .then(result => {
-          console.log('🤖 AI Assistant processed message:', result);
-          // The result will be handled by the voice response
-        })
-        .catch(error => {
-          console.error('Error processing message through AI assistant:', error);
-        });
-    }
-    
     this.sendEvent({
       type: 'conversation.item.create',
       item: {
@@ -294,20 +335,44 @@ you should acknowledge the request and let them know you're processing it. Keep 
   async sendVoiceCommand(command: string): Promise<void> {
     if (this.currentUserId) {
       try {
-        const response = await aiAssistantService.processVoiceCommand(command, this.currentUserId);
+        const result = await aiAssistantService.processUserMessage(command, this.currentUserId);
         
-        // Send the processed response to the AI for voice output
+        // If it's a shopping list action, handle it specially
+        if (result.type === 'shopping' && result.success) {
+          // Send a confirmation message to the AI for voice output
+          this.sendEvent({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'assistant',
+              content: [{ type: 'input_text', text: result.message }],
+            },
+          });
+          this.sendEvent({ type: 'response.create' });
+        } else {
+          // For other actions, let the AI handle the response naturally
+          this.sendEvent({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: command }],
+            },
+          });
+          this.sendEvent({ type: 'response.create' });
+        }
+      } catch (error) {
+        console.error('Error processing voice command:', error);
+        // Send error message to AI for voice output
         this.sendEvent({
           type: 'conversation.item.create',
           item: {
             type: 'message',
             role: 'assistant',
-            content: [{ type: 'input_text', text: response }],
+            content: [{ type: 'input_text', text: "I had trouble processing that request. Could you try again?" }],
           },
         });
         this.sendEvent({ type: 'response.create' });
-      } catch (error) {
-        console.error('Error processing voice command:', error);
       }
     }
   }
