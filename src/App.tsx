@@ -7,13 +7,14 @@ import { Navigation } from './components/Navigation'
 import { Calendar } from './components/Calendar'
 import { Contacts } from './components/Contacts'
 import { Shopping } from './components/Shopping'
+import { Tasks } from './components/Tasks'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
-export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat'
+export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat'
 
 function App() {
   const { user, loading, signOut } = useAuth()
@@ -117,6 +118,8 @@ function App() {
               return <Contacts />
             case 'shopping':
               return <Shopping />
+            case 'tasks':
+              return <Tasks />
             case 'settings':
               return <Settings />
             case 'ai-chat':

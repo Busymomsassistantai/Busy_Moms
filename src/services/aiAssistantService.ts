@@ -21,6 +21,8 @@ export class AIAssistantService {
           return await this.handleReminderAction(message, userId, actionType.details);
         case 'shopping':
           return await this.handleShoppingAction(message, userId, actionType.details);
+        case 'task':
+          return await this.handleTaskAction(message, userId, actionType.details);
         default:
           return await this.handleChatAction(message, userId);
       }
@@ -35,7 +37,7 @@ export class AIAssistantService {
   }
 
   private async classifyUserIntent(message: string): Promise<{
-    type: 'calendar' | 'reminder' | 'shopping' | 'chat';
+    type: 'calendar' | 'reminder' | 'shopping' | 'task' | 'chat';
     details?: any;
   }> {
     const prompt = `Analyze this user message and determine what action they want to take. Respond with JSON only:
@@ -46,13 +48,14 @@ Classify as one of these types:
 - "calendar": Creating, editing, or viewing calendar events
 - "reminder": Setting up reminders or tasks
 - "shopping": Adding items to shopping list or managing shopping
+- "task": Creating, assigning, or managing family tasks/chores
 - "chat": General conversation or questions
 
-If it's calendar, reminder, or shopping, extract relevant details.
+If it's calendar, reminder, shopping, or task, extract relevant details.
 
 Response format:
 {
-  "type": "calendar|reminder|shopping|chat",
+  "type": "calendar|reminder|shopping|task|chat",
   "details": {
     "action": "create|add|update|delete|remove|complete|mark|view",
     "title": "extracted title",
@@ -73,6 +76,13 @@ For shopping actions:
 - "remove" or "delete": Removing items from list
 - "complete" or "mark": Marking items as completed
 - "view" or "show": Displaying the shopping list
+
+For task actions:
+- "create" or "add": Creating new tasks
+- "assign": Assigning tasks to family members
+- "complete" or "mark": Marking tasks as completed
+- "view" or "show": Displaying tasks
+- "update": Updating task details
 
 Today is ${new Date().toISOString().split('T')[0]}.
 Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}.`;

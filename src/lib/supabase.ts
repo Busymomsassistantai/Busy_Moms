@@ -111,3 +111,24 @@ export interface Reminder {
   created_at?: string
   updated_at?: string
 }
+
+export interface Task {
+  id: string
+  user_id: string
+  assigned_to?: string
+  title: string
+  description?: string
+  category?: 'chores' | 'homework' | 'sports' | 'music' | 'health' | 'social' | 'other'
+  priority?: 'low' | 'medium' | 'high'
+  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  due_date?: string
+  due_time?: string
+  recurring?: boolean
+  recurring_pattern?: 'daily' | 'weekly' | 'monthly' | 'yearly'
+  points?: number
+  notes?: string
+  completed_at?: string
+  created_at?: string
+  updated_at?: string
+  assigned_family_member?: FamilyMember
+}
