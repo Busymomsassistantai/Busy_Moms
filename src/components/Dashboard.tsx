@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut, Smartphone, Phone } from 'lucide-react';
+import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Car, Users, LogOut, Smartphone, Phone, User } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { VoiceChat } from './VoiceChat';
@@ -83,10 +83,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       // Load incomplete shopping items (tasks)
       const { data: tasksData, error: tasksError } = await supabase
         .from('shopping_lists')
-        .select(`
-          *,
-          assigned_family_member:family_members(id, name, age)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .eq('completed', false)
         .order('created_at', { ascending: false });
@@ -405,7 +402,17 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 capitalize">{task.category}</p>
+                      <div className="text-sm text-gray-600">
+                        <p className="capitalize">{task.category}</p>
+                        {(task as any).assigned_family_member && (
+                          <div className="flex items-center space-x-1 mt-1">
+                            <User className="w-3 h-3" />
+                            <span className="text-xs">
+                              For {(task as any).assigned_family_member.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       {task.quantity && task.quantity > 1 && (
                         <p className="text-sm text-gray-500">Quantity: {task.quantity}</p>
                       )}
