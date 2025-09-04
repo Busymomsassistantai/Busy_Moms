@@ -498,6 +498,35 @@ Tomorrow is ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T'
     return 'other';
   }
 
+  private categorizeTask(title: string): string {
+    const lower = title.toLowerCase();
+    if (lower.includes('clean') || lower.includes('tidy') || lower.includes('organize')) return 'chores';
+    if (lower.includes('homework') || lower.includes('study') || lower.includes('read')) return 'homework';
+    if (lower.includes('practice') || lower.includes('game') || lower.includes('sport')) return 'sports';
+    if (lower.includes('piano') || lower.includes('music') || lower.includes('instrument')) return 'music';
+    if (lower.includes('doctor') || lower.includes('medicine') || lower.includes('health')) return 'health';
+    if (lower.includes('friend') || lower.includes('party') || lower.includes('social')) return 'social';
+    return 'other';
+  }
+
+  private calculateTaskPoints(priority: string, title: string): number {
+    let basePoints = 0;
+    
+    // Base points by priority
+    switch (priority) {
+      case 'high': basePoints = 15; break;
+      case 'medium': basePoints = 10; break;
+      case 'low': basePoints = 5; break;
+    }
+    
+    // Bonus points for certain task types
+    const lower = title.toLowerCase();
+    if (lower.includes('homework') || lower.includes('study')) basePoints += 5;
+    if (lower.includes('help') || lower.includes('assist')) basePoints += 3;
+    
+    return basePoints;
+  }
+
   private formatDate(dateString: string): string {
     const date = new Date(dateString);
     const today = new Date();

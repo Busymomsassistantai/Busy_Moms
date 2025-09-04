@@ -282,7 +282,8 @@ Examples:
 
   private isShoppingListCommand(message: string): boolean {
     const lowerMessage = message.toLowerCase();
-    const shoppingKeywords = [
+    const keywords = [
+      // Shopping keywords
       'add to shopping list',
       'shopping list',
       'buy',
@@ -296,10 +297,22 @@ Examples:
       'remove from shopping',
       'delete from shopping',
       'mark as bought',
-      'completed shopping'
+      'completed shopping',
+      // Task keywords
+      'create task',
+      'assign task',
+      'task for',
+      'chore for',
+      'homework for',
+      'clean room',
+      'do homework',
+      'practice',
+      'complete task',
+      'mark task',
+      'finish task'
     ];
     
-    return shoppingKeywords.some(keyword => lowerMessage.includes(keyword));
+    return keywords.some(keyword => lowerMessage.includes(keyword));
   }
   // === Public API ===
   onEvent(cb: (event: RealtimeEvent) => void) {
