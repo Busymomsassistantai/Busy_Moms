@@ -37,6 +37,8 @@ export function Tasks() {
       setTasks(tasksData || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      // Show user-friendly error message
+      alert(`Error loading tasks: ${error.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }

@@ -60,12 +60,19 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
     setLoading(true)
     try {
       const taskData = {
-        ...formData,
-        user_id: user.id,
+        title: formData.title,
+        description: formData.description || '',
+        category: formData.category,
+        priority: formData.priority,
         assigned_to: formData.assigned_to || null,
+        due_date: formData.due_date || null,
+        due_time: formData.due_time || null,
         points: formData.points || 0,
-        status: 'pending' as const,
-        recurring_pattern: formData.recurring ? formData.recurring_pattern : null
+        notes: formData.notes || '',
+        recurring: formData.recurring,
+        recurring_pattern: formData.recurring ? formData.recurring_pattern || null : null,
+        user_id: user.id,
+        status: 'pending' as const
       }
 
       let result
@@ -109,7 +116,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
       })
     } catch (error) {
       console.error('Error saving task:', error)
-      alert('Error saving task. Please try again.')
+      alert(`Error saving task: ${error.message || 'Please try again.'}`)
     } finally {
       setLoading(false)
     }
