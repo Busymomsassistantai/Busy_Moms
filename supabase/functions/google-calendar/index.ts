@@ -106,6 +106,21 @@ Deno.serve(async (req) => {
       return json(await res.json(), res.status);
     }
 
+    if (action === "getEvents") {
+      const { timeMin, timeMax, maxResults = 250 } = body;
+      const url = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+      url.searchParams.set("singleEvents", "true");
+      url.searchParams.set("orderBy", "startTime");
+      url.searchParams.set("maxResults", String(maxResults));
+      if (timeMin) url.searchParams.set("timeMin", timeMin);
+      if (timeMax) url.searchParams.set("timeMax", timeMax);
+      
+      const res = await fetch(url.toString(), { 
+        headers: { Authorization: `Bearer ${access_token}` } 
+      });
+      const result = await res.json();
+      return json(result, res.status);
+    }
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
     return json({ error: e.message }, 400);
