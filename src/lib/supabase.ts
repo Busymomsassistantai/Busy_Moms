@@ -92,6 +92,7 @@ export interface ShoppingItem {
   urgent?: boolean
   quantity?: number
   notes?: string
+  assigned_to?: string
   created_at?: string
 }
 

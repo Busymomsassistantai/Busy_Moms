@@ -83,7 +83,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       // Load incomplete shopping items (tasks)
       const { data: tasksData, error: tasksError } = await supabase
         .from('shopping_lists')
-        .select('*')
+        .select(`
+          *,
+          assigned_family_member:family_members(id, name, age)
+        `)
         .eq('user_id', user.id)
         .eq('completed', false)
         .order('created_at', { ascending: false });

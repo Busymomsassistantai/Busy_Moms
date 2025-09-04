@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, User } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
-import { ShoppingItem, supabase } from '../lib/supabase';
+import { ShoppingItem, FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
 export function Shopping() {
@@ -9,24 +9,30 @@ export function Shopping() {
   const [activeTab, setActiveTab] = useState('list');
   const [showShoppingForm, setShowShoppingForm] = useState(false);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchShoppingList();
+      fetchFamilyMembers();
     }
   }, [user]);
 
   const fetchShoppingList = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: shoppingData, error: shoppingError } = await supabase
         .from('shopping_lists')
-        .select('*')
+        .select(`
+          *,
+          assigned_family_member:family_members(id, name, age)
+        `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setShoppingList(data || []);
+      if (shoppingError) throw shoppingError;
+      setShoppingList(shoppingData || []);
     } catch (error) {
       console.error('Error fetching shopping list:', error);
     } finally {
@@ -34,8 +40,27 @@ export function Shopping() {
     }
   };
 
+  const fetchFamilyMembers = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data: members, error } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name', { ascending: true });
+
+      if (!error) {
+        setFamilyMembers(members || []);
+      }
+    } catch (error) {
+      console.error('Error loading family members:', error);
+    }
+  };
+
   const handleItemCreated = (newItem: ShoppingItem) => {
-    setShoppingList(prev => [...prev, newItem]);
+    // Refresh the list to get the assigned family member data
+    fetchShoppingList();
   };
 
   const toggleItemCompleted = (itemId: string) => {
@@ -152,9 +177,19 @@ export function Shopping() {
                         <h3 className={`font-medium ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                           {item.item}
                         </h3>
-                        <p className={`text-sm ${item.completed ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
-                        </p>
+                        <div className={`text-sm ${item.completed ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <p>
+                            {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
+                          </p>
+                          {(item as any).assigned_family_member && (
+                            <div className="flex items-center space-x-1 mt-1">
+                              <User className="w-3 h-3" />
+                              <span className="text-xs">
+                                Assigned to {(item as any).assigned_family_member.name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {item.urgent && !item.completed && (
                         <div className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">

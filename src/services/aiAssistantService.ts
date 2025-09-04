@@ -57,6 +57,7 @@ Response format:
     "action": "create|add|update|delete|remove|complete|mark|view",
     "title": "extracted title",
     "item": "item name for shopping actions",
+    "assignee": "person name if mentioned (for Emma, Tom needs, etc.)",
     "date": "YYYY-MM-DD if mentioned",
     "time": "HH:MM if mentioned",
     "location": "location if mentioned",
