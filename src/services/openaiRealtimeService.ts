@@ -1,4 +1,3 @@
-// OpenAI Realtime API service using WebRTC
 import { aiAssistantService } from './aiAssistantService';
 
 // Local fallbacks for browsers/TS configs that don't include these in lib.dom.d.ts
@@ -64,7 +63,6 @@ private emit(event: RealtimeEvent) {
 try {
 this.onEventCb?.(event);
 } catch (e) {
-// eslint-disable-next-line no-console
 console.error('onEvent callback error:', e);
 }
 }
@@ -73,7 +71,6 @@ private emitConn(state: RTCPeerConnectionState) {
 try {
 this.onConnStateCb?.(state);
 } catch (e) {
-// eslint-disable-next-line no-console
 console.error('onConnectionStateChange callback error:', e);
 }
 }
@@ -85,7 +82,6 @@ typeof window !== 'undefined' &&
 (('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window));
 
 if (!hasSpeech) {
-  // eslint-disable-next-line no-console
   console.warn('SpeechRecognition is not supported in this browser.');
   return;
 }
@@ -109,7 +105,6 @@ this.wakeWordRecognition.onresult = (event: SpeechRecognitionEvent) => {
 };
 
 this.wakeWordRecognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-  // eslint-disable-next-line no-console
   console.error('Wake word recognition error:', event);
 };
 
@@ -123,12 +118,10 @@ this.wakeWordRecognition.onend = () => {
 this.wakeWordRecognition.start();
 this.isListeningForWakeWordFlag = true;
 this.wakeWordDetection = true;
-// eslint-disable-next-line no-console
 console.log('🎤 Wake word detection started');
 
 
 } catch (error) {
-// eslint-disable-next-line no-console
 console.error('Failed to start wake word detection:', error);
 }
 }
@@ -139,10 +132,8 @@ try {
 this.wakeWordDetection = false;
 this.isListeningForWakeWordFlag = false;
 this.wakeWordRecognition.stop();
-// eslint-disable-next-line no-console
 console.log('🔇 Stopped listening for wake word');
 } catch (error) {
-// eslint-disable-next-line no-console
 console.error('Failed to stop wake word detection:', error);
 }
 }
@@ -152,7 +143,7 @@ onWakeWordDetected(callback: () => void) {
 this.onWakeWordDetectedCb = callback;
 }
 
-isListeningForWakeWord(): boolean {
+getIsListeningForWakeWord(): boolean {
 return this.isListeningForWakeWordFlag;
 }
 
@@ -253,9 +244,7 @@ instructions: this.config.instructions,
 voice: this.config.voice,
 input_audio_format: 'pcm16',
 output_audio_format: 'pcm16',
-// Keep the model conversational for voice, but deterministic for actions
 modalities: ['text', 'audio'],
-// Examples of how Sara should respond
 system_prompt_examples: `You are Sara. Keep confirmations terse:
 
 "Added an event for 3pm tomorrow."
@@ -268,7 +257,7 @@ system_prompt_examples: `You are Sara. Keep confirmations terse:
 
 "Marked bread as completed on the shopping list."`,
 turn_detection: {
-type: 'none', // Disable automatic voice detection
+type: 'none',
 },
 },
 }));
@@ -284,7 +273,6 @@ try {
 const msg = JSON.parse(evt.data);
 this.emit(msg);
 } catch (_e) {
-// eslint-disable-next-line no-console
 console.warn('Non-JSON data message:', evt.data);
 }
 };
@@ -308,7 +296,6 @@ this.emitConn('disconnected' as RTCPeerConnectionState);
 
 isSupported(): boolean {
 return typeof RTCPeerConnection !== 'undefined';
-// Note: you may also want to check for microphone permissions elsewhere.
 }
 
 isConnected(): boolean {
