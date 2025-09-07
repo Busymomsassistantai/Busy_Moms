@@ -85,6 +85,28 @@ export class GoogleCalendarService {
     this.signedIn = !!session?.access_token;
   }
 
+  /**
+   * For this implementation, Google authentication is mediated by your server/Edge Function
+   * using the Supabase user session. There is no separate gapi.signIn() on the client.
+   * This method exists so UI code calling `googleCalendarService.signIn()` does not break.
+   */
+  async signIn(): Promise<void> {
+    if (!this.ready) await this.initialize();
+    const { data: { session } } = await supabase.auth.getSession();
+    this.signedIn = !!session?.access_token;
+    if (!this.signedIn) {
+      throw new Error('Please sign into the app first (no Supabase session found).');
+    }
+  }
+
+  /**
+   * Optional convenience: mark as signed out. If you add a server endpoint to revoke the
+   * Google refresh token, call it here before flipping the local state.
+   */
+  async signOut(): Promise<void> {
+    this.signedIn = false;
+  }
+
   isAvailable(): boolean {
     return !!FUNCTIONS_BASE;
   }
