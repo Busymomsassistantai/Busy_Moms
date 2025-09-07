@@ -7,19 +7,19 @@ export interface AIAction {
 type: 'calendar' | 'reminder' | 'shopping' | 'task' | 'chat';
 success: boolean;
 message: string;
-data?: any;
+data?: unknown;
 }
 
 type IntentType = 'calendar' | 'reminder' | 'shopping' | 'task' | 'chat';
 
 interface IntentResult {
 type: IntentType;
-details?: Record<string, any>;
+details?: Record<string, unknown>;
 }
 
 /** ---- Shared helpers ---------------------------------------------------- */
 
-function toISODate(input?: any): string | null {
+function toISODate(input?: string | number | Date | unknown): string | null {
 if (!input) return null;
 const s = String(input).trim();
 
@@ -34,7 +34,7 @@ if (m2) {
 const year = new Date().getFullYear();
 const mm = String(Math.max(1, Math.min(12, parseInt(m2[1], 10)))).padStart(2, '0');
 const dd = String(Math.max(1, Math.min(31, parseInt(m2[2], 10)))).padStart(2, '0');
-return ${year}-${mm}-${dd};
+return `${year}-${mm}-${dd}`;
 }
 
 // Natural words "today" / "tomorrow"
@@ -56,7 +56,7 @@ return d.toISOString().split('T')[0];
 return null;
 }
 
-function toISOTime(input?: any): string | null {
+function toISOTime(input?: string | number | Date | unknown): string | null {
 if (!input) return null;
 const s = String(input).trim();
 
@@ -70,7 +70,7 @@ if (am && h === 12) h = 0;
 if (!am && h < 12) h += 12;
 const hh = String(h).padStart(2, '0');
 const mm = String(min).padStart(2, '0');
-return ${hh}:${mm}:00;
+return `${hh}:${mm}:00`;
 }
 
 // "14" or "14:30"
@@ -80,12 +80,12 @@ const h = Math.max(0, Math.min(23, parseInt(m2[1], 10)));
 const min = m2[2] ? parseInt(m2[2], 10) : 0;
 const hh = String(h).padStart(2, '0');
 const mm = String(min).padStart(2, '0');
-return ${hh}:${mm}:00;
+return `${hh}:${mm}:00`;
 }
 return null;
 }
 
-function coerceInt(n: any, fallback: number | null = null): number | null {
+function coerceInt(n: unknown, fallback: number | null = null): number | null {
 const x = typeof n === 'string' ? parseInt(n, 10) : typeof n === 'number' ? n : NaN;
 return Number.isFinite(x) ? x : fallback;
 }
@@ -166,8 +166,8 @@ return await this.handleTaskAction(intent.details || {}, userId);
 default:
 return { type: 'chat', success: true, message: 'Okay!', data: { echo: message } };
 }
-} catch (err: any) {
-console.error('processUserMessage error:', err);
+} catch (err: unknown) {
+console.error('processUserMessage error:', err instanceof Error ? err.message : err);
 // Last-ditch local fallback — try to do something useful
 try {
 const intent = fallbackClassify(message);
@@ -183,8 +183,10 @@ return await this.handleTaskAction(intent.details || {}, userId);
 default:
 return { type: 'chat', success: false, message: err?.message || 'Something went wrong.' };
 }
-} catch (e:any) {
-return { type: 'chat', success: false, message: e?.message || 'Something went wrong.' };
+} catch (e: unknown) {
+
+return { type: 'chat', success: false, message: (e instanceof Error ? e.message : String(e)) || 'Something went wrong.' 
+};
 }
 }
 }
@@ -203,7 +205,7 @@ const system = [
 'For task: title, date?, time?, priority? (low|medium|high), assignee? (string).',
 'Return ONLY minimal JSON with no commentary.'
 ].join(' ');
-const user = Today is ${today}. Classify and normalize this message: "${message}";
+const user = `Today is ${today}. Classify and normalize this message: "${message}"`;
 
 let raw: string;
 try {
@@ -211,9 +213,11 @@ try {
     { role: 'system', content: system },
     { role: 'user', content: user },
   ]);
-} catch (e:any) {
-  console.warn('LLM classify failed, using fallback:', e?.message);
+} catch (e: unknown) {
+
+  console.warn('LLM classify failed, using fallback:', (e instanceof Error ? e.message : String(e)));
   return fallbackClassify(message);
+
 }
 
 const cleaned = raw
@@ -237,14 +241,14 @@ return fallbackClassify(message);
 }
 
 /** Calendar events — now delegated to the injected provider. */
-private async handleCalendarAction(details: Record<string, any>, userId: UUID): Promise<AIAction> {
+private async handleCalendarAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
 const title = (details.title || details.name || 'Untitled Event').toString().slice(0, 200);
 const event_date = toISODate(details.date) || new Date().toISOString().split('T')[0];
 const start_time = toISOTime(details.time);
 let end_time = toISOTime(details.end_time);
 const location = details.location ? String(details.location).slice(0, 200) : null;
 const participants = Array.isArray(details.participants)
-? details.participants.map((p: any) => String(p))
+? details.participants.map((p: unknown) => String(p))
 : null;
 
 // If end_time is missing but start_time exists, default to +30m
@@ -274,7 +278,7 @@ try {
     message: `Added "${title}" on ${event_date}.`,
     data: result,
   };
-} catch (error: any) {
+} catch (error: unknown) {
   return { type: 'calendar', success: false, message: error?.message || 'Failed to create event.' };
 }
 
@@ -282,7 +286,7 @@ try {
 }
 
 /** Reminders */
-private async handleReminderAction(details: Record<string, any>, userId: UUID): Promise<AIAction> {
+private async handleReminderAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
 const title = (details.title || details.name || 'Reminder').toString().slice(0, 200);
 const reminder_date = toISODate(details.date);
 const reminder_time = toISOTime(details.time);
@@ -326,7 +330,7 @@ return { type: 'reminder', success: true, message: `Reminder set: ${title}.`, da
 }
 
 /** Shopping list */
-private async handleShoppingAction(details: Record<string, any>, userId: UUID): Promise<AIAction> {
+private async handleShoppingAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
 const item = (details.item || details.name || '').toString().trim();
 if (!item) {
 return { type: 'shopping', success: false, message: 'Please specify an item to add.' };
@@ -371,11 +375,12 @@ return { type: 'shopping', success: true, message: `Added “${item}” to your 
 }
 
 /** Tasks */
-private async handleTaskAction(details: Record<string, any>, userId: UUID): Promise<AIAction> {
+private async handleTaskAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
 const title = (details.title || details.name || 'Task').toString().slice(0, 200);
 const due_date = toISODate(details.date);
 const due_time = toISOTime(details.time);
-const priority: Task['priority'] = (details.priority?.toString().toLowerCase() as any) ?? 'medium';
+const p = details.priority ? details.priority.toString().toLowerCase() : undefined;
+const priority: Task['priority'] = (p === 'low' || p === 'medium' || p === 'high') ? p : 'medium';
 
 // dedupe by title + due_date
 if (due_date) {
