@@ -1,0 +1,177 @@
+import { supabase } from "../lib/supabase";
+import { ICalendarProvider, CalendarEventInput, CalendarCreateResult } from "./calendarProvider";
+
+const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(/\/+$/, "");
+
+/** Minimal Google Calendar types we use */
+export interface GoogleCalendarEvent {
+  id?: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  start?: { date?: string; dateTime?: string; timeZone?: string };
+  end?: { date?: string; dateTime?: string; timeZone?: string };
+  attendees?: Array<{ email: string; responseStatus?: string }>;
+  htmlLink?: string;
+}
+
+export interface GetEventsParams {
+  q?: string;
+  timeMin?: string; // RFC3339 string
+  timeMax?: string; // RFC3339 string
+  maxResults?: number;
+}
+
+/** Narrower event payload for inserts */
+type GoogleDateTime = { date?: string; dateTime?: string; timeZone?: string };
+type GoogleEventBody = {
+  summary?: string;
+  description?: string;
+  location?: string;
+  start?: GoogleDateTime;
+  end?: GoogleDateTime;
+  attendees?: Array<{ email: string }>;
+};
+
+/** ---- Low-level helpers that talk to your server/Edge Function ------------- */
+async function callCalendar(action: string, body: Record<string, unknown> = {}) {
+  if (!FUNCTIONS_BASE) {
+    // Treat as disabled in dev if no server is configured
+    throw new Error('Calendar server is not configured (missing VITE_FUNCTIONS_URL).');
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Not signed in');
+
+  const res = await fetch(`${FUNCTIONS_BASE}/google-calendar`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ action, ...body }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Google Calendar error ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json().catch(() => ({}));
+}
+
+export async function listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
+  const data = await callCalendar('listUpcoming', { maxResults });
+  return (data.items as GoogleCalendarEvent[]) || [];
+}
+
+export async function getEvents(params: GetEventsParams = {}): Promise<GoogleCalendarEvent[]> {
+  const data = await callCalendar('getEvents', params);
+  return (data.items as GoogleCalendarEvent[]) || [];
+}
+
+export async function insertEvent(event: GoogleEventBody): Promise<unknown> {
+  const data = await callCalendar('insertEvent', { event });
+  return data;
+}
+
+/** ---- Service class used by UI components --------------------------------- */
+export class GoogleCalendarService {
+  private ready = false;
+  private signedIn = false;
+
+  async initialize(): Promise<void> {
+    this.ready = !!FUNCTIONS_BASE;
+    if (!this.ready) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    this.signedIn = !!session?.access_token;
+  }
+
+  isAvailable(): boolean {
+    return !!FUNCTIONS_BASE;
+  }
+  isReady(): boolean {
+    return this.ready;
+  }
+  isSignedIn(): boolean {
+    return this.signedIn;
+  }
+
+  async listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
+    if (!this.ready || !this.signedIn) return [];
+    return listUpcoming(maxResults);
+  }
+
+  async getEvents(params: GetEventsParams = {}): Promise<GoogleCalendarEvent[]> {
+    if (!this.ready || !this.signedIn) return [];
+    return getEvents(params);
+  }
+
+  async insertEvent(event: GoogleEventBody): Promise<unknown> {
+    if (!this.ready || !this.signedIn) throw new Error('Not signed in to Google Calendar.');
+    return insertEvent(event);
+  }
+}
+
+export const googleCalendarService = new GoogleCalendarService();
+
+/** ---- Provider to fit the generic calendar interface ---------------------- */
+export class GoogleCalendarProvider implements ICalendarProvider {
+  constructor(private svc: GoogleCalendarService) {}
+
+  isAvailable(): boolean | Promise<boolean> { return this.svc.isAvailable(); }
+
+  /**
+   * Create an event by mapping our local schema -> Google Calendar schema.
+   * - If start_time is provided, we create a timed event (30m default length).
+   * - If no start_time, we create an all-day event.
+   */
+  async createEvent(userId: string, event: CalendarEventInput): Promise<CalendarCreateResult> {
+    if (!this.svc.isReady() || !this.svc.isSignedIn()) {
+      // Ensure service has session
+      await this.svc.initialize();
+      if (!this.svc.isSignedIn()) throw new Error('Please connect Google Calendar first.');
+    }
+
+    // Build start/end
+    let startDateTime: string | undefined;
+    let endDateTime: string | undefined;
+
+    if (event.start_time) {
+      startDateTime = `${event.date}T${event.start_time}`;
+      if (event.end_time) {
+        endDateTime = `${event.date}T${event.end_time}`;
+      } else {
+        // default +30m if only start provided
+        const d = new Date(`${event.date}T${event.start_time}`);
+        if (!Number.isNaN(d.getTime())) {
+          d.setMinutes(d.getMinutes() + 30);
+          endDateTime = d.toISOString().slice(0, 19);
+        }
+      }
+    }
+
+    const googleEvent: GoogleEventBody = {
+      summary: event.title,
+      description: event.source === 'ai' ? 'Created by Sara' : undefined,
+      location: event.location || undefined,
+      start: startDateTime
+        ? { dateTime: startDateTime }
+        : { date: event.date },
+      end: endDateTime
+        ? { dateTime: endDateTime }
+        : (event.start_time ? { dateTime: `${event.date}T${event.start_time}` } : { date: event.date }),
+      attendees: Array.isArray(event.participants)
+        ? event.participants.filter(Boolean).map(e => ({ email: String(e) }))
+        : undefined,
+    };
+
+    const created: any = await this.svc.insertEvent(googleEvent);
+
+    const id = created?.id ?? created?.event?.id ?? created?.data?.id ?? '';
+    return {
+      id: id ? String(id) : '',
+      externalId: id ? String(id) : undefined,
+      provider: 'google',
+      raw: created,
+    };
+  }
+}
