@@ -1,7 +1,8 @@
 import { supabase } from "../lib/supabase";
 import { ICalendarProvider, CalendarEventInput, CalendarCreateResult } from "./calendarProvider";
 
-const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(//+$/, "");
+const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(/\/+$/, "");
+
 
 export interface GoogleCalendarEvent {
 id?: string;
