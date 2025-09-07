@@ -1,4 +1,5 @@
 import { aiAssistantService } from './aiAssistantService';
+import { supabase } from "../lib/supabase";
 
 // Fallback minimal speech types (safe for TS projects without full lib.dom)
 interface MinimalSpeechResult { transcript: string }
@@ -62,6 +63,7 @@ export class OpenAIRealtimeService extends Emitter {
   private buffer: Float32Array[] = [];
   private currentUserId?: string;
   private connected = false;
+  private lastTokenFetchError?: string;
 
   // Callbacks required by UI
   private onEventCb?: (event: RealtimeEvent) => void;
@@ -100,6 +102,69 @@ export class OpenAIRealtimeService extends Emitter {
   // == Internals ==
   private emitUI(event: RealtimeEvent) { this.onEventCb?.(event); this.emit(event); }
   private emitConn(state: RTCPeerConnectionState) { this.onConnStateCb?.(state); this.emitUI({ type: 'connection.state', state }); }
+
+  /** Build a list of candidate URLs for the ephemeral token endpoint. */
+  private buildTokenUrlCandidates(): string[] {
+    const urls: string[] = [];
+    if (EPHEMERAL_URL) urls.push(EPHEMERAL_URL);
+    if (FUNCTIONS_BASE) {
+      urls.push(
+        `${FUNCTIONS_BASE}/openai-token`,
+        `${FUNCTIONS_BASE}/webrtc-token`,
+        `${FUNCTIONS_BASE}/realtime-token`,
+      );
+      urls.push(
+        `${FUNCTIONS_BASE}/functions/v1/openai-token`,
+        `${FUNCTIONS_BASE}/functions/v1/webrtc-token`,
+        `${FUNCTIONS_BASE}/functions/v1/realtime-token`,
+      );
+    }
+    urls.push(
+      '/openai-token',
+      '/webrtc-token',
+      '/realtime-token',
+      '/api/openai-token',
+      '/api/webrtc-token',
+      '/api/realtime-token'
+    );
+    return Array.from(new Set(urls));
+  }
+
+  /** Attempt JSON POST to each candidate; require JSON content-type; return parsed JSON. */
+  private async fetchJsonFirst(body: unknown): Promise<any> {
+    const candidates = this.buildTokenUrlCandidates();
+    const authHeader: Record<string, string> = {};
+    try {
+      const { data: { session} } = await supabase.auth.getSession();
+      if (session?.access_token) authHeader.Authorization = `Bearer ${session.access_token}`;
+    } catch { /* optional */ }
+
+    const tried: string[] = [];
+    for (const url of candidates) {
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...authHeader },
+          body: JSON.stringify(body ?? {}),
+        });
+        tried.push(`${url} -> ${resp.status}`);
+        const ct = resp.headers.get('content-type') || '';
+        if (!resp.ok) continue;
+        if (!ct.includes('application/json')) continue;
+        return await resp.json();
+      } catch (e) {
+        tried.push(`${url} -> ${e instanceof Error ? e.message : String(e)}`);
+        continue;
+      }
+    }
+    this.lastTokenFetchError = `Tried: ${tried.join(' | ')}`;
+    throw new Error(`No valid token endpoint responded with JSON. ${this.lastTokenFetchError}`);
+  }
+
+  /** Extract the ephemeral key from commonly used JSON shapes. */
+  private extractEphemeralKey(json: any): string {
+    return json?.client_secret?.value || json?.value || json?.token || '';
+  }
 
   async startWakeWordDetection() {
     const SpeechRecognitionCtor =
@@ -186,27 +251,10 @@ export class OpenAIRealtimeService extends Emitter {
   async connectRealtime() {
     if (this.pc) return;
 
-    // Acquire ephemeral key from your backend (Edge Function/Server)
-    const tokenUrl = EPHEMERAL_URL || (FUNCTIONS_BASE ? `${FUNCTIONS_BASE}/openai-token` : '/api/realtime-token');
-    const tokenResp = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ userId: this.currentUserId || 'anonymous', roomId: 'default' })
-    });
-    if (!tokenResp.ok) {
-      const t = await tokenResp.text().catch(() => '');
-      throw new Error(`Failed to get ephemeral key: ${tokenResp.status} ${tokenResp.statusText} ${t.slice(0,120)}`);
-    }
-    const ct = tokenResp.headers.get('content-type') || '';
-    if (!ct.includes('application/json')) {
-      const body = await tokenResp.text().catch(() => '');
-      throw new Error(`Token endpoint returned non-JSON (${tokenResp.status}). Body starts: ${body.slice(0,80)}`);
-    }
-    const tokenJson: any = await tokenResp.json();
-    const EPHEMERAL_KEY = tokenJson?.client_secret?.value || tokenJson?.value || tokenJson?.token || '';
-    if (!EPHEMERAL_KEY) {
-      throw new Error('Token endpoint JSON missing client_secret.value/token');
-    }
+    // Acquire ephemeral key from your backend (Edge Function/Server), trying multiple candidates.
+    const tokenJson = await this.fetchJsonFirst({ userId: this.currentUserId || 'anonymous', roomId: 'default' });
+    const EPHEMERAL_KEY = this.extractEphemeralKey(tokenJson);
+    if (!EPHEMERAL_KEY) throw new Error('Token endpoint JSON missing client_secret.value/token');
 
     this.pc = new RTCPeerConnection();
     this.pc.onconnectionstatechange = () => {
