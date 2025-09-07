@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { ICalendarProvider, CalendarEventInput, CalendarCreateResult } from "./calendarProvider";
 
 const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(//+$/, "");
 
@@ -137,3 +138,64 @@ return insertEvent(event);
 }
 
 export const googleCalendarService = new GoogleCalendarService();
+
+/**
+
+Google-backed calendar provider for AI injection.
+*/
+export class GoogleCalendarProvider implements ICalendarProvider {
+constructor(private svc: GoogleCalendarService) {}
+
+isAvailable(): boolean {
+return this.svc.isReady() && this.svc.isSignedIn();
+}
+
+async createEvent(userId: string, event: CalendarEventInput): Promise<CalendarCreateResult> {
+// Map CalendarEventInput -> Google Calendar API event body
+// If time provided, use dateTime; otherwise use all-day (date).
+const toDateTime = (date: string, time?: string | null) => {
+if (!time) return null;
+// Basic local dateTime; a production impl should handle time zones explicitly
+return ${date}T${time};
+};
+
+let startDateTime = toDateTime(event.date, event.start_time);
+let endDateTime = toDateTime(event.date, event.end_time);
+
+// If only start_time exists, default end to +30 minutes
+if (startDateTime && !endDateTime) {
+  const d = new Date(startDateTime);
+  if (!Number.isNaN(d.getTime())) {
+    d.setMinutes(d.getMinutes() + 30);
+    endDateTime = d.toISOString().slice(0,19);
+  }
+}
+
+const googleEvent: any = {
+  summary: event.title,
+  description: event.source === 'ai' ? 'Created by Sara' : undefined,
+  location: event.location || undefined,
+  start: startDateTime
+    ? { dateTime: startDateTime }
+    : { date: event.date },
+  end: endDateTime
+    ? { dateTime: endDateTime }
+    : { date: event.date },
+  attendees: Array.isArray(event.participants)
+    ? event.participants.map((email) => ({ email }))
+    : undefined,
+};
+
+const created = await this.svc.insertEvent(googleEvent);
+
+const id = created?.id ?? created?.event?.id ?? created?.data?.id ?? '';
+return {
+  id: id ? String(id) : '',
+  externalId: id ? String(id) : undefined,
+  provider: 'google',
+  raw: created,
+};
+
+
+}
+}
