@@ -2,10 +2,23 @@ import { aiAssistantService } from './aiAssistantService';
 
 // Local fallbacks for browsers/TS configs that don't include these in lib.dom.d.ts
 // If your project already includes proper DOM speech types, you can remove these aliases.
-type SpeechRecognition = any;
-type SpeechRecognitionEvent = any;
-type SpeechRecognitionErrorEvent = any;
-
+interface MinimalSpeechResult { transcript: string }
+interface MinimalSpeechEvent { results?: Array<Array<MinimalSpeechResult>> }
+interface MinimalSpeechErrorEvent { error?: string }
+interface MinimalSpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: MinimalSpeechEvent) => void;
+  onerror?: (e: MinimalSpeechErrorEvent) => void;
+  start: () => void;
+  stop: () => void;
+}
+type SpeechRecognitionCtor = new () => MinimalSpeechRecognition;
+type WindowSpeech = {
+  SpeechRecognition?: SpeechRecognitionCtor;
+  webkitSpeechRecognition?: SpeechRecognitionCtor;
+};
 export interface OpenAIRealtimeConfig {
 model?: string;
 voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
@@ -15,7 +28,7 @@ wakeWord?: string;
 
 export interface RealtimeEvent {
 type: string;
-[key: string]: any;
+[key: string]: unknown;
 }
 
 export class OpenAIRealtimeService {
@@ -87,7 +100,7 @@ if (!hasSpeech) {
 }
 
 const SpeechRecognitionCtor =
-  (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  (window as unknown as WindowSpeech).SpeechRecognition || (window as unknown as WindowSpeech).webkitSpeechRecognition;
 
 this.wakeWordRecognition = new SpeechRecognitionCtor();
 this.wakeWordRecognition.continuous = true;
@@ -96,7 +109,7 @@ this.wakeWordRecognition.lang = 'en-US';
 const wakeWord = (this.config.wakeWord || 'sara').toLowerCase();
 
 this.wakeWordRecognition.onresult = (event: SpeechRecognitionEvent) => {
-  const results = (event as any).results || [];
+  const results = (event as unknown as { results?: Array<Array<{ transcript: string }>> }).results || [];
   if (!results || !results.length) return;
   const transcript = results[results.length - 1][0].transcript.toLowerCase();
   if (typeof transcript === 'string' && transcript.includes(wakeWord)) {
@@ -175,7 +188,7 @@ throw new Error('Realtime not configured: missing openai-token Edge Function');
 }
 
 if (!tokenResp.ok) {
-throw new Error(Failed to get ephemeral key: ${tokenResp.status});
+throw new Error(`Failed to get ephemeral key: ${tokenResp.status}`);
 }
 const payload = await tokenResp.json().catch(() => ({}));
 const EPHEMERAL_KEY = payload?.EPHEMERAL_KEY;
@@ -220,13 +233,14 @@ this.emitConn(this.pc!.connectionState);
 const offer = await this.pc.createOffer();
 await this.pc.setLocalDescription(offer);
 
-const resp = await fetch(${(RTC_URL || 'https://api.openai.com/v1/realtime')}?model=${this.config.model}, {
+if (!offer.sdp) { throw new Error('Failed to create SDP offer.'); }
+const resp = await fetch(`${(RTC_URL || "https://api.openai.com/v1/realtime")}?model=${this.config.model}`, {
 method: 'POST',
 headers: {
-Authorization: Bearer ${EPHEMERAL_KEY},
+Authorization: `Bearer ${EPHEMERAL_KEY}`,
 'Content-Type': 'application/sdp',
 },
-body: offer.sdp as any,
+body: offer.sdp,
 });
 
 const answer = {
@@ -306,10 +320,12 @@ return this.connected;
 async handleTextAsCommand(message: string) {
 if (!this.currentUserId) return;
 try {
-const result = await aiAssistantService.processUserMessage(message, this.currentUserId as any);
+const result = await aiAssistantService.processUserMessage(message, this.currentUserId!);
 this.emit({ type: 'assistant.result', result });
-} catch (e: any) {
-this.emit({ type: 'assistant.error', message: e?.message || 'Action failed' });
+} catch (e: unknown) {
+
+this.emit({ type: 'assistant.error', message: (e instanceof Error ? e.message : String(e)) || 'Action failed' 
+});
 }
 }
 }
