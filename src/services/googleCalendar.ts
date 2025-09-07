@@ -47,8 +47,8 @@ body: JSON.stringify({ action, ...body }),
 });
 
 if (!res.ok) {
-const text = await res.text().catch(() => '');
-throw new Error(Google Calendar error ${res.status}: ${text || res.statusText});
+  const text = await res.text().catch(() => '');
+  throw new Error(`Google Calendar error ${res.status}: ${text || res.statusText}`);
 }
 return res.json();
 }
