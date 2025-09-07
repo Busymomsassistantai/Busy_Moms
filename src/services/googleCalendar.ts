@@ -1,7 +1,6 @@
 import { supabase } from "../lib/supabase";
 
-const FUNCTIONS_BASE = (import.meta.env.VITE_FUNCTIONS_URL || "").replace(/\/$/, "");
-
+const FUNCTIONS_BASE = (import.meta.env.VITE_FUNCTIONS_URL || "").replace(//$/, "");
 
 export interface GoogleCalendarEvent {
 id?: string;
@@ -37,8 +36,7 @@ throw new Error('Calendar server is not configured (missing VITE_FUNCTIONS_URL).
 const { data: { session } } = await supabase.auth.getSession();
 if (!session?.access_token) throw new Error('Not signed in');
 
-const res = await fetch(`${FUNCTIONS_BASE}/google-calendar`, {
-
+const res = await fetch(${FUNCTIONS_BASE}/google-calendar, {
 method: 'POST',
 headers: {
 'content-type': 'application/json',
