@@ -152,7 +152,7 @@ onWakeWordDetected(callback: () => void) {
 this.onWakeWordDetectedCb = callback;
 }
 
-getIsListeningForWakeWord(): boolean {
+isListeningForWakeWord(): boolean {
 return this.isListeningForWakeWordFlag;
 }
 
