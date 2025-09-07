@@ -1,134 +1,82 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xmwavumggnlffdtedjdb.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const url = import.meta.env.VITE_SUPABASE_URL
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'x-client-info': 'busy-moms-app'
-    }
-  }
-})
-
-// Database types
-export interface Profile {
-  id: string
-  email: string
-  full_name?: string
-  user_type?: 'Mom' | 'Dad' | 'Guardian' | 'Other'
-  onboarding_completed?: boolean
-  ai_personality?: 'Friendly' | 'Professional' | 'Humorous'
-  created_at?: string
-  updated_at?: string
+if (!url || !anonKey) {
+throw new Error(
+'[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. ' +
+'Ensure your environment variables are set. Refusing to fall back to a hardcoded project.'
+)
 }
 
+export const supabase: SupabaseClient = createClient(url, anonKey, {
+auth: {
+persistSession: true,
+autoRefreshToken: true,
+detectSessionInUrl: true,
+},
+db: { schema: 'public' },
+})
+
+// ---- Shared App Types (used only for TypeScript hints) ----------------------
+
+export type UUID = string
+
 export interface FamilyMember {
-  id: string
-  user_id: string
-  name: string
-  age?: number
-  gender?: 'Boy' | 'Girl' | 'Other'
-  allergies?: string[]
-  medical_notes?: string
-  school?: string
-  grade?: string
-  created_at?: string
-  updated_at?: string
+id: UUID
+user_id: UUID
+name: string
+relationship?: string | null
+avatar_url?: string | null
+created_at?: string
+updated_at?: string
 }
 
 export interface Event {
-  id: string
-  user_id: string
-  title: string
-  description?: string
-  event_date: string
-  start_time?: string
-  end_time?: string
-  location?: string
-  event_type?: 'sports' | 'party' | 'meeting' | 'medical' | 'school' | 'family' | 'other'
-  participants?: string[]
-  rsvp_required?: boolean
-  rsvp_status?: 'pending' | 'yes' | 'no' | 'maybe'
-  source?: 'manual' | 'whatsapp' | 'calendar_sync'
-  whatsapp_message_id?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface Contact {
-  id: string
-  user_id: string
-  name: string
-  role: string
-  phone?: string
-  email?: string
-  category?: 'babysitter' | 'coach' | 'doctor' | 'tutor' | 'teacher' | 'other'
-  rating?: number
-  notes?: string
-  verified?: boolean
-  background_check_date?: string
-  background_check_status?: 'pending' | 'passed' | 'failed' | 'expired'
-  available?: boolean
-  last_contact?: string
-  created_at?: string
-  updated_at?: string
-}
-
-export interface ShoppingItem {
-  id: string
-  user_id: string
-  item: string
-  category?: 'dairy' | 'produce' | 'meat' | 'bakery' | 'baby' | 'household' | 'other'
-  completed?: boolean
-  urgent?: boolean
-  quantity?: number
-  notes?: string
-  assigned_to?: string
-  created_at?: string
+id: UUID
+user_id: UUID
+title: string
+description?: string | null
+event_date: string // YYYY-MM-DD
+start_time?: string | null // HH:MM:SS
+end_time?: string | null // HH:MM:SS
+location?: string | null
+participants?: string[] | null
+event_type?: string | null
+rsvp_required?: boolean | null
+rsvp_status?: 'pending' | 'yes' | 'no' | 'maybe' | null
+source?: 'whatsapp' | 'manual' | 'ai' | null
+created_at?: string
+updated_at?: string
 }
 
 export interface Reminder {
-  id: string
-  user_id: string
-  title: string
-  description?: string
-  reminder_date: string
-  reminder_time?: string
-  priority?: 'low' | 'medium' | 'high'
-  completed?: boolean
-  recurring?: boolean
-  recurring_pattern?: 'daily' | 'weekly' | 'monthly' | 'yearly'
-  family_member_id?: string
-  created_at?: string
-  updated_at?: string
+id: UUID
+user_id: UUID
+title: string
+notes?: string | null
+reminder_date?: string | null // YYYY-MM-DD
+reminder_time?: string | null // HH:MM:SS
+priority?: 'low' | 'medium' | 'high' | null
+completed?: boolean | null
+created_at?: string
+updated_at?: string
+family_member_id?: UUID | null
 }
 
-export interface Task {
-  id: string
-  user_id: string
-  assigned_to?: string
-  title: string
-  description?: string
-  category?: 'chores' | 'homework' | 'sports' | 'music' | 'health' | 'social' | 'other'
-  priority?: 'low' | 'medium' | 'high'
-  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled'
-  due_date?: string
-  due_time?: string
-  recurring?: boolean
-  recurring_pattern?: 'daily' | 'weekly' | 'monthly' | 'yearly'
-  points?: number
-  notes?: string
-  completed_at?: string
-  created_at?: string
-  updated_at?: string
-  assigned_family_member?: FamilyMember
+export interface ShoppingItem {
+id: UUID
+user_id: UUID
+item: string
+quantity?: number | null
+category?:
+| 'dairy' | 'produce' | 'meat' | 'bakery' | 'baby' | 'beverages'
+| 'frozen' | 'household' | 'snacks' | 'health' | 'pantry' | 'other'
+| string | null
+notes?: string | null
+completed?: boolean | null
+assigned_to?: UUID | null
+created_at?: string
+updated_at?: string
 }
