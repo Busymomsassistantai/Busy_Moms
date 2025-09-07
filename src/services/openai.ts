@@ -1,107 +1,101 @@
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // Note: In production, API calls should go through your backend
-});
+type Role = 'user' | 'assistant' | 'system';
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
+role: Role;
+content: string;
 }
 
+interface WhatsAppParseResult {
+isEvent: boolean;
+eventDetails?: {
+title?: string;
+date?: string; // YYYY-MM-DD
+time?: string; // HH:MM:SS
+end_time?: string; // HH:MM:SS
+location?: string;
+participants?: string[];
+};
+}
+
+/**
+
+Centralized client for model interactions used by the app.
+
+NOTE: The browser SDK is enabled via dangerouslyAllowBrowser: true.
+
+In production, route through your own API to avoid exposing keys.
+*/
+const openai = new OpenAI({
+apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+dangerouslyAllowBrowser: true
+});
+
 export class AIService {
-  private systemPrompt = `You are a helpful AI assistant for busy parents, specifically designed for the "Busy Moms Assistant" app. You help with:
+/**
 
-- Managing family schedules and events
-- Shopping lists and gift suggestions
-- Reminders and daily planning
-- Contact management
-- General parenting advice and support
+Basic chat wrapper that returns plain text.
+*/
+async chat(messages: ChatMessage[], model = 'gpt-4o-mini'): Promise<string> {
+const resp = await openai.chat.completions.create({
+model,
+messages: messages.map(m => ({ role: m.role, content: m.content }))
+});
+const first = resp.choices?.[0]?.message?.content ?? '';
+return typeof first === 'string' ? first : JSON.stringify(first);
+}
 
-Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.`;
+/**
 
-  async chat(messages: ChatMessage[]): Promise<string> {
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: this.systemPrompt },
-          ...messages
-        ],
-        max_tokens: 500,
-        temperature: 0.7,
-      });
+Parse a WhatsApp message for event details.
 
-      return response.choices[0]?.message?.content || 'I apologize, but I couldn\'t generate a response. Please try again.';
-    } catch (error) {
-      console.error('OpenAI API Error:', error);
-      // Return a fallback response instead of throwing an error for reminder extraction
-      if (error instanceof Error && error.message.includes('API')) {
-        return 'I\'m having trouble connecting to my AI service right now. Please try again in a moment.';
-      }
-      throw new Error('Unable to connect to AI service. Please check your connection and try again.');
-    }
+We instruct the model to reply ONLY with strict JSON in a fixed schema.
+
+We then strip any stray code-fence markers and parse safely.
+*/
+async parseWhatsAppMessage(text: string): Promise<WhatsAppParseResult> {
+const system = [
+'You extract calendar event details from casual WhatsApp messages.',
+'Return ONLY JSON with this shape:',
+'{ "isEvent": boolean, "eventDetails": { "title": string, "date": "YYYY-MM-DD", "time": "HH:MM:SS", "end_time": "HH:MM:SS", "location": string, "participants": string[] } }',
+'If no event present, return { "isEvent": false }.',
+'Dates MUST be ISO (YYYY-MM-DD). Times MUST be 24h HH:MM:SS.',
+'Do not include any extra commentary, just JSON.'
+].join(' ');
+
+const user = [
+
+  'Message:',
+  text
+].join('\n');
+
+const raw = await this.chat([
+  { role: 'system', content: system },
+  { role: 'user', content: user }
+]);
+
+// Clean common code-fence noise and parse JSON
+const cleaned = raw.trim()
+  .replace(/^[\s\uFEFF\u200B]+/, '')
+  .replace(/^```json\s*/i, '')
+  .replace(/^```\s*/i, '')
+  .replace(/\s*```\s*$/i, '');
+
+try {
+  const parsed = JSON.parse(cleaned);
+  // Minimal guard-rails
+  if (parsed && typeof parsed.isEvent === 'boolean') {
+    return parsed;
   }
+} catch (e) {
+  // fallthrough to default below
+  console.error('parseWhatsAppMessage JSON parse error:', e, 'raw:', raw);
+}
+return { isEvent: false };
 
-  async generateEventSuggestions(eventType: string, age?: number): Promise<string> {
-    const prompt = `Suggest 3 practical ideas for a ${eventType}${age ? ` for a ${age}-year-old` : ''}. Keep suggestions brief and actionable.`;
-    
-    try {
-      const response = await this.chat([
-        { role: 'user', content: prompt }
-      ]);
-      return response;
-    } catch (error) {
-      return 'Unable to generate suggestions at the moment. Please try again later.';
-    }
-  }
 
-  async parseWhatsAppMessage(message: string): Promise<{
-    isEvent: boolean;
-    eventDetails?: {
-      title: string;
-      date?: string;
-      time?: string;
-      location?: string;
-    };
-  }> {
-    const prompt = `Analyze this WhatsApp message and determine if it contains an event invitation or announcement. If it does, extract the event details:
-
-Message: "${message}"
-
-IMPORTANT: For the date field, convert any relative dates (like "this Saturday", "next Friday", "tomorrow") to the actual date in YYYY-MM-DD format. For time, use HH:MM format (24-hour).
-
-Respond in JSON format with:
-{
-  "isEvent": boolean,
-  "eventDetails": {
-    "title": "event name",
-    "date": "YYYY-MM-DD format if mentioned",
-    "time": "HH:MM format if mentioned", 
-    "location": "location if mentioned"
-  }
-}`;
-
-    try {
-      const response = await this.chat([
-        { role: 'user', content: prompt }
-      ]);
-      
-      // Try to parse JSON response
-      // Clean the response by removing markdown code block syntax
-      const cleanedResponse = response.trim()
-        .replace(/^```json\s*/, '')  // Remove opening ```json
-        .replace(/^```\s*/, '')      // Remove opening ```
-        .replace(/\s*```$/, '');     // Remove closing ```
-      
-      const parsed = JSON.parse(response);
-      return parsed;
-    } catch (error) {
-      return { isEvent: false };
-    }
-  }
+}
 }
 
 export const aiService = new AIService();
