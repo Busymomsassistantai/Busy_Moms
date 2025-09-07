@@ -36,9 +36,12 @@ return null;
 function toISOTime(s?: string | null): string | null {
 if (!s) return null;
 if (isISOTime(s)) {
-return s.length === 5 ? s + ':00' : s;
+return s.length === 5 ? ${s}:00 : s;
 }
-const m = s.trim().toLowerCase().match(/^(\d{1,2})(?::(\d{2}))?\s*(a|p).?m?.?$/);
+const trimmed = s.trim().toLowerCase();
+
+// Match formats like "2pm", "2:30pm", "2 p.m.", "2:30 p.m."
+const m = trimmed.match(/^(\d{1,2})(?::(\d{2}))?\s*(a|p).?m?.?$/);
 if (m) {
 let h = parseInt(m[1], 10);
 const min = m[2] ? parseInt(m[2], 10) : 0;
@@ -49,7 +52,9 @@ const hh = String(h).padStart(2, '0');
 const mm = String(min).padStart(2, '0');
 return ${hh}:${mm}:00;
 }
-const m2 = s.match(/^(\d{1,2})(?::(\d{2}))?$/);
+
+// Match simple 24h formats like "14" or "14:30"
+const m2 = trimmed.match(/^(\d{1,2})(?::(\d{2}))?$/);
 if (m2) {
 const h = Math.max(0, Math.min(23, parseInt(m2[1], 10)));
 const min = m2[2] ? parseInt(m2[2], 10) : 0;
@@ -57,6 +62,7 @@ const hh = String(h).padStart(2, '0');
 const mm = String(min).padStart(2, '0');
 return ${hh}:${mm}:00;
 }
+
 return null;
 }
 
@@ -134,9 +140,9 @@ const event_date = toISODate(details.date) || new Date().toISOString().split('T'
 const start_time = toISOTime(details.time);
 const end_time = toISOTime(details.end_time);
 const location = details.location ? String(details.location).slice(0, 200) : null;
-const participants = Array.isArray(details.participants) ? details.participants.map(String) : null;
+const participants = Array.isArray(details.participants) ? details.participants.map((p: any) => String(p)) : null;
 
-// dedupe check
+// dedupe check: same user + title + date
 let existingId: UUID | null = null;
 try {
   const { data: rows } = await supabase
@@ -147,7 +153,9 @@ try {
     .eq('event_date', event_date)
     .limit(1);
   if (rows && rows.length > 0) existingId = rows[0].id;
-} catch {}
+} catch (e) {
+  // non-fatal
+}
 
 if (existingId) {
   return { type: 'calendar', success: true, message: 'Event already exists.', data: { id: existingId } };
@@ -230,7 +238,9 @@ try {
     .eq('item', item)
     .limit(1);
   if (rows && rows.length > 0 && rows[0].completed === false) exists = true;
-} catch {}
+} catch (e) {
+  // non-fatal
+}
 
 if (exists) {
   return { type: 'shopping', success: true, message: `“${item}” is already on your list.` };
