@@ -1,4 +1,4 @@
-import { supabase, Event, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
+import { supabase, Event as DBEvent, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
 import { aiService } from './openai';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
@@ -260,7 +260,7 @@ if (existingId) {
   return { type: 'calendar', success: true, message: 'Event already exists.', data: { id: existingId } };
 }
 
-const payload: Partial<Event> = {
+const payload: Partial<DBEvent> = {
   user_id: userId,
   title,
   event_date,
