@@ -1,5 +1,6 @@
-import { supabase, Event as DBEvent, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
+import { supabase, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
 import { aiService } from './openai';
+import { ICalendarProvider, LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
 export interface AIAction {
@@ -137,6 +138,18 @@ return { type: 'chat' };
 }
 
 export class AIAssistantService {
+private calendarProvider: ICalendarProvider;
+
+constructor(provider?: ICalendarProvider) {
+// Default to local DB provider unless explicitly injected
+this.calendarProvider = provider ?? new LocalCalendarProvider();
+}
+
+/** Expose setter to inject a different provider at runtime. */
+setCalendarProvider(provider: ICalendarProvider) {
+this.calendarProvider = provider;
+}
+
 /** Main entry: classify -> route to handler */
 async processUserMessage(message: string, userId: UUID): Promise<AIAction> {
 try {
@@ -223,7 +236,7 @@ return fallbackClassify(message);
 
 }
 
-/** Calendar events (local DB; Google sync handled separately in UI/services). */
+/** Calendar events — now delegated to the injected provider. */
 private async handleCalendarAction(details: Record<string, any>, userId: UUID): Promise<AIAction> {
 const title = (details.title || details.name || 'Untitled Event').toString().slice(0, 200);
 const event_date = toISODate(details.date) || new Date().toISOString().split('T')[0];
@@ -234,52 +247,36 @@ const participants = Array.isArray(details.participants)
 ? details.participants.map((p: any) => String(p))
 : null;
 
-// If end_time is before start_time (or missing), default to +30m
-if (start_time && (!end_time)) {
+// If end_time is missing but start_time exists, default to +30m
+if (start_time && !end_time) {
   const [hh, mm] = start_time.split(':').map((x) => parseInt(x,10));
   const d = new Date();
   d.setHours(hh, mm + 30, 0, 0);
   end_time = d.toTimeString().slice(0,8);
 }
 
-// dedupe check: same user + title + date (case-insensitive)
-let existingId: UUID | null = null;
-try {
-  const { data: rows } = await supabase
-    .from('events')
-    .select('id, title, event_date')
-    .eq('user_id', userId)
-    .eq('event_date', event_date)
-    .ilike('title', title); // case-insensitive compare
-  if (rows && rows.length > 0) existingId = rows[0].id as UUID;
-} catch (e) {
-  // non-fatal
-}
-
-if (existingId) {
-  return { type: 'calendar', success: true, message: 'Event already exists.', data: { id: existingId } };
-}
-
-const payload: Partial<DBEvent> = {
-  user_id: userId,
+const payload: CalendarEventInput = {
   title,
-  event_date,
+  date: event_date!,
   start_time,
   end_time,
   location,
   participants,
-  event_type: 'other',
+  type: 'other',
   source: 'ai',
 };
 
-const { data, error } = await supabase.from('events').insert([payload]).select('*').single();
-
-if (error) {
-  console.error('events insert error:', error);
-  return { type: 'calendar', success: false, message: error.message || 'Failed to create event.' };
+try {
+  const result = await this.calendarProvider.createEvent(String(userId), payload);
+  return {
+    type: 'calendar',
+    success: true,
+    message: `Added "${title}" on ${event_date}.`,
+    data: result,
+  };
+} catch (error: any) {
+  return { type: 'calendar', success: false, message: error?.message || 'Failed to create event.' };
 }
-
-return { type: 'calendar', success: true, message: `Added "${title}" on ${event_date}.`, data };
 
 
 }
