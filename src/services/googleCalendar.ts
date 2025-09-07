@@ -1,7 +1,6 @@
 import { supabase } from "../lib/supabase";
 
-const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(/\/+$/, "");
-
+const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(//+$/, "");
 
 export interface GoogleCalendarEvent {
 id?: string;
@@ -37,18 +36,18 @@ throw new Error('Calendar server is not configured (missing VITE_FUNCTIONS_URL).
 const { data: { session } } = await supabase.auth.getSession();
 if (!session?.access_token) throw new Error('Not signed in');
 
-const res = await fetch(`${FUNCTIONS_BASE}/google-calendar`, {
+const res = await fetch(${FUNCTIONS_BASE}/google-calendar, {
 method: 'POST',
 headers: {
 'content-type': 'application/json',
-Authorization: `Bearer ${session.access_token}`,
+Authorization: Bearer ${session.access_token},
 },
 body: JSON.stringify({ action, ...body }),
 });
 
 if (!res.ok) {
-  const text = await res.text().catch(() => '');
-  throw new Error(`Google Calendar error ${res.status}: ${text || res.statusText}`);
+const text = await res.text().catch(() => '');
+throw new Error(Google Calendar error ${res.status}: ${text || res.statusText});
 }
 return res.json();
 }
