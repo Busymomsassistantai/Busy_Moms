@@ -37,7 +37,8 @@ throw new Error('Calendar server is not configured (missing VITE_FUNCTIONS_URL).
 const { data: { session } } = await supabase.auth.getSession();
 if (!session?.access_token) throw new Error('Not signed in');
 
-const res = await fetch(${FUNCTIONS_BASE}/google-calendar, {
+const res = await fetch(`${FUNCTIONS_BASE}/google-calendar`, {
+
 method: 'POST',
 headers: {
 'content-type': 'application/json',
