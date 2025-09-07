@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, CheckCircle, XCircle, AlertCircle, Loader2, ExternalLink, X } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, AlertCircle, Loader2, ExternalLink, X, RefreshCw } from 'lucide-react';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 
 interface GoogleCalendarTestProps {
