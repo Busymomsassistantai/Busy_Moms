@@ -149,7 +149,7 @@ export function Settings() {
         {
           icon: Calendar,
           title: 'Test Google Calendar',
-          description: 'Verify Google Calendar API integration',
+          description: 'Verify Google Calendar API integration', 
           action: 'Test',
           onClick: () => setShowGoogleCalendarTest(true)
         }
