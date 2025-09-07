@@ -107,7 +107,6 @@ const res = await fetch(`${FUNCTIONS_BASE}/google-oauth/start`, {
   redirect: 'manual',
 });
 
-// Edge functions typically respond with a redirect Location
 const loc = res.headers.get('Location');
 if (!loc) throw new Error('OAuth start failed: missing redirect');
 window.location.href = loc;
