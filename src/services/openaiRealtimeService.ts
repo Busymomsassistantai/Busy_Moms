@@ -1,7 +1,18 @@
+/* full file content */
 import { aiAssistantService } from './aiAssistantService';
 
-// Local fallbacks for browsers/TS configs that don't include these in lib.dom.d.ts
-// If your project already includes proper DOM speech types, you can remove these aliases.
+export interface OpenAIRealtimeConfig {
+  model: string;
+  wakeWord?: string; // e.g., "hey sara"
+  vadThreshold?: number; // simple amplitude gate
+}
+
+export interface RealtimeEvent {
+  type: string;
+  [key: string]: unknown;
+}
+
+// If your project already includes proper DOM speech types, you can remove these fallbacks.
 interface MinimalSpeechResult { transcript: string }
 interface MinimalSpeechEvent { results?: Array<Array<MinimalSpeechResult>> }
 interface MinimalSpeechErrorEvent { error?: string }
@@ -15,319 +26,197 @@ interface MinimalSpeechRecognition {
   stop: () => void;
 }
 type SpeechRecognitionCtor = new () => MinimalSpeechRecognition;
-type WindowSpeech = {
-  SpeechRecognition?: SpeechRecognitionCtor;
-  webkitSpeechRecognition?: SpeechRecognitionCtor;
-};
-export interface OpenAIRealtimeConfig {
-model?: string;
-voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
-instructions?: string;
-wakeWord?: string;
-}
+type WindowSpeech = { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor };
 
-export interface RealtimeEvent {
-type: string;
-[key: string]: unknown;
-}
+// Minimal event emitter base
+class Emitter {
+  private listeners = new Map<string, Array<(ev: RealtimeEvent) => void>>();
 
-export class OpenAIRealtimeService {
-private pc: RTCPeerConnection | null = null;
-private dc: RTCDataChannel | null = null;
-private audioEl: HTMLAudioElement | null = null;
-private micStream: MediaStream | null = null;
-private connected = false;
-private config: OpenAIRealtimeConfig = {};
-private onEventCb?: (event: RealtimeEvent) => void;
-private onConnStateCb?: (state: RTCPeerConnectionState) => void;
-
-// Wake word detection state
-private wakeWordDetection = false;
-private isListeningForWakeWordFlag = false; // renamed to avoid method/property collision
-private wakeWordRecognition: SpeechRecognition | null = null;
-private onWakeWordDetectedCb?: () => void;
-
-private currentUserId: string | null = null;
-
-constructor(config: OpenAIRealtimeConfig = {}) {
-this.config = {
-model: 'gpt-4o-realtime-preview',
-voice: 'alloy',
-instructions: `You are Sara, a helpful AI assistant embedded in a family organizer app.
-
-Keep replies short and actionable.
-
-When the user asks for reminders, events, shopping, or tasks, respond with a concise confirmation.
-
-DO NOT produce code fences or markdown unless asked.`,
-...config,
-};
-}
-
-onEvent(cb: (event: RealtimeEvent) => void) {
-this.onEventCb = cb;
-}
-
-onConnectionStateChange(cb: (state: RTCPeerConnectionState) => void) {
-this.onConnStateCb = cb;
-}
-
-private emit(event: RealtimeEvent) {
-try {
-this.onEventCb?.(event);
-} catch (e) {
-console.error('onEvent callback error:', e);
-}
-}
-
-private emitConn(state: RTCPeerConnectionState) {
-try {
-this.onConnStateCb?.(state);
-} catch (e) {
-console.error('onConnectionStateChange callback error:', e);
-}
-}
-
-private startWakeWordDetection() {
-try {
-const hasSpeech =
-typeof window !== 'undefined' &&
-(('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window));
-
-if (!hasSpeech) {
-  console.warn('SpeechRecognition is not supported in this browser.');
-  return;
-}
-
-const SpeechRecognitionCtor =
-  (window as unknown as WindowSpeech).SpeechRecognition || (window as unknown as WindowSpeech).webkitSpeechRecognition;
-
-this.wakeWordRecognition = new SpeechRecognitionCtor();
-this.wakeWordRecognition.continuous = true;
-this.wakeWordRecognition.interimResults = false;
-this.wakeWordRecognition.lang = 'en-US';
-const wakeWord = (this.config.wakeWord || 'sara').toLowerCase();
-
-this.wakeWordRecognition.onresult = (event: SpeechRecognitionEvent) => {
-  const results = (event as unknown as { results?: Array<Array<{ transcript: string }>> }).results || [];
-  if (!results || !results.length) return;
-  const transcript = results[results.length - 1][0].transcript.toLowerCase();
-  if (typeof transcript === 'string' && transcript.includes(wakeWord)) {
-    this.onWakeWordDetectedCb?.();
+  on(type: string, fn: (ev: RealtimeEvent) => void) {
+    const arr = this.listeners.get(type) || [];
+    arr.push(fn);
+    this.listeners.set(type, arr);
   }
-};
-
-this.wakeWordRecognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-  console.error('Wake word recognition error:', event);
-};
-
-this.wakeWordRecognition.onend = () => {
-  if (this.isListeningForWakeWordFlag) {
-    // Restart listening if it was stopped unexpectedly
-    this.startWakeWordDetection();
+  off(type: string, fn: (ev: RealtimeEvent) => void) {
+    const arr = this.listeners.get(type) || [];
+    this.listeners.set(type, arr.filter((f) => f !== fn));
   }
-};
-
-this.wakeWordRecognition.start();
-this.isListeningForWakeWordFlag = true;
-this.wakeWordDetection = true;
-console.log('🎤 Wake word detection started');
-
-
-} catch (error) {
-console.error('Failed to start wake word detection:', error);
-}
+  emit(ev: RealtimeEvent) {
+    const arr = this.listeners.get(ev.type) || [];
+    for (const f of arr) f(ev);
+  }
 }
 
-private stopWakeWordDetection() {
-if (this.wakeWordRecognition) {
-try {
-this.wakeWordDetection = false;
-this.isListeningForWakeWordFlag = false;
-this.wakeWordRecognition.stop();
-console.log('🔇 Stopped listening for wake word');
-} catch (error) {
-console.error('Failed to stop wake word detection:', error);
+const RTC_URL = import.meta.env.VITE_OPENAI_REALTIME_URL as string | undefined;
+const EPHEMERAL_URL = import.meta.env.VITE_OPENAI_EPHEMERAL_URL as string | undefined;
+
+export class OpenAIRealtimeService extends Emitter {
+  private pc?: RTCPeerConnection;
+  private micStream?: MediaStream;
+  private audioEl?: HTMLAudioElement;
+  private recognition?: MinimalSpeechRecognition;
+  private wakeWordRecognition?: MinimalSpeechRecognition;
+  private vadThreshold: number;
+  private buffer: Float32Array[] = [];
+  private currentUserId?: string;
+
+  constructor(private config: OpenAIRealtimeConfig) {
+    super();
+    this.vadThreshold = config.vadThreshold ?? 0.03;
+  }
+
+  attachUser(userId: string) {
+    this.currentUserId = userId;
+  }
+
+  async initWakeWord() {
+    const SpeechRecognitionCtor =
+      (window as unknown as WindowSpeech).SpeechRecognition ||
+      (window as unknown as WindowSpeech).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionCtor) return;
+
+    this.wakeWordRecognition = new SpeechRecognitionCtor();
+    this.wakeWordRecognition.continuous = true;
+    this.wakeWordRecognition.interimResults = false;
+    this.wakeWordRecognition.lang = 'en-US';
+
+    const wake = (this.config.wakeWord || 'hey sara').toLowerCase();
+
+    this.wakeWordRecognition.onresult = (event: MinimalSpeechEvent) => {
+      const results = (event as unknown as { results?: Array<Array<{ transcript: string }>> }).results || [];
+      for (const result of results) {
+        const transcript = (result?.[0]?.transcript || '').toLowerCase();
+        if (transcript.includes(wake)) {
+          this.emit({ type: 'wake.detected' });
+          this.startRecording().catch((e) => {
+            this.emit({ type: 'assistant.error', message: (e instanceof Error ? e.message : String(e)) || 'Record start failed' });
+          });
+          break;
+        }
+      }
+    };
+
+    this.wakeWordRecognition.start();
+  }
+
+  async startRecording() {
+    if (this.micStream) return;
+
+    this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ctx = new AudioContext();
+    const src = ctx.createMediaStreamSource(this.micStream);
+    const proc = ctx.createScriptProcessor(4096, 1, 1);
+
+    src.connect(proc);
+    proc.connect(ctx.destination);
+
+    proc.onaudioprocess = (ev) => {
+      const ch = ev.inputBuffer.getChannelData(0);
+      const max = Math.max(...ch.map((v) => Math.abs(v)));
+      this.emit({ type: 'vad.level', value: max });
+      if (max > this.vadThreshold) {
+        this.buffer.push(new Float32Array(ch));
+      } else if (this.buffer.length > 0) {
+        // End of speech segment
+        const concat = this.concatBuffers(this.buffer);
+        this.buffer = [];
+        this.emit({ type: 'vad.segment', data: concat });
+        // For demo: convert to fake text and dispatch to AI
+        const fakeText = '[voice] user audio segment';
+        this.processUserText(fakeText).catch((e) => {
+          this.emit({ type: 'assistant.error', message: (e instanceof Error ? e.message : String(e)) || 'Voice segment failed' });
+        });
+      }
+    };
+
+    this.emit({ type: 'recording.started' });
+  }
+
+  stopRecording() {
+    if (this.micStream) {
+      this.micStream.getTracks().forEach((t) => t.stop());
+      this.micStream = undefined;
+      this.emit({ type: 'recording.stopped' });
+    }
+  }
+
+  private concatBuffers(chunks: Float32Array[]): Float32Array {
+    const total = chunks.reduce((a, b) => a + b.length, 0);
+    const out = new Float32Array(total);
+    let offset = 0;
+    for (const c of chunks) {
+      out.set(c, offset);
+      offset += c.length;
+    }
+    return out;
+  }
+
+  async connectRealtime() {
+    if (this.pc) return;
+
+    // Acquire ephemeral key from your backend
+    const tokenResp = await fetch(EPHEMERAL_URL || '/api/realtime-token');
+    if (!tokenResp.ok) {
+      throw new Error(`Failed to get ephemeral key: ${tokenResp.status}`);
+    }
+    const { client_secret: { value: EPHEMERAL_KEY } = { value: '' } } = await tokenResp.json();
+
+    this.pc = new RTCPeerConnection();
+    this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.micStream.getTracks().forEach((t) => this.pc!.addTrack(t, this.micStream!));
+
+    const audioEl = document.createElement('audio');
+    audioEl.autoplay = true;
+    this.audioEl = audioEl;
+
+    this.pc.ontrack = (e) => {
+      this.audioEl!.srcObject = e.streams[0];
+    };
+
+    const data = this.pc.createDataChannel('oai-events');
+    data.onmessage = (ev) => {
+      this.emit({ type: 'oai.message', raw: ev.data });
+    };
+
+    const offer = await this.pc.createOffer();
+    await this.pc.setLocalDescription(offer);
+
+    if (!offer.sdp) { throw new Error('Failed to create SDP offer.'); }
+    const resp = await fetch(`${(RTC_URL || "https://api.openai.com/v1/realtime")}?model=${this.config.model}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${EPHEMERAL_KEY}`,
+        'Content-Type': 'application/sdp',
+      },
+      body: offer.sdp,
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Realtime connect failed: ${resp.status} ${resp.statusText}`);
+    }
+
+    const answerSDP = await resp.text();
+    await this.pc.setRemoteDescription({ type: 'answer', sdp: answerSDP });
+    this.emit({ type: 'realtime.connected' });
+  }
+
+  async disconnectRealtime() {
+    if (this.pc) {
+      this.pc.close();
+      this.pc = undefined;
+      this.emit({ type: 'realtime.disconnected' });
+    }
+    this.stopRecording();
+  }
+
+  async processUserText(message: string) {
+    try {
+      const result = await aiAssistantService.processUserMessage(message, this.currentUserId!);
+      this.emit({ type: 'assistant.action', data: result });
+    } catch (e: unknown) {
+      this.emit({ type: 'assistant.error', message: (e instanceof Error ? e.message : String(e)) || 'Action failed' });
+    }
+  }
 }
-}
-}
-
-onWakeWordDetected(callback: () => void) {
-this.onWakeWordDetectedCb = callback;
-}
-
-getIsListeningForWakeWord(): boolean {
-return this.isListeningForWakeWordFlag;
-}
-
-async initialize(userId: string): Promise<void> {
-this.currentUserId = userId;
-
-// 1) Get ephemeral token from your (server-side) function
-let tokenResp: Response;
-try {
-const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!baseUrl || !anonKey) {
-  throw new Error('Realtime not configured: missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
-}
-
-tokenResp = await fetch(`${baseUrl}/functions/v1/openai-token`, {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${anonKey}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ userId, sessionId: `session-${Date.now()}` }),
-});
-
-
-} catch (e) {
-throw new Error('Realtime not configured: missing openai-token Edge Function');
-}
-
-if (!tokenResp.ok) {
-throw new Error(`Failed to get ephemeral key: ${tokenResp.status}`);
-}
-const payload = await tokenResp.json().catch(() => ({}));
-const EPHEMERAL_KEY = payload?.EPHEMERAL_KEY;
-const RTC_URL = payload?.RTC_URL;
-
-if (!EPHEMERAL_KEY) {
-throw new Error('Failed to get ephemeral key: missing EPHEMERAL_KEY in response');
-}
-
-// 2) Create RTCPeerConnection & DataChannel
-this.pc = new RTCPeerConnection({
-iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-});
-this.dc = this.pc.createDataChannel('oai-events');
-this.setupDataChannelHandlers();
-
-// 3) Set up audio element
-this.audioEl = new Audio();
-this.audioEl.autoplay = true;
-
-// 4) Local mic capture
-if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-throw new Error('Microphone access is not supported in this browser/environment.');
-}
-this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-this.micStream.getTracks().forEach(track => this.pc!.addTrack(track, this.micStream!));
-
-// 5) Remote track
-this.pc.ontrack = (e) => {
-if (this.audioEl) this.audioEl.srcObject = e.streams[0];
-};
-
-// 6) ICE/connection state
-this.pc.oniceconnectionstatechange = () => {
-const state = this.pc!.iceConnectionState;
-if (state === 'connected') this.connected = true;
-if (state === 'disconnected' || state === 'failed') this.connected = false;
-this.emitConn(this.pc!.connectionState);
-};
-
-// 7) Signal to OAI Realtime server
-const offer = await this.pc.createOffer();
-await this.pc.setLocalDescription(offer);
-
-if (!offer.sdp) { throw new Error('Failed to create SDP offer.'); }
-const resp = await fetch(`${(RTC_URL || "https://api.openai.com/v1/realtime")}?model=${this.config.model}`, {
-method: 'POST',
-headers: {
-Authorization: `Bearer ${EPHEMERAL_KEY}`,
-'Content-Type': 'application/sdp',
-},
-body: offer.sdp,
-});
-
-const answer = {
-type: 'answer',
-sdp: await resp.text(),
-} as RTCSessionDescriptionInit;
-
-await this.pc.setRemoteDescription(answer);
-
-// 8) Send session meta (instructions, TTS voice, etc)
-this.dc?.send(JSON.stringify({
-type: 'session.update',
-session: {
-instructions: this.config.instructions,
-voice: this.config.voice,
-input_audio_format: 'pcm16',
-output_audio_format: 'pcm16',
-modalities: ['text', 'audio'],
-system_prompt_examples: `You are Sara. Keep confirmations terse:
-
-"Added an event for 3pm tomorrow."
-
-"Reminder set for 8:00 AM."
-
-"Added milk to the shopping list."
-
-"Task created for Jake due tomorrow."
-
-"Marked bread as completed on the shopping list."`,
-turn_detection: {
-type: 'none',
-},
-},
-}));
-
-// Start wake word detection after initialization
-this.startWakeWordDetection();
-}
-
-private setupDataChannelHandlers() {
-if (!this.dc) return;
-this.dc.onmessage = async (evt) => {
-try {
-const msg = JSON.parse(evt.data);
-this.emit(msg);
-} catch (_e) {
-console.warn('Non-JSON data message:', evt.data);
-}
-};
-}
-
-async disconnect() {
-try {
-this.stopWakeWordDetection();
-this.dc?.close();
-this.pc?.close();
-this.micStream?.getTracks().forEach(t => t.stop());
-} finally {
-this.dc = null;
-this.pc = null;
-this.audioEl = null;
-this.micStream = null;
-this.connected = false;
-this.emitConn('disconnected' as RTCPeerConnectionState);
-}
-}
-
-isSupported(): boolean {
-return typeof RTCPeerConnection !== 'undefined';
-}
-
-isConnected(): boolean {
-return this.connected;
-}
-
-/** Helper to let Sara write to the DB using the same logic as text chat. */
-async handleTextAsCommand(message: string) {
-if (!this.currentUserId) return;
-try {
-const result = await aiAssistantService.processUserMessage(message, this.currentUserId!);
-this.emit({ type: 'assistant.result', result });
-} catch (e: unknown) {
-
-this.emit({ type: 'assistant.error', message: (e instanceof Error ? e.message : String(e)) || 'Action failed' 
-});
-}
-}
-}
-
-export const openaiRealtimeService = new OpenAIRealtimeService();
+export const openaiRealtimeService = new OpenAIRealtimeService({ model: 'gpt-4o-realtime-preview' });
