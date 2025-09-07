@@ -51,6 +51,7 @@ class Emitter {
 const RTC_URL = import.meta.env.VITE_OPENAI_REALTIME_URL as string | undefined;
 const EPHEMERAL_URL = import.meta.env.VITE_OPENAI_EPHEMERAL_URL as string | undefined;
 const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? '').replace(/\/+$/, '');
+const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '');
 
 export class OpenAIRealtimeService extends Emitter {
   private pc?: RTCPeerConnection;
@@ -112,13 +113,25 @@ export class OpenAIRealtimeService extends Emitter {
         `${FUNCTIONS_BASE}/openai-token`,
         `${FUNCTIONS_BASE}/webrtc-token`,
         `${FUNCTIONS_BASE}/realtime-token`,
-      );
-      urls.push(
         `${FUNCTIONS_BASE}/functions/v1/openai-token`,
         `${FUNCTIONS_BASE}/functions/v1/webrtc-token`,
         `${FUNCTIONS_BASE}/functions/v1/realtime-token`,
       );
     }
+    if (SUPABASE_URL) {
+      urls.push(
+        `${SUPABASE_URL}/functions/v1/openai-token`,
+        `${SUPABASE_URL}/functions/v1/webrtc-token`,
+        `${SUPABASE_URL}/functions/v1/realtime-token`,
+      );
+    }
+    // Netlify Functions convention
+    urls.push(
+      '/.netlify/functions/openai-token',
+      '/.netlify/functions/webrtc-token',
+      '/.netlify/functions/realtime-token',
+    );
+    // Local fallbacks (dev proxy, custom API, etc.)
     urls.push(
       '/openai-token',
       '/webrtc-token',
@@ -135,9 +148,9 @@ export class OpenAIRealtimeService extends Emitter {
     const candidates = this.buildTokenUrlCandidates();
     const authHeader: Record<string, string> = {};
     try {
-      const { data: { session} } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) authHeader.Authorization = `Bearer ${session.access_token}`;
-    } catch { /* optional */ }
+    } catch { /* optional; ignore */ }
 
     const tried: string[] = [];
     for (const url of candidates) {
