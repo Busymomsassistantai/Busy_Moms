@@ -49,6 +49,7 @@ class Emitter {
 
 const RTC_URL = import.meta.env.VITE_OPENAI_REALTIME_URL as string | undefined;
 const EPHEMERAL_URL = import.meta.env.VITE_OPENAI_EPHEMERAL_URL as string | undefined;
+const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? '').replace(/\/+$/, '');
 
 export class OpenAIRealtimeService extends Emitter {
   private pc?: RTCPeerConnection;
@@ -185,10 +186,27 @@ export class OpenAIRealtimeService extends Emitter {
   async connectRealtime() {
     if (this.pc) return;
 
-    // Acquire ephemeral key from your backend
-    const tokenResp = await fetch(EPHEMERAL_URL || '/api/realtime-token');
-    if (!tokenResp.ok) throw new Error(`Failed to get ephemeral key: ${tokenResp.status}`);
-    const { client_secret: { value: EPHEMERAL_KEY } = { value: '' } } = await tokenResp.json();
+    // Acquire ephemeral key from your backend (Edge Function/Server)
+    const tokenUrl = EPHEMERAL_URL || (FUNCTIONS_BASE ? `${FUNCTIONS_BASE}/openai-token` : '/api/realtime-token');
+    const tokenResp = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ userId: this.currentUserId || 'anonymous', roomId: 'default' })
+    });
+    if (!tokenResp.ok) {
+      const t = await tokenResp.text().catch(() => '');
+      throw new Error(`Failed to get ephemeral key: ${tokenResp.status} ${tokenResp.statusText} ${t.slice(0,120)}`);
+    }
+    const ct = tokenResp.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const body = await tokenResp.text().catch(() => '');
+      throw new Error(`Token endpoint returned non-JSON (${tokenResp.status}). Body starts: ${body.slice(0,80)}`);
+    }
+    const tokenJson: any = await tokenResp.json();
+    const EPHEMERAL_KEY = tokenJson?.client_secret?.value || tokenJson?.value || tokenJson?.token || '';
+    if (!EPHEMERAL_KEY) {
+      throw new Error('Token endpoint JSON missing client_secret.value/token');
+    }
 
     this.pc = new RTCPeerConnection();
     this.pc.onconnectionstatechange = () => {
