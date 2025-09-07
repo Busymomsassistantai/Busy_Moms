@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import { ICalendarProvider, CalendarEventInput, CalendarCreateResult } from "./calendarProvider";
 
 const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(/\/+$/, "");
+const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "");
 
 /** Minimal Google Calendar types we use */
 export interface GoogleCalendarEvent {
@@ -35,27 +36,43 @@ type GoogleEventBody = {
 
 /** ---- Low-level helpers that talk to your server/Edge Function ------------- */
 async function callCalendar(action: string, body: Record<string, unknown> = {}) {
-  if (!FUNCTIONS_BASE) {
-    // Treat as disabled in dev if no server is configured
-    throw new Error('Calendar server is not configured (missing VITE_FUNCTIONS_URL).');
-  }
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new Error('Not signed in');
 
-  const res = await fetch(`${FUNCTIONS_BASE}/google-calendar`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ action, ...body }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Google Calendar error ${res.status}: ${text || res.statusText}`);
+  const candidates: string[] = [];
+  if (FUNCTIONS_BASE) {
+    candidates.push(
+      `${FUNCTIONS_BASE}/google-calendar`,
+      `${FUNCTIONS_BASE}/functions/v1/google-calendar`
+    );
   }
-  return res.json().catch(() => ({}));
+  if (SUPABASE_URL) {
+    candidates.push(`${SUPABASE_URL}/functions/v1/google-calendar`);
+  }
+  candidates.push('/.netlify/functions/google-calendar');
+  candidates.push('/google-calendar', '/api/google-calendar');
+
+  const tried: string[] = [];
+  for (const url of Array.from(new Set(candidates))) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action, ...body }),
+      });
+      tried.push(`${url} -> ${res.status}`);
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok || !ct.includes('application/json')) continue;
+      return await res.json().catch(() => ({}));
+    } catch (e) {
+      tried.push(`${url} -> ${(e as Error).message}`);
+      continue;
+    }
+  }
+  throw new Error(`Google Calendar endpoint not reachable. Tried: ${tried.join(' | ')}`);
 }
 
 export async function listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
@@ -79,10 +96,10 @@ export class GoogleCalendarService {
   private signedIn = false;
 
   async initialize(): Promise<void> {
-    this.ready = !!FUNCTIONS_BASE;
-    if (!this.ready) return;
+    this.ready = !!(FUNCTIONS_BASE || SUPABASE_URL);
     const { data: { session } } = await supabase.auth.getSession();
     this.signedIn = !!session?.access_token;
+    console.info('[GoogleCalendar] initialize => ready:', this.ready, 'signedIn:', this.signedIn);
   }
 
   /**
@@ -108,7 +125,7 @@ export class GoogleCalendarService {
   }
 
   isAvailable(): boolean {
-    return !!FUNCTIONS_BASE;
+    return !!(FUNCTIONS_BASE || SUPABASE_URL);
   }
   isReady(): boolean {
     return this.ready;
@@ -118,17 +135,17 @@ export class GoogleCalendarService {
   }
 
   async listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
-    if (!this.ready || !this.signedIn) return [];
+    if (!this.ready) await this.initialize();
     return listUpcoming(maxResults);
   }
 
   async getEvents(params: GetEventsParams = {}): Promise<GoogleCalendarEvent[]> {
-    if (!this.ready || !this.signedIn) return [];
+    if (!this.ready) await this.initialize();
     return getEvents(params);
   }
 
   async insertEvent(event: GoogleEventBody): Promise<unknown> {
-    if (!this.ready || !this.signedIn) throw new Error('Not signed in to Google Calendar.');
+    if (!this.ready) await this.initialize();
     return insertEvent(event);
   }
 }
@@ -148,7 +165,6 @@ export class GoogleCalendarProvider implements ICalendarProvider {
    */
   async createEvent(userId: string, event: CalendarEventInput): Promise<CalendarCreateResult> {
     if (!this.svc.isReady() || !this.svc.isSignedIn()) {
-      // Ensure service has session
       await this.svc.initialize();
       if (!this.svc.isSignedIn()) throw new Error('Please connect Google Calendar first.');
     }
@@ -162,7 +178,6 @@ export class GoogleCalendarProvider implements ICalendarProvider {
       if (event.end_time) {
         endDateTime = `${event.date}T${event.end_time}`;
       } else {
-        // default +30m if only start provided
         const d = new Date(`${event.date}T${event.start_time}`);
         if (!Number.isNaN(d.getTime())) {
           d.setMinutes(d.getMinutes() + 30);
@@ -187,7 +202,6 @@ export class GoogleCalendarProvider implements ICalendarProvider {
     };
 
     const created: any = await this.svc.insertEvent(googleEvent);
-
     const id = created?.id ?? created?.event?.id ?? created?.data?.id ?? '';
     return {
       id: id ? String(id) : '',
