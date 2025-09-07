@@ -4,6 +4,7 @@ import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
+import { GoogleCalendarTest } from './GoogleCalendarTest';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -14,6 +15,7 @@ export function Settings() {
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
+  const [showGoogleCalendarTest, setShowGoogleCalendarTest] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
@@ -143,6 +145,13 @@ export function Settings() {
           description: 'Setup and test demo user login',
           action: 'Test',
           onClick: () => setShowAuthTest(true)
+        },
+        {
+          icon: Calendar,
+          title: 'Test Google Calendar',
+          description: 'Verify Google Calendar API integration',
+          action: 'Test',
+          onClick: () => setShowGoogleCalendarTest(true)
         }
       ]
     },
@@ -506,6 +515,11 @@ export function Settings() {
       <AuthTest
         isOpen={showAuthTest}
         onClose={() => setShowAuthTest(false)}
+      />
+
+      <GoogleCalendarTest
+        isOpen={showGoogleCalendarTest}
+        onClose={() => setShowGoogleCalendarTest(false)}
       />
 
       <ProfileForm
