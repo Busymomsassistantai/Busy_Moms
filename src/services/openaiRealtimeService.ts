@@ -1,7 +1,11 @@
-src/services/openaiRealtimeService.ts
-
 // OpenAI Realtime API service using WebRTC
 import { aiAssistantService } from './aiAssistantService';
+
+// Local fallbacks for browsers/TS configs that don't include these in lib.dom.d.ts
+// If your project already includes proper DOM speech types, you can remove these aliases.
+type SpeechRecognition = any;
+type SpeechRecognitionEvent = any;
+type SpeechRecognitionErrorEvent = any;
 
 export interface OpenAIRealtimeConfig {
 model?: string;
@@ -26,8 +30,8 @@ private onEventCb?: (event: RealtimeEvent) => void;
 private onConnStateCb?: (state: RTCPeerConnectionState) => void;
 
 // Wake word detection state
-private wakeWordDetection: boolean = false;
-private isListeningForWakeWord: boolean = false;
+private wakeWordDetection = false;
+private isListeningForWakeWordFlag = false; // renamed to avoid method/property collision
 private wakeWordRecognition: SpeechRecognition | null = null;
 private onWakeWordDetectedCb?: () => void;
 
@@ -60,6 +64,7 @@ private emit(event: RealtimeEvent) {
 try {
 this.onEventCb?.(event);
 } catch (e) {
+// eslint-disable-next-line no-console
 console.error('onEvent callback error:', e);
 }
 }
@@ -68,49 +73,62 @@ private emitConn(state: RTCPeerConnectionState) {
 try {
 this.onConnStateCb?.(state);
 } catch (e) {
+// eslint-disable-next-line no-console
 console.error('onConnectionStateChange callback error:', e);
 }
 }
 
 private startWakeWordDetection() {
 try {
-if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-console.warn('SpeechRecognition is not supported in this browser.');
-return;
+const hasSpeech =
+typeof window !== 'undefined' &&
+(('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window));
+
+if (!hasSpeech) {
+  // eslint-disable-next-line no-console
+  console.warn('SpeechRecognition is not supported in this browser.');
+  return;
 }
 
-const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-this.wakeWordRecognition = new SpeechRecognition();
+const SpeechRecognitionCtor =
+  (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+this.wakeWordRecognition = new SpeechRecognitionCtor();
 this.wakeWordRecognition.continuous = true;
 this.wakeWordRecognition.interimResults = false;
 this.wakeWordRecognition.lang = 'en-US';
 const wakeWord = (this.config.wakeWord || 'sara').toLowerCase();
 
 this.wakeWordRecognition.onresult = (event: SpeechRecognitionEvent) => {
-  const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-  if (transcript.includes(wakeWord)) {
+  const results = (event as any).results || [];
+  if (!results || !results.length) return;
+  const transcript = results[results.length - 1][0].transcript.toLowerCase();
+  if (typeof transcript === 'string' && transcript.includes(wakeWord)) {
     this.onWakeWordDetectedCb?.();
   }
 };
 
 this.wakeWordRecognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+  // eslint-disable-next-line no-console
   console.error('Wake word recognition error:', event);
 };
 
 this.wakeWordRecognition.onend = () => {
-  if (this.isListeningForWakeWord) {
+  if (this.isListeningForWakeWordFlag) {
     // Restart listening if it was stopped unexpectedly
     this.startWakeWordDetection();
   }
 };
 
 this.wakeWordRecognition.start();
-this.isListeningForWakeWord = true;
+this.isListeningForWakeWordFlag = true;
 this.wakeWordDetection = true;
+// eslint-disable-next-line no-console
 console.log('🎤 Wake word detection started');
 
 
 } catch (error) {
+// eslint-disable-next-line no-console
 console.error('Failed to start wake word detection:', error);
 }
 }
@@ -119,10 +137,12 @@ private stopWakeWordDetection() {
 if (this.wakeWordRecognition) {
 try {
 this.wakeWordDetection = false;
-this.isListeningForWakeWord = false;
+this.isListeningForWakeWordFlag = false;
 this.wakeWordRecognition.stop();
+// eslint-disable-next-line no-console
 console.log('🔇 Stopped listening for wake word');
 } catch (error) {
+// eslint-disable-next-line no-console
 console.error('Failed to stop wake word detection:', error);
 }
 }
@@ -132,8 +152,8 @@ onWakeWordDetected(callback: () => void) {
 this.onWakeWordDetectedCb = callback;
 }
 
-isListeningForWakeWord(): boolean {
-return this.isListeningForWakeWord;
+getIsListeningForWakeWord(): boolean {
+return this.isListeningForWakeWordFlag;
 }
 
 async initialize(userId: string): Promise<void> {
@@ -142,14 +162,23 @@ this.currentUserId = userId;
 // 1) Get ephemeral token from your (server-side) function
 let tokenResp: Response;
 try {
-tokenResp = await fetch(${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-token, {
-method: 'POST',
-headers: {
-'Authorization': Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY},
-'Content-Type': 'application/json',
-},
-body: JSON.stringify({ userId, sessionId: session-${Date.now()} }),
+const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!baseUrl || !anonKey) {
+  throw new Error('Realtime not configured: missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
+}
+
+tokenResp = await fetch(`${baseUrl}/functions/v1/openai-token`, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${anonKey}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ userId, sessionId: `session-${Date.now()}` }),
 });
+
+
 } catch (e) {
 throw new Error('Realtime not configured: missing openai-token Edge Function');
 }
@@ -157,7 +186,13 @@ throw new Error('Realtime not configured: missing openai-token Edge Function');
 if (!tokenResp.ok) {
 throw new Error(Failed to get ephemeral key: ${tokenResp.status});
 }
-const { EPHEMERAL_KEY, RTC_URL } = await tokenResp.json();
+const payload = await tokenResp.json().catch(() => ({}));
+const EPHEMERAL_KEY = payload?.EPHEMERAL_KEY;
+const RTC_URL = payload?.RTC_URL;
+
+if (!EPHEMERAL_KEY) {
+throw new Error('Failed to get ephemeral key: missing EPHEMERAL_KEY in response');
+}
 
 // 2) Create RTCPeerConnection & DataChannel
 this.pc = new RTCPeerConnection({
@@ -171,6 +206,9 @@ this.audioEl = new Audio();
 this.audioEl.autoplay = true;
 
 // 4) Local mic capture
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+throw new Error('Microphone access is not supported in this browser/environment.');
+}
 this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 this.micStream.getTracks().forEach(track => this.pc!.addTrack(track, this.micStream!));
 
@@ -191,7 +229,7 @@ this.emitConn(this.pc!.connectionState);
 const offer = await this.pc.createOffer();
 await this.pc.setLocalDescription(offer);
 
-const resp = await fetch(${RTC_URL || 'https://api.openai.com/v1/realtime'}?model=${this.config.model}, {
+const resp = await fetch(${(RTC_URL || 'https://api.openai.com/v1/realtime')}?model=${this.config.model}, {
 method: 'POST',
 headers: {
 Authorization: Bearer ${EPHEMERAL_KEY},
@@ -245,7 +283,8 @@ this.dc.onmessage = async (evt) => {
 try {
 const msg = JSON.parse(evt.data);
 this.emit(msg);
-} catch (e) {
+} catch (_e) {
+// eslint-disable-next-line no-console
 console.warn('Non-JSON data message:', evt.data);
 }
 };
@@ -269,6 +308,7 @@ this.emitConn('disconnected' as RTCPeerConnectionState);
 
 isSupported(): boolean {
 return typeof RTCPeerConnection !== 'undefined';
+// Note: you may also want to check for microphone permissions elsewhere.
 }
 
 isConnected(): boolean {
@@ -281,7 +321,7 @@ if (!this.currentUserId) return;
 try {
 const result = await aiAssistantService.processUserMessage(message, this.currentUserId as any);
 this.emit({ type: 'assistant.result', result });
-} catch (e:any) {
+} catch (e: any) {
 this.emit({ type: 'assistant.error', message: e?.message || 'Action failed' });
 }
 }
