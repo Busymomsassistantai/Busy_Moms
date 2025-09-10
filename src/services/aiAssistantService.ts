@@ -95,10 +95,10 @@ const system = [
 'Dates should be ISO yyyy-mm-dd if you can infer them; times as HH:MM:SS.',
 ].join('\n');
 try {
-const resp = await aiService.chat({
-system,
-messages: [{ role: 'user', content: user }]
-});
+const resp = await aiService.chat([
+{ role: 'system', content: system },
+{ role: 'user', content: user }
+]);
 const text = resp?.choices?.[0]?.message?.content;
 if (!text) return { type: 'chat' };
 const jsonStart = text.indexOf('{');
@@ -153,7 +153,7 @@ this.calendarProvider = provider ?? new LocalCalendarProvider();
 setCalendarProvider(provider: ICalendarProvider) {
 this.calendarProvider = provider;
 }
-/** Entry point for a user’s message */
+/** Entry point for a user's message */
 async processUserMessage(message: string, userId: UUID): Promise<AIAction> {
 try {
 const intent = await classifyMessage(message);
@@ -167,7 +167,7 @@ return this.handleShoppingAction(intent.details || {}, userId);
 case 'task':
 return this.handleTaskAction(intent.details || {}, userId);
 default:
-return { type: 'chat', success: true, message: 'I’m here! How can I help?', data: { echo: message } };
+return { type: 'chat', success: true, message: 'I'm here! How can I help?', data: { echo: message } };
 }
 } catch (err: unknown) {
 console.error('processUserMessage error:', err instanceof Error ? err.message : err);
