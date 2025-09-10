@@ -13,8 +13,6 @@ import {
   MessageCircle,
   Gift,
   Calendar as CalendarIcon,
-  FolderSync as Sync,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   Smartphone,
@@ -28,7 +26,6 @@ import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { supabase } from '../lib/supabase';
 import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
-import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 
 /**
  * Calendar
@@ -37,7 +34,6 @@ import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCa
  * - Keyboard navigation (← → T) & a11y labels
  * - Click-on-day to create event (pre-filled date)
  * - Inline agenda for selected day (sorted, handles all-day)
- * - Optional Google Calendar merge toggle (connect/disconnect)
  * - Keeps original color language (purple, blue, green, etc.)
  */
 
@@ -99,13 +95,6 @@ export function Calendar() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Google
-  const [isGoogleServiceReady, setIsGoogleServiceReady] = useState(false);
-  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
-  const [syncingCalendar, setSyncingCalendar] = useState(false);
-  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
-  const [mergeGoogle, setMergeGoogle] = useState(true);
-
   const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
   const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate]);
 
@@ -138,129 +127,26 @@ export function Calendar() {
     if (user?.id) loadEvents();
   }, [user?.id, loadEvents]);
 
-  // --- Google Calendar bootstrapping & sync ---------------------------------
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        await googleCalendarService.initialize();
-        if (mounted) {
-          setIsGoogleServiceReady(true);
-          setIsGoogleConnected(googleCalendarService.isSignedIn());
-        }
-      } catch (e) {
-        console.error('Failed to init Google service', e);
-        if (mounted) setIsGoogleServiceReady(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const connectGoogleCalendar = useCallback(async () => {
-    try {
-      setError(null);
-      setSyncingCalendar(true);
-      await googleCalendarService.signIn();
-      setIsGoogleConnected(true);
-    } catch (e) {
-      console.error('Google connect error', e);
-      setError(
-        e instanceof Error ? e.message : 'Failed to connect to Google Calendar'
-      );
-    } finally {
-      setSyncingCalendar(false);
-    }
-  }, []);
-
-  const syncWithGoogleCalendar = useCallback(async () => {
-    try {
-      if (!isGoogleServiceReady) return;
-      setSyncingCalendar(true);
-      setError(null);
-
-      // Ensure signed in, but avoid cross-calling connect->sync->connect cycles
-      if (!googleCalendarService.isSignedIn()) {
-        await googleCalendarService.signIn();
-        setIsGoogleConnected(true);
-      }
-
-      const timeMin = new Date(monthStart);
-      timeMin.setHours(0, 0, 0, 0);
-      const timeMax = new Date(monthEnd);
-      timeMax.setHours(23, 59, 59, 999);
-
-      const gEvents =
-        (await googleCalendarService.getEvents({
-          timeMin: timeMin.toISOString(),
-          timeMax: timeMax.toISOString(),
-        })) ?? [];
-
-      setGoogleEvents(gEvents);
-    } catch (e) {
-      console.error('Google sync error', e);
-      setError(
-        e instanceof Error ? e.message : 'Failed to sync Google Calendar'
-      );
-    } finally {
-      setSyncingCalendar(false);
-    }
-  }, [isGoogleServiceReady, monthStart, monthEnd]);
-
-  const disconnectGoogleCalendar = useCallback(async () => {
-    try {
-      await googleCalendarService.signOut();
-      setIsGoogleConnected(false);
-      setGoogleEvents([]);
-    } catch (e) {
-      console.error('Google disconnect error', e);
-      setError('Failed to disconnect from Google Calendar');
-    }
-  }, []);
-
-  // Auto-sync when month changes (if enabled & ready)
-  useEffect(() => {
-    if (isGoogleServiceReady && mergeGoogle) {
-      void syncWithGoogleCalendar();
-    }
-  }, [isGoogleServiceReady, mergeGoogle, monthStart, monthEnd, syncWithGoogleCalendar]);
-
   // --- Derived day agenda ----------------------------------------------------
   const itemsForSelectedDate = useMemo(() => {
-    if (!selectedDate) return { events: [] as (DbEvent | GoogleCalendarEvent)[] };
+    if (!selectedDate) return { events: [] as DbEvent[] };
     const d = toLocalISODate(selectedDate);
 
     const dayDbEvents = events.filter(ev => ev.event_date === d);
 
-    const dayGoogleEvents = mergeGoogle
-      ? googleEvents.filter(ge => {
-          const raw = ge.start?.date ?? ge.start?.dateTime;
-          if (!raw) return false;
-          // For comparing by day only, UTC is fine here
-          const isoDay = new Date(raw).toISOString().split('T')[0];
-          return isoDay === d;
-        })
-      : [];
+    const sorted = dayDbEvents.sort((a, b) => {
+      const minutesKey = (it: DbEvent) => {
+        if (it.start_time) {
+          const [h, m] = String(it.start_time).split(':').map((n: string) => parseInt(n, 10));
+          return (isNaN(h) ? 23 : h) * 60 + (isNaN(m) ? 59 : m);
+        }
+        return 24 * 60;
+      };
+      return minutesKey(a) - minutesKey(b);
+    });
 
-    const merged = [...dayDbEvents, ...dayGoogleEvents];
-
-    const minutesKey = (it: any) => {
-      // DB row: 'HH:MM' (string)
-      if ('start_time' in it && it.start_time) {
-        const [h, m] = String(it.start_time).split(':').map((n: string) => parseInt(n, 10));
-        return (isNaN(h) ? 23 : h) * 60 + (isNaN(m) ? 59 : m);
-      }
-      // Google: dateTime or all-day date
-      const s = it.start?.dateTime ?? it.start?.date;
-      if (!s) return 24 * 60;
-      const dt = new Date(s);
-      return dt.getHours() * 60 + dt.getMinutes();
-    };
-
-    const sorted = merged.sort((a, b) => minutesKey(a) - minutesKey(b));
     return { events: sorted };
-  }, [selectedDate, events, googleEvents, mergeGoogle]);
+  }, [selectedDate, events]);
 
   // --- Calendar grid helpers -------------------------------------------------
   const monthLabel = useMemo(
@@ -335,18 +221,9 @@ export function Calendar() {
   const dayEventsCount = useCallback(
     (day: Date) => {
       const d = toLocalISODate(day);
-      const countDb = events.filter(ev => ev.event_date === d).length;
-      const countG =
-        mergeGoogle
-          ? googleEvents.filter(ge => {
-              const raw = ge.start?.date ?? ge.start?.dateTime;
-              if (!raw) return false;
-              return new Date(raw).toISOString().split('T')[0] === d;
-            }).length
-          : 0;
-      return countDb + countG;
+      return events.filter(ev => ev.event_date === d).length;
     },
-    [events, googleEvents, mergeGoogle]
+    [events]
   );
 
   // --- UI --------------------------------------------------------------------
@@ -397,52 +274,6 @@ export function Calendar() {
           >
             <Smartphone className="w-4 h-4" /> WhatsApp
           </button>
-
-          <div className="flex items-center gap-2 ml-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={mergeGoogle}
-                onChange={e => setMergeGoogle(e.target.checked)}
-              />
-              Merge Google
-            </label>
-
-            {isGoogleConnected ? (
-              <button
-                onClick={disconnectGoogleCalendar}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                title="Disconnect Google"
-              >
-                <X className="w-4 h-4" /> Disconnect
-              </button>
-            ) : (
-              <button
-                onClick={connectGoogleCalendar}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                title="Connect Google"
-              >
-                <Sync className="w-4 h-4" /> Connect
-              </button>
-            )}
-
-            <button
-              onClick={syncWithGoogleCalendar}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-md border"
-              title="Sync Google now"
-              disabled={!isGoogleServiceReady || !mergeGoogle || syncingCalendar}
-            >
-              {syncingCalendar ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Syncing…
-                </>
-              ) : (
-                <>
-                  <Sync className="w-4 h-4" /> Sync
-                </>
-              )}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -524,90 +355,34 @@ export function Calendar() {
             {itemsForSelectedDate.events.length === 0 ? (
               <div className="text-sm text-gray-500">No events for this day.</div>
             ) : (
-              itemsForSelectedDate.events.map((it: any, i) => {
-                const isDb = 'id' in it && 'event_date' in it; // crude check
-                if (isDb) {
-                  const ev = it as DbEvent;
-                  return (
-                    <div
-                      key={`db-${ev.id}-${i}`}
-                      className={[
-                        'border rounded p-2 text-sm flex items-start gap-2',
-                        getEventBadge((ev as any).type),
-                      ].join(' ')}
-                    >
-                      <Clock className="w-4 h-4 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
-                        <div className="text-xs">
-                          {formatTimeRange(ev.start_time, ev.end_time)}
-                        </div>
-                        {ev.location && (
-                          <div className="text-xs flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {ev.location}
-                          </div>
-                        )}
-                        {ev.notes && (
-                          <div className="text-xs mt-1 text-gray-700">
-                            {ev.notes}
-                          </div>
-                        )}
-                      </div>
+              itemsForSelectedDate.events.map((ev, i) => (
+                <div
+                  key={`db-${ev.id}-${i}`}
+                  className={[
+                    'border rounded p-2 text-sm flex items-start gap-2',
+                    getEventBadge(ev.event_type),
+                  ].join(' ')}
+                >
+                  <Clock className="w-4 h-4 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
+                    <div className="text-xs">
+                      {formatTimeRange(ev.start_time, ev.end_time)}
                     </div>
-                  );
-                } else {
-                  const ge = it as GoogleCalendarEvent;
-                  const title =
-                    ge.summary || (ge.id ? `Google event (${ge.id.slice(0, 6)}…)` : 'Google event');
-                  const allDay = !!ge.start?.date && !ge.start?.dateTime;
-                  const timeRange = allDay
-                    ? 'All day'
-                    : (() => {
-                        const s = ge.start?.dateTime ?? ge.start?.date;
-                        const e = ge.end?.dateTime ?? ge.end?.date;
-                        if (!s) return '';
-                        const fmt = (v?: string) =>
-                          v
-                            ? new Date(v).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-                            : '';
-                        const left = fmt(s as string);
-                        const right = fmt(e as string);
-                        return right ? `${left} - ${right}` : left;
-                      })();
-
-                  return (
-                    <div
-                      key={`g-${ge.id ?? i}`}
-                      className="border rounded p-2 text-sm flex items-start gap-2 bg-gray-100 text-gray-800 border-gray-200"
-                    >
-                      <CalendarIcon className="w-4 h-4 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="font-semibold">{title}</div>
-                        <div className="text-xs">{timeRange}</div>
-                        {ge.location && (
-                          <div className="text-xs flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {ge.location}
-                          </div>
-                        )}
+                    {ev.location && (
+                      <div className="text-xs flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {ev.location}
                       </div>
-                      {ge.htmlLink && (
-                        <a
-                          href={ge.htmlLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs underline inline-flex items-center gap-1"
-                          title="Open in Google Calendar"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          Open
-                        </a>
-                      )}
-                    </div>
-                  );
-                }
-              })
+                    )}
+                    {ev.description && (
+                      <div className="text-xs mt-1 text-gray-700">
+                        {ev.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         )}
