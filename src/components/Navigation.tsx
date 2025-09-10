@@ -20,30 +20,30 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex items-center justify-around py-2 relative">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-pb">
+      <div className="flex items-center justify-around py-1 sm:py-2 relative">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onScreenChange(item.id)}
-            className={`flex flex-col items-center space-y-1 py-2 px-3 rounded-lg transition-all ${
+            className={`flex flex-col items-center space-y-0.5 sm:space-y-1 py-1 sm:py-2 px-1 sm:px-3 rounded-lg transition-all ${
               currentScreen === item.id
                 ? 'text-purple-600 bg-purple-50'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            <item.icon className="w-5 h-5" />
-            <span className="text-xs font-medium">{item.label}</span>
+            <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs font-medium hidden sm:block">{item.label}</span>
           </button>
         ))}
         
         {/* Voice Chat Button - Floating */}
         <button
           onClick={onVoiceChatOpen}
-          className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
           title="AI Voice Assistant"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
     </div>

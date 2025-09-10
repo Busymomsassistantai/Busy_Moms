@@ -228,72 +228,76 @@ export function Calendar() {
 
   // --- UI --------------------------------------------------------------------
   return (
-    <div className="w-full" onKeyDown={onKeyDown} tabIndex={0} aria-label="Calendar">
+    <div className="w-full p-2 sm:p-4" onKeyDown={onKeyDown} tabIndex={0} aria-label="Calendar">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
           <button
-            className="p-2 rounded hover:bg-gray-100"
+            className="p-1 sm:p-2 rounded hover:bg-gray-100"
             aria-label="Previous month"
             onClick={goPrevMonth}
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5" />
+          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-1 sm:gap-2">
+            <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             {monthLabel}
           </h2>
           <button
-            className="p-2 rounded hover:bg-gray-100"
+            className="p-1 sm:p-2 rounded hover:bg-gray-100"
             aria-label="Next month"
             onClick={goNextMonth}
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
-            className="ml-2 px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm"
+            className="ml-1 sm:ml-2 px-2 sm:px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs sm:text-sm"
             onClick={goToday}
             aria-label="Go to today"
           >
-            Today (T)
+            <span className="hidden sm:inline">Today (T)</span>
+            <span className="sm:hidden">Today</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => setShowEventForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+            className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700"
           >
-            <Plus className="w-4 h-4" /> New Event
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">New Event</span>
+            <span className="sm:hidden text-xs">New</span>
           </button>
 
           <button
             onClick={() => setShowWhatsAppForm(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+            className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
             title="WhatsApp Integration"
           >
-            <Smartphone className="w-4 h-4" /> WhatsApp
+            <Smartphone className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">WhatsApp</span>
           </button>
         </div>
       </div>
 
       {/* Error banner */}
       {error && (
-        <div className="mb-3 flex items-start gap-2 rounded border border-red-200 bg-red-50 p-3 text-red-800">
-          <Info className="w-4 h-4 mt-0.5" />
-          <div className="text-sm">{error}</div>
+        <div className="mb-2 sm:mb-3 flex items-start gap-2 rounded border border-red-200 bg-red-50 p-2 sm:p-3 text-red-800">
+          <Info className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
+          <div className="text-xs sm:text-sm">{error}</div>
         </div>
       )}
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-1">
+      <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-1 sm:mb-2">
         {WEEKDAYS_SHORT.map((wd) => (
-          <div key={wd} className="py-2">{wd}</div>
+          <div key={wd} className="py-1 sm:py-2">{wd}</div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-[1px] bg-gray-200 rounded overflow-hidden">
+      <div className="grid grid-cols-7 gap-[1px] bg-gray-200 rounded overflow-hidden mb-4 sm:mb-6">
         {daysInGrid.map((day, idx) => {
           const isToday = isSameDay(day, new Date());
           const selected = selectedDate ? isSameDay(day, selectedDate) : false;
@@ -304,24 +308,26 @@ export function Calendar() {
               key={idx}
               onClick={() => onDayClick(day)}
               className={[
-                'relative h-24 bg-white p-3 text-left focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-gray-50 transition-all duration-200 group',
+                'relative h-16 sm:h-24 bg-white p-1 sm:p-3 text-left focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-gray-50 transition-all duration-200 group',
                 selected ? 'ring-2 ring-purple-500 bg-purple-50' : '',
               ].join(' ')}
               aria-label={`Day ${toLocalISODate(day)} (${count} events)`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-sm font-medium ${selected ? 'text-purple-700' : 'text-gray-700'} group-hover:text-purple-600 transition-colors`}>{day.getDate()}</span>
+                <span className={`text-xs sm:text-sm font-medium ${selected ? 'text-purple-700' : 'text-gray-700'} group-hover:text-purple-600 transition-colors`}>{day.getDate()}</span>
                 {isToday && (
-                  <span className="rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] px-2 py-1 font-medium shadow-sm">
-                    Today
+                  <span className="rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 sm:py-1 font-medium shadow-sm">
+                    <span className="hidden sm:inline">Today</span>
+                    <span className="sm:hidden">•</span>
                   </span>
                 )}
               </div>
 
               {count > 0 && (
-                <div className="absolute bottom-1 left-1 right-1">
-                  <div className={`text-[10px] font-medium ${selected ? 'text-purple-600' : 'text-gray-500'} group-hover:text-purple-600 transition-colors`}>
-                    {count} event{count === 1 ? '' : 's'}
+                <div className="absolute bottom-0.5 sm:bottom-1 left-0.5 sm:left-1 right-0.5 sm:right-1">
+                  <div className={`text-[8px] sm:text-[10px] font-medium ${selected ? 'text-purple-600' : 'text-gray-500'} group-hover:text-purple-600 transition-colors`}>
+                    <span className="hidden sm:inline">{count} event{count === 1 ? '' : 's'}</span>
+                    <span className="sm:hidden">{count}</span>
                   </div>
                 </div>
               )}
@@ -331,11 +337,11 @@ export function Calendar() {
       </div>
 
       {/* Agenda */}
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="text-lg font-semibold">Agenda</h3>
+          <h3 className="text-base sm:text-lg font-semibold">Agenda</h3>
           {selectedDate && (
-            <span className="text-sm text-gray-500">
+            <span className="text-xs sm:text-sm text-gray-500">
               {selectedDate.toLocaleDateString(undefined, {
                 weekday: 'short',
                 day: 'numeric',
@@ -346,37 +352,37 @@ export function Calendar() {
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
             <span>Loading events…</span>
           </div>
         ) : (
           <div className="space-y-2">
             {itemsForSelectedDate.events.length === 0 ? (
-              <div className="text-sm text-gray-500">No events for this day.</div>
+              <div className="text-xs sm:text-sm text-gray-500">No events for this day.</div>
             ) : (
               itemsForSelectedDate.events.map((ev, i) => (
                 <div
                   key={`db-${ev.id}-${i}`}
                   className={[
-                    'border rounded p-2 text-sm flex items-start gap-2',
+                    'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2',
                     getEventBadge(ev.event_type),
                   ].join(' ')}
                 >
-                  <Clock className="w-4 h-4 mt-0.5" />
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
                   <div className="flex-1">
                     <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
-                    <div className="text-xs">
+                    <div className="text-xs sm:text-sm">
                       {formatTimeRange(ev.start_time, ev.end_time)}
                     </div>
                     {ev.location && (
-                      <div className="text-xs flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
+                      <div className="text-xs sm:text-sm flex items-center gap-1">
+                        <MapPin className="w-2 h-2 sm:w-3 sm:h-3" />
                         {ev.location}
                       </div>
                     )}
                     {ev.description && (
-                      <div className="text-xs mt-1 text-gray-700">
+                      <div className="text-xs sm:text-sm mt-1 text-gray-700">
                         {ev.description}
                       </div>
                     )}
@@ -390,16 +396,16 @@ export function Calendar() {
 
       {/* Event form modal */}
       {showEventForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold">Create / Edit Event</h4>
+              <h4 className="font-semibold text-sm sm:text-base">Create / Edit Event</h4>
               <button
                 onClick={() => setShowEventForm(false)}
-                className="p-1 rounded hover:bg-gray-100"
+                className="p-0.5 sm:p-1 rounded hover:bg-gray-100"
                 aria-label="Close event form"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             <EventForm
@@ -414,16 +420,16 @@ export function Calendar() {
 
       {/* WhatsApp modal */}
       {showWhatsAppForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold">WhatsApp Integration</h4>
+              <h4 className="font-semibold text-sm sm:text-base">WhatsApp Integration</h4>
               <button
                 onClick={() => setShowWhatsAppForm(false)}
-                className="p-1 rounded hover:bg-gray-100"
+                className="p-0.5 sm:p-1 rounded hover:bg-gray-100"
                 aria-label="Close WhatsApp modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             <WhatsAppIntegration

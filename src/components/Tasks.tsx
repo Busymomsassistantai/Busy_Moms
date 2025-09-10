@@ -186,42 +186,42 @@ export function Tasks() {
     .reduce((sum, t) => sum + (t.points || 0), 0);
 
   return (
-    <div className="h-screen overflow-y-auto pb-20">
+    <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
       {/* Header */}
-      <div className="bg-white p-6 border-b border-gray-200">
+      <div className="bg-white p-4 sm:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-            <p className="text-gray-600">Manage family tasks and chores</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tasks</h1>
+            <p className="text-sm sm:text-base text-gray-600">Manage family tasks and chores</p>
           </div>
           <button 
             onClick={() => setShowTaskForm(true)}
-            className="w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors"
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="bg-green-50 p-3 rounded-lg text-center">
-            <div className="text-2xl font-bold text-green-600">{completedTasks}</div>
-            <div className="text-sm text-green-700">Completed</div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+          <div className="bg-green-50 p-2 sm:p-3 rounded-lg text-center">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">{completedTasks}</div>
+            <div className="text-xs sm:text-sm text-green-700">Completed</div>
           </div>
-          <div className="bg-blue-50 p-3 rounded-lg text-center">
-            <div className="text-2xl font-bold text-blue-600">{tasks.filter(t => t.status === 'pending').length}</div>
-            <div className="text-sm text-blue-700">Pending</div>
+          <div className="bg-blue-50 p-2 sm:p-3 rounded-lg text-center">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600">{tasks.filter(t => t.status === 'pending').length}</div>
+            <div className="text-xs sm:text-sm text-blue-700">Pending</div>
           </div>
-          <div className="bg-purple-50 p-3 rounded-lg text-center">
-            <div className="text-2xl font-bold text-purple-600">{totalPoints}</div>
-            <div className="text-sm text-purple-700">Points Earned</div>
+          <div className="bg-purple-50 p-2 sm:p-3 rounded-lg text-center">
+            <div className="text-lg sm:text-2xl font-bold text-purple-600">{totalPoints}</div>
+            <div className="text-xs sm:text-sm text-purple-700">Points Earned</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="space-y-3">
           {/* Status Tabs */}
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <div className="flex space-x-0.5 sm:space-x-1 bg-gray-100 rounded-lg p-1">
             {[
               { id: 'all', label: 'All Tasks', icon: CheckSquare },
               { id: 'pending', label: 'Pending', icon: Clock },
@@ -231,25 +231,26 @@ export function Tasks() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 py-1.5 sm:py-2 px-1 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all ${
                   activeTab === tab.id
                     ? 'bg-white text-purple-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
+                <tab.icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
               </button>
             ))}
           </div>
 
           {/* Family Member Filter */}
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-500" />
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <Filter className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
             <select
               value={selectedMember}
               onChange={(e) => setSelectedMember(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Family Members</option>
               <option value="">Unassigned</option>
@@ -263,18 +264,18 @@ export function Tasks() {
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-            <span className="ml-2 text-gray-600">Loading tasks...</span>
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-500"></div>
+            <span className="ml-2 text-sm sm:text-base text-gray-600">Loading tasks...</span>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredTasks.map((task) => (
               <div
                 key={task.id}
-                className={`p-4 rounded-xl border-2 transition-all ${
+                className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${
                   task.status === 'completed'
                     ? 'bg-gray-50 border-gray-200 opacity-75'
                     : task.priority === 'high'
@@ -282,57 +283,57 @@ export function Tasks() {
                     : 'bg-white border-gray-200 hover:border-purple-300'
                 }`}
               >
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <button
                     onClick={() => {
                       const newStatus = task.status === 'completed' ? 'pending' : 'completed';
                       updateTaskStatus(task.id, newStatus);
                     }}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                       task.status === 'completed'
                         ? 'bg-green-500 border-green-500'
                         : 'border-gray-300 hover:border-purple-500'
                     }`}
                   >
                     {task.status === 'completed' && (
-                      <CheckSquare className="w-4 h-4 text-white" />
+                      <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     )}
                   </button>
 
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-lg">{getCategoryIcon(task.category || 'other')}</span>
-                      <h3 className={`font-semibold ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                    <div className="flex items-center space-x-1 sm:space-x-2 mb-2">
+                      <span className="text-sm sm:text-lg">{getCategoryIcon(task.category || 'other')}</span>
+                      <h3 className={`font-semibold text-sm sm:text-base ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                         {task.title}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority || 'medium')}`}>
+                      <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority || 'medium')}`}>
                         {task.priority}
                       </span>
                       {task.points && task.points > 0 && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium flex items-center space-x-1">
-                          <Star className="w-3 h-3" />
+                        <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium flex items-center space-x-1">
+                          <Star className="w-2 h-2 sm:w-3 sm:h-3" />
                           <span>{task.points}</span>
                         </span>
                       )}
                     </div>
 
                     {task.description && (
-                      <p className={`text-sm mb-2 ${task.status === 'completed' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-xs sm:text-sm mb-2 ${task.status === 'completed' ? 'text-gray-400' : 'text-gray-600'}`}>
                         {task.description}
                       </p>
                     )}
 
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500">
                       {(task as any).assigned_family_member && (
                         <div className="flex items-center space-x-1">
-                          <User className="w-4 h-4" />
+                          <User className="w-3 h-3 sm:w-4 sm:h-4" />
                           <span>Assigned to {(task as any).assigned_family_member.name}</span>
                         </div>
                       )}
                       
                       {task.due_date && (
                         <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
+                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                           <span>
                             Due {new Date(task.due_date).toLocaleDateString()}
                             {task.due_time && ` at ${task.due_time}`}
@@ -340,24 +341,24 @@ export function Tasks() {
                         </div>
                       )}
 
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status || 'pending')}`}>
+                      <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status || 'pending')}`}>
                         {task.status?.replace('_', ' ')}
                       </span>
                     </div>
 
                     {task.notes && (
-                      <p className="text-xs text-gray-500 mt-2 italic">
+                      <p className="text-xs sm:text-sm text-gray-500 mt-2 italic">
                         {task.notes}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-1 sm:space-y-2">
                     {task.status !== 'completed' && (
                       <select
                         value={task.status}
                         onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
                         <option value="pending">Pending</option>
                         <option value="in_progress">In Progress</option>
@@ -368,14 +369,14 @@ export function Tasks() {
                     
                     <button
                       onClick={() => handleEditTask(task)}
-                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
+                      className="px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
                     >
                       Edit
                     </button>
                     
                     <button
                       onClick={() => deleteTask(task.id)}
-                      className="px-3 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200 transition-colors"
+                      className="px-2 sm:px-3 py-0.5 sm:py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200 transition-colors"
                     >
                       Delete
                     </button>
@@ -386,18 +387,18 @@ export function Tasks() {
 
             {filteredTasks.length === 0 && !loading && (
               <div className="text-center py-12">
-                <CheckSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <CheckSquare className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                   {activeTab === 'all' ? 'No tasks yet' : `No ${activeTab} tasks`}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-sm sm:text-base text-gray-600 mb-4">
                   {activeTab === 'all' 
                     ? 'Create your first task to get started' 
                     : `No tasks with ${activeTab} status`}
                 </p>
                 <button
                   onClick={() => setShowTaskForm(true)}
-                  className="px-6 py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors text-sm sm:text-base"
                 >
                   Create First Task
                 </button>
