@@ -6,10 +6,9 @@ interface NavigationProps {
   currentScreen: Screen;
   onScreenChange: (screen: Screen) => void;
   onSignOut: () => void;
-  onVoiceChatOpen?: () => void;
 }
 
-export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: NavigationProps) {
+export function Navigation({ currentScreen, onScreenChange }: NavigationProps) {
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
     { id: 'calendar' as Screen, icon: Calendar, label: 'Calendar' },
@@ -37,11 +36,11 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
           </button>
         ))}
         
-        {/* Voice Chat Button - Floating */}
+        {/* AI Chat Button - Floating */}
         <button
-          onClick={onVoiceChatOpen}
+          onClick={() => onScreenChange('ai-chat')}
           className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
-          title="AI Voice Assistant"
+          title="AI Chat Assistant"
         >
           <MessageCircle className="w-6 h-6" />
         </button>
