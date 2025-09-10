@@ -125,54 +125,54 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">WhatsApp Integration</h2>
-                <p className="text-gray-600">Parse messages to create events automatically</p>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">WhatsApp Integration</h2>
+                <p className="text-xs sm:text-sm text-gray-600">Parse messages to create events automatically</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
-              <X className="w-4 h-4 text-gray-600" />
+              <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
           </div>
 
           {/* Input Methods */}
-          <div className="space-y-4 mb-6">
+          <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Paste WhatsApp Message
               </label>
               <form onSubmit={handleMessageSubmit}>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  rows={4}
+                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                  rows={3}
                   placeholder="Paste your WhatsApp message here..."
                 />
-                <div className="flex space-x-3 mt-3">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-2 sm:mt-3">
                   <button
                     type="submit"
                     disabled={!message.trim() || processing}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
                   >
                     {processing ? 'Parsing...' : 'Parse Message'}
                   </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
                   >
-                    <Upload className="w-4 h-4" />
+                    <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span>Upload File</span>
                   </button>
                 </div>
@@ -188,9 +188,9 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
           </div>
 
           {/* Sample Messages */}
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Try these sample messages:</h3>
-            <div className="space-y-2">
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Try these sample messages:</h3>
+            <div className="space-y-1 sm:space-y-2">
               {sampleMessages.map((sample, index) => (
                 <button
                   key={index}
@@ -198,7 +198,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                     setMessage(sample);
                     parseWhatsAppMessage(sample);
                   }}
-                  className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+                  className="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-xs sm:text-sm"
                 >
                   "{sample}"
                 </button>
@@ -208,76 +208,76 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
 
           {/* Error Display */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-                <p className="text-red-700">{error}</p>
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
+                <p className="text-xs sm:text-sm text-red-700">{error}</p>
               </div>
             </div>
           )}
 
           {/* Parsed Event Preview */}
           {parsedEvent && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center space-x-2 mb-3">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <h3 className="font-medium text-green-900">Event Detected!</h3>
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                <h3 className="font-medium text-green-900 text-sm sm:text-base">Event Detected!</h3>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <div>
-                  <h4 className="font-semibold text-gray-900 text-lg">{parsedEvent.title}</h4>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-lg">{parsedEvent.title}</h4>
+                  <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
                     {parsedEvent.event_type}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                   {parsedEvent.event_date && (
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                       <span>{parsedEvent.event_date}</span>
                     </div>
                   )}
                   
                   {parsedEvent.start_time && (
                     <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-gray-500" />
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                       <span>{parsedEvent.start_time}</span>
                     </div>
                   )}
                   
                   {parsedEvent.location && (
                     <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                       <span>{parsedEvent.location}</span>
                     </div>
                   )}
                   
                   <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-500" />
+                    <Users className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
                     <span>RSVP Required</span>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-green-200">
-                  <p className="text-sm text-gray-600 mb-3">Original message:</p>
-                  <p className="text-sm bg-white p-3 rounded border italic">
+                <div className="pt-2 sm:pt-3 border-t border-green-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">Original message:</p>
+                  <p className="text-xs sm:text-sm bg-white p-2 sm:p-3 rounded border italic">
                     "{parsedEvent.description}"
                   </p>
                 </div>
 
-                <div className="flex space-x-3 pt-3">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2 sm:pt-3">
                   <button
                     onClick={createEventFromParsed}
                     disabled={processing}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
                   >
                     {processing ? 'Creating...' : 'Add to Calendar'}
                   </button>
                   <button
                     onClick={() => setParsedEvent(null)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
                   >
                     Cancel
                   </button>
@@ -287,9 +287,9 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
           )}
 
           {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+            <h3 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">How it works:</h3>
+            <ul className="text-xs sm:text-sm text-blue-700 space-y-1">
               <li>• Copy and paste WhatsApp messages containing event information</li>
               <li>• Our AI will automatically detect dates, times, locations, and event details</li>
               <li>• Review the parsed information and add it to your calendar</li>

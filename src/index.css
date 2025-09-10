@@ -11,12 +11,13 @@
   /* Improve touch targets on mobile */
   @media (max-width: 640px) {
     button {
-      min-height: 44px;
-      min-width: 44px;
+      min-height: 40px;
+      min-width: 40px;
     }
     
     input, select, textarea {
-      min-height: 44px;
+      min-height: 40px;
+      font-size: 16px; /* Prevents zoom on iOS */
     }
   }
   
@@ -27,6 +28,37 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+    
+    /* Prevent horizontal scroll */
+    body {
+      overflow-x: hidden;
+    }
+    
+    /* Better modal sizing on mobile */
+    .fixed.inset-0 {
+      padding: 0.5rem;
+    }
+    
+    /* Improve form spacing on mobile */
+    form {
+      max-width: 100%;
+    }
+    
+    /* Better button spacing */
+    .space-x-2 > * + * {
+      margin-left: 0.25rem;
+    }
+    
+    /* Improve grid layouts on mobile */
+    .grid-cols-2 {
+      grid-template-columns: 1fr;
+    }
+    
+    @media (min-width: 640px) {
+      .sm\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
   }
 }
