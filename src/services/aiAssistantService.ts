@@ -167,7 +167,7 @@ return this.handleShoppingAction(intent.details || {}, userId);
 case 'task':
 return this.handleTaskAction(intent.details || {}, userId);
 default:
-return { type: 'chat', success: true, message: "I'm here! How can I help?", data: { echo: message } };
+return { type: 'chat', success: true, message: 'I\'m here! How can I help?', data: { echo: message } };
 }
 } catch (err: unknown) {
 console.error('processUserMessage error:', err instanceof Error ? err.message : err);
