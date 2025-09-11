@@ -30,7 +30,7 @@ throw new Error('Missing VITE_OPENAI_API_KEY');
 }
 const resp = await openai.chat.completions.create({
 model,
-messages: messages.map(m => ({ role: m.role, content: m.content })),
+messages: messages,
 temperature: 0.2,
 });
 const first = resp.choices?.[0]?.message?.content ?? '';
@@ -42,6 +42,36 @@ console.error('[aiService.chat] error:', msg);
 throw new Error(msg);
 }
 }
+
+  /** Parse WhatsApp messages for event information */
+  async parseWhatsAppMessage(message: string): Promise<{
+    isEvent: boolean;
+    eventDetails?: {
+      title: string;
+      date?: string;
+      time?: string;
+      location?: string;
+    };
+  }> {
+    try {
+      const response = await this.chat([
+        {
+          role: 'system',
+          content: 'You are a WhatsApp message parser. Extract event information from messages. Return JSON with isEvent (boolean) and eventDetails (title, date in YYYY-MM-DD format, time in HH:MM format, location) if found.'
+        },
+        {
+          role: 'user',
+          content: `Parse this WhatsApp message for event information: "${message}"`
+        }
+      ]);
+
+      const parsed = JSON.parse(response);
+      return parsed;
+    } catch (error) {
+      console.error('Error parsing WhatsApp message:', error);
+      return { isEvent: false };
+    }
+  }
 }
 
 export const aiService = new AIService();
