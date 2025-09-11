@@ -130,15 +130,9 @@ Examples:
     console.log('🤖 AI classification response:', response);
 
     // Extract JSON from response
-    const jsonMatch = response.match(/\{[^}]*\}/);
-    if (jsonMatch) {
-      const payload = JSON.parse(jsonMatch[0]) as IntentResult;
-      console.log('🎯 Parsed intent:', payload);
-      return payload;
-    }
-    
-    console.log('❌ No valid JSON found in response, using fallback');
-    return fallbackClassify(message);
+    const payload = JSON.parse(response) as IntentResult;
+    console.log('🎯 Parsed intent:', payload);
+    return payload;
   } catch (e: unknown) {
     console.error('❌ LLM classify failed, using fallback:', (e instanceof Error ? e.message : String(e)));
     return fallbackClassify(message);
