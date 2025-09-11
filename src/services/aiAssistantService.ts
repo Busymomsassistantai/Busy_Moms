@@ -87,31 +87,44 @@ return Number.isFinite(v) ? v : fallback;
 /** ---- AI parsing -------------------------------------------------------- */
 async function classifyMessage(message: string): Promise<IntentResult> {
 const today = new Date().toISOString().split('T')[0];
-const user = `Today is ${today}. Classify and normalize this message: "${message}"`;
-const system = [
-'You are a classifier that maps text to an intent: calendar|reminder|shopping|task|chat.',
-'Return a minimal JSON with {type, details?}.',
-'Details can include any of: title, date, time, participants, location, priority, list.',
-'Dates should be ISO yyyy-mm-dd if you can infer them; times as HH:MM:SS.',
-].join('\n');
-try {
-const resp = await aiService.chat([
-{ role: 'system', content: system },
-{ role: 'user', content: user }
-]);
-const text = resp?.choices?.[0]?.message?.content;
-if (!text) return { type: 'chat' };
-const jsonStart = text.indexOf('{');
-const jsonEnd = text.lastIndexOf('}');
-if (jsonStart >= 0 && jsonEnd > jsonStart) {
-const payload = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as IntentResult;
-return payload;
-}
-return { type: 'chat' };
-} catch (e: unknown) {
-console.warn('LLM classify failed, using fallback:', (e instanceof Error ? e.message : String(e)));
-return fallbackClassify(message);
-}
+  
+  const systemPrompt = `You are a classifier that maps text to an intent: calendar|reminder|shopping|task|chat.
+Return ONLY a JSON object with {type, details}.
+Details can include: title, date, time, participants, location, priority, list.
+Dates should be ISO yyyy-mm-dd if you can infer them; times as HH:MM:SS.
+
+Examples:
+- "Add milk to shopping list" -> {"type": "shopping", "details": {"title": "milk", "category": "dairy"}}
+- "Remind me to call mom tomorrow at 3pm" -> {"type": "reminder", "details": {"title": "call mom", "date": "tomorrow", "time": "15:00:00"}}
+- "Schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}
+- "Create task to clean room" -> {"type": "task", "details": {"title": "clean room"}}`;
+
+  try {
+    const response = await aiService.chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Today is ${today}. Classify this message: "${message}"` }
+    ]);
+
+    console.log('Creating calendar event with details:', details);
+    console.log('AI classification response:', response);
+
+    const jsonStart = response.indexOf('{');
+    const jsonEnd = response.lastIndexOf('}');
+    if (jsonStart >= 0 && jsonEnd > jsonStart) {
+      const jsonStr = response.slice(jsonStart, jsonEnd + 1);
+      console.log('Extracted JSON:', jsonStr);
+      const payload = JSON.parse(jsonStr) as IntentResult;
+      console.log('Parsed intent:', payload);
+      return payload;
+    }
+    
+    console.log('No valid JSON found, using fallback');
+    return { type: 'chat' };
+  } catch (e: unknown) {
+    console.error('LLM classify failed, using fallback:', (e instanceof Error ? e.message : String(e)));
+    console.log('Calendar event created successfully:', result);
+    return fallbackClassify(message);
+  }
 }
 /** Simpler fallback classifier so app still works without LLM. */
 function fallbackClassify(message: string): IntentResult {
@@ -203,7 +216,6 @@ return { type: 'calendar', success: true, message: `Scheduled: ${title} on ${dat
 }
 /** Reminders */
 private async handleReminderAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
-console.log('Creating reminder with details:', details);
 const title = String(details.title ?? 'Reminder');
 const date = toISODate(details.date);
 const time = toISOTime(details.time);
@@ -226,7 +238,6 @@ if (error) {
 console.error('Reminder creation error:', error);
 return { type: 'reminder', success: false, message: error.message || 'Failed to create reminder.' };
 }
-console.log('Reminder created successfully:', data);
 return { type: 'reminder', success: true, message: `Reminder set for ${date}${time ? ' at ' + time.slice(0,5) : ''}: ${title}`, data };
 }
 /** Shopping */
