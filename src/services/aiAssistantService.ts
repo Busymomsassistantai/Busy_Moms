@@ -203,6 +203,7 @@ return { type: 'calendar', success: true, message: `Scheduled: ${title} on ${dat
 }
 /** Reminders */
 private async handleReminderAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+console.log('Creating reminder with details:', details);
 const title = String(details.title ?? 'Reminder');
 const date = toISODate(details.date);
 const time = toISOTime(details.time);
@@ -225,6 +226,7 @@ if (error) {
 console.error('Reminder creation error:', error);
 return { type: 'reminder', success: false, message: error.message || 'Failed to create reminder.' };
 }
+console.log('Reminder created successfully:', data);
 return { type: 'reminder', success: true, message: `Reminder set for ${date}${time ? ' at ' + time.slice(0,5) : ''}: ${title}`, data };
 }
 /** Shopping */
@@ -277,36 +279,5 @@ return { type: 'task', success: false, message: error.message || 'Failed to crea
 }
 return { type: 'task', success: true, message: `Task added: ${title}`, data };
 }
-
-  /** Chat responses */
-  private async handleChatAction(message: string, userId: UUID): Promise<AIAction> {
-    try {
-      const response = await aiService.chat([
-        {
-          role: 'system',
-          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. Keep responses concise and helpful. The user's ID is ${userId}.`
-        },
-        {
-          role: 'user',
-          content: message
-        }
-      ]);
-
-      return {
-        type: 'chat',
-        success: true,
-        message: response,
-        data: { originalMessage: message }
-      };
-    } catch (error) {
-      console.error('Chat response error:', error);
-      return {
-        type: 'chat',
-        success: true,
-        message: "I'm here to help! You can ask me to add reminders, create events, manage your shopping list, or just chat about parenting topics.",
-        data: { originalMessage: message }
-      };
-    }
-  }
 }
 export const aiAssistantService = new AIAssistantService();
