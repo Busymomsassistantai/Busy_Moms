@@ -210,40 +210,65 @@ if (!date) {
 return { type: 'reminder', success: false, message: 'Please include a date for the reminder.' };
 }
 const { data, error } = await supabase
-.from<Reminder>('reminders')
-.insert([{ user_id: userId, title, date, time }])
+.from('reminders')
+.insert([{ 
+user_id: userId, 
+title, 
+reminder_date: date, 
+reminder_time: time,
+priority: 'medium',
+completed: false
+}])
 .select()
 .single();
 if (error) {
+console.error('Reminder creation error:', error);
 return { type: 'reminder', success: false, message: error.message || 'Failed to create reminder.' };
 }
-return { type: 'reminder', success: true, message: `Reminder set for ${date}${time ? ' ' + time.slice(0,5) : ''}: ${title}`, data };
+return { type: 'reminder', success: true, message: `Reminder set for ${date}${time ? ' at ' + time.slice(0,5) : ''}: ${title}`, data };
 }
 /** Shopping */
 private async handleShoppingAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
 const title = String(details.title ?? 'item');
-const list = String(details.list ?? 'general');
+const category = String(details.category ?? details.list ?? 'other');
 const quantity = coerceInt(details['quantity'] ?? 1, 1) ?? 1;
 const { data, error } = await supabase
-.from<ShoppingItem>('shopping_items')
-.insert([{ user_id: userId, list, title, quantity }])
+.from('shopping_lists')
+.insert([{ 
+user_id: userId, 
+item: title, 
+category, 
+quantity,
+completed: false,
+urgent: false
+}])
 .select()
 .single();
 if (error) {
+console.error('Shopping item creation error:', error);
 return { type: 'shopping', success: false, message: error.message || 'Failed to add to shopping list.' };
 }
-return { type: 'shopping', success: true, message: `Added to ${list} list: ${title} x${quantity}`, data };
+return { type: 'shopping', success: true, message: `Added to shopping list: ${title}${quantity > 1 ? ` x${quantity}` : ''}`, data };
 }
 /** Tasks */
 private async handleTaskAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
 const title = String(details.title ?? 'New task');
-const due_date = toISODate(details['date']);
-const due_time = toISOTime(details['time']);
+const due_date = toISODate(details.date);
+const due_time = toISOTime(details.time);
 const p = details.priority ? details.priority.toString().toLowerCase() : undefined;
 const priority: Task['priority'] = (p === 'low' || p === 'medium' || p === 'high') ? p : 'medium';
 const { data, error } = await supabase
-.from<Task>('tasks')
-.insert([{ user_id: userId, title, due_date, due_time, priority }])
+.from('tasks')
+.insert([{ 
+user_id: userId, 
+title, 
+due_date, 
+due_time, 
+priority,
+status: 'pending',
+category: 'other',
+points: 0
+}])
 .select()
 .single();
 if (error) {
