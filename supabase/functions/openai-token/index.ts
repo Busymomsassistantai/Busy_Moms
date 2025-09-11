@@ -23,7 +23,9 @@ interface TokenRequest {
 }
 
 interface TokenResponse {
-  value: string;
+  client_secret: {
+    value: string;
+  };
   expiresAt: number;
   userId: string;
 }
@@ -80,7 +82,9 @@ Deno.serve(async (req: Request) => {
       console.log('⚠️ OpenAI API key not configured, returning demo token');
       return new Response(
         JSON.stringify({ 
-          value: "demo-token-for-development",
+          client_secret: {
+            value: "demo-token-for-development"
+          },
           expiresAt: Date.now() + (60 * 60 * 1000),
           userId,
           demo: true,
@@ -143,7 +147,9 @@ Deno.serve(async (req: Request) => {
     const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour from now
 
     const response: TokenResponse = {
-      value: tokenData.client_secret?.value || tokenData.token || openaiApiKey,
+      client_secret: {
+        value: tokenData.client_secret?.value || tokenData.token || openaiApiKey
+      },
       expiresAt,
       userId
     };
