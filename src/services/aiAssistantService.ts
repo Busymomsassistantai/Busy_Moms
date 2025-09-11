@@ -277,5 +277,36 @@ return { type: 'task', success: false, message: error.message || 'Failed to crea
 }
 return { type: 'task', success: true, message: `Task added: ${title}`, data };
 }
+
+  /** Chat responses */
+  private async handleChatAction(message: string, userId: UUID): Promise<AIAction> {
+    try {
+      const response = await aiService.chat([
+        {
+          role: 'system',
+          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. Keep responses concise and helpful. The user's ID is ${userId}.`
+        },
+        {
+          role: 'user',
+          content: message
+        }
+      ]);
+
+      return {
+        type: 'chat',
+        success: true,
+        message: response,
+        data: { originalMessage: message }
+      };
+    } catch (error) {
+      console.error('Chat response error:', error);
+      return {
+        type: 'chat',
+        success: true,
+        message: "I'm here to help! You can ask me to add reminders, create events, manage your shopping list, or just chat about parenting topics.",
+        data: { originalMessage: message }
+      };
+    }
+  }
 }
 export const aiAssistantService = new AIAssistantService();
