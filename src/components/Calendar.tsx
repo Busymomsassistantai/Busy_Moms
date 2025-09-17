@@ -19,7 +19,6 @@ import {
   X,
   Info,
   Loader2,
-  Bell,
 } from 'lucide-react';
 
 import { EventForm } from './forms/EventForm';
@@ -92,9 +91,7 @@ export function Calendar() {
 
   // Data
   const [events, setEvents] = useState<DbEvent[]>([]);
-  const [reminders, setReminders] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
-  const [selectedReminder, setSelectedReminder] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,8 +104,7 @@ export function Calendar() {
     setLoading(true);
     setError(null);
     try {
-      // Load events
-      const { data: eventsData, error: eventsErr } = await supabase
+      const { data, error: qErr } = await supabase
         .from('events')
         .select('*')
         .eq('user_id', user.id)
@@ -117,24 +113,10 @@ export function Calendar() {
         .order('event_date', { ascending: true })
         .order('start_time', { ascending: true });
 
-      if (eventsErr) throw eventsErr;
-      setEvents(eventsData ?? []);
-
-      // Load reminders for the same date range
-      const { data: remindersData, error: remindersErr } = await supabase
-        .from('reminders')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('reminder_date', toLocalISODate(monthStart))
-        .lte('reminder_date', toLocalISODate(monthEnd))
-        .eq('completed', false)
-        .order('reminder_date', { ascending: true })
-        .order('reminder_time', { ascending: true });
-
-      if (remindersErr) throw remindersErr;
-      setReminders(remindersData ?? []);
+      if (qErr) throw qErr;
+      setEvents(data ?? []);
     } catch (e) {
-      console.error('❌ Error loading calendar data:', e);
+      console.error('❌ Error loading events:', e);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
@@ -147,11 +129,10 @@ export function Calendar() {
 
   // --- Derived day agenda ----------------------------------------------------
   const itemsForSelectedDate = useMemo(() => {
-    if (!selectedDate) return { events: [] as DbEvent[], reminders: [] as any[] };
+    if (!selectedDate) return { events: [] as DbEvent[] };
     const d = toLocalISODate(selectedDate);
 
     const dayDbEvents = events.filter(ev => ev.event_date === d);
-    const dayReminders = reminders.filter(rem => rem.reminder_date === d);
 
     const sorted = dayDbEvents.sort((a, b) => {
       const minutesKey = (it: DbEvent) => {
@@ -164,19 +145,8 @@ export function Calendar() {
       return minutesKey(a) - minutesKey(b);
     });
 
-    const sortedReminders = dayReminders.sort((a, b) => {
-      const minutesKey = (it: any) => {
-        if (it.reminder_time) {
-          const [h, m] = String(it.reminder_time).split(':').map((n: string) => parseInt(n, 10));
-          return (isNaN(h) ? 23 : h) * 60 + (isNaN(m) ? 59 : m);
-        }
-        return 24 * 60;
-      };
-      return minutesKey(a) - minutesKey(b);
-    });
-
-    return { events: sorted, reminders: sortedReminders };
-  }, [selectedDate, events, reminders]);
+    return { events: sorted };
+  }, [selectedDate, events]);
 
   // --- Calendar grid helpers -------------------------------------------------
   const monthLabel = useMemo(
@@ -251,11 +221,9 @@ export function Calendar() {
   const dayEventsCount = useCallback(
     (day: Date) => {
       const d = toLocalISODate(day);
-      const eventCount = events.filter(ev => ev.event_date === d).length;
-      const reminderCount = reminders.filter(rem => rem.reminder_date === d).length;
-      return eventCount + reminderCount;
+      return events.filter(ev => ev.event_date === d).length;
     },
-    [events, reminders]
+    [events]
   );
 
   // --- UI --------------------------------------------------------------------
@@ -390,78 +358,37 @@ export function Calendar() {
           </div>
         ) : (
           <div className="space-y-2">
-            {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 ? (
-              <div className="text-xs sm:text-sm text-gray-500">No events or reminders for this day.</div>
+            {itemsForSelectedDate.events.length === 0 ? (
+              <div className="text-xs sm:text-sm text-gray-500">No events for this day.</div>
             ) : (
-              <>
-                {/* Events */}
-                {itemsForSelectedDate.events.map((ev, i) => (
-                  <div
-                    key={`event-${ev.id}-${i}`}
-                    onClick={() => {
-                      setSelectedEvent(ev);
-                      setShowEventDetails(true);
-                    }}
-                    className={[
-                      'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 cursor-pointer hover:shadow-md transition-all',
-                      getEventBadge(ev.event_type),
-                    ].join(' ')}
-                  >
-                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
-                      <div className="text-xs sm:text-sm">
-                        {formatTimeRange(ev.start_time, ev.end_time)}
-                      </div>
-                      {ev.location && (
-                        <div className="text-xs sm:text-sm flex items-center gap-1">
-                          <MapPin className="w-2 h-2 sm:w-3 sm:h-3" />
-                          {ev.location}
-                        </div>
-                      )}
-                      {ev.description && (
-                        <div className="text-xs sm:text-sm mt-1 text-gray-700">
-                          {ev.description}
-                        </div>
-                      )}
+              itemsForSelectedDate.events.map((ev, i) => (
+                <div
+                  key={`db-${ev.id}-${i}`}
+                  className={[
+                    'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2',
+                    getEventBadge(ev.event_type),
+                  ].join(' ')}
+                >
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
+                    <div className="text-xs sm:text-sm">
+                      {formatTimeRange(ev.start_time, ev.end_time)}
                     </div>
-                  </div>
-                ))}
-                
-                {/* Reminders */}
-                {itemsForSelectedDate.reminders.map((reminder, i) => (
-                  <div
-                    key={`reminder-${reminder.id}-${i}`}
-                    onClick={() => {
-                      setSelectedReminder(reminder);
-                      setShowEventDetails(true);
-                    }}
-                    className="border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 bg-orange-50 border-orange-200 cursor-pointer hover:shadow-md transition-all"
-                  >
-                    <Bell className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 text-orange-600" />
-                    <div className="flex-1">
-                      <div className="font-semibold text-orange-800">{reminder.title}</div>
-                      <div className="text-xs sm:text-sm text-orange-600">
-                        {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
+                    {ev.location && (
+                      <div className="text-xs sm:text-sm flex items-center gap-1">
+                        <MapPin className="w-2 h-2 sm:w-3 sm:h-3" />
+                        {ev.location}
                       </div>
-                      {reminder.priority && reminder.priority !== 'medium' && (
-                        <div className={`text-xs inline-block px-1.5 py-0.5 rounded-full mt-1 ${
-                          reminder.priority === 'high' 
-                            ? 'bg-red-100 text-red-700' 
-                            : 'bg-green-100 text-green-700'
-                        }`}>
-                          {reminder.priority} priority
-                        </div>
-                      )}
-                      {reminder.description && (
-                        <div className="text-xs sm:text-sm mt-1 text-orange-700">
-                          {reminder.description}
-                        </div>
-                      )}
-                    </div>
+                    )}
+                    {ev.description && (
+                      <div className="text-xs sm:text-sm mt-1 text-gray-700">
+                        {ev.description}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </>
+                </div>
+              ))
             )}
           </div>
         )}
@@ -487,195 +414,6 @@ export function Calendar() {
               onCancel={() => setShowEventForm(false)}
               onSaved={handleEventSaved}
             />
-          </div>
-        </div>
-      )}
-
-      {/* Event/Reminder Details Modal */}
-      {showEventDetails && (selectedEvent || selectedReminder) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
-            <div className="p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                  {selectedEvent ? 'Event Details' : 'Reminder Details'}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowEventDetails(false);
-                    setSelectedEvent(null);
-                    setSelectedReminder(null);
-                  }}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-
-              {selectedEvent && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedEvent.title}</h3>
-                    <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getEventBadge(selectedEvent.event_type)}`}>
-                      {selectedEvent.event_type}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{new Date(selectedEvent.event_date).toLocaleDateString()}</span>
-                    </div>
-
-                    {(selectedEvent.start_time || selectedEvent.end_time) && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>{formatTimeRange(selectedEvent.start_time, selectedEvent.end_time)}</span>
-                      </div>
-                    )}
-
-                    {selectedEvent.location && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>{selectedEvent.location}</span>
-                      </div>
-                    )}
-
-                    {selectedEvent.participants && selectedEvent.participants.length > 0 && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span>{selectedEvent.participants.join(', ')}</span>
-                      </div>
-                    )}
-
-                    {selectedEvent.description && (
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-700">{selectedEvent.description}</p>
-                      </div>
-                    )}
-
-                    {selectedEvent.rsvp_required && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <span className="font-medium text-blue-900">RSVP Required:</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            selectedEvent.rsvp_status === 'yes' ? 'bg-green-100 text-green-700' :
-                            selectedEvent.rsvp_status === 'no' ? 'bg-red-100 text-red-700' :
-                            selectedEvent.rsvp_status === 'maybe' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {selectedEvent.rsvp_status || 'pending'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      onClick={() => {
-                        setShowEventDetails(false);
-                        setShowEventForm(true);
-                      }}
-                      className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-                    >
-                      Edit Event
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowEventDetails(false);
-                        setSelectedEvent(null);
-                      }}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {selectedReminder && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedReminder.title}</h3>
-                    <div className="flex items-center space-x-2">
-                      <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        selectedReminder.priority === 'high' ? 'bg-red-100 text-red-700' :
-                        selectedReminder.priority === 'low' ? 'bg-green-100 text-green-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {selectedReminder.priority || 'medium'} priority
-                      </div>
-                      <div className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-                        Reminder
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{new Date(selectedReminder.reminder_date).toLocaleDateString()}</span>
-                    </div>
-
-                    {selectedReminder.reminder_time && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>{formatTimeRange(selectedReminder.reminder_time, null)}</span>
-                      </div>
-                    )}
-
-                    {selectedReminder.description && (
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-700">{selectedReminder.description}</p>
-                      </div>
-                    )}
-
-                    {selectedReminder.recurring && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <span className="font-medium text-blue-900">Recurring:</span>
-                          <span className="text-blue-700">{selectedReminder.recurring_pattern || 'Custom'}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex space-x-3 pt-4">
-                    <button
-                      onClick={async () => {
-                        try {
-                          const { error } = await supabase
-                            .from('reminders')
-                            .update({ completed: true })
-                            .eq('id', selectedReminder.id);
-                          
-                          if (!error) {
-                            setShowEventDetails(false);
-                            setSelectedReminder(null);
-                            loadEvents(); // Refresh to remove completed reminder
-                          }
-                        } catch (error) {
-                          console.error('Error completing reminder:', error);
-                        }
-                      }}
-                      className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                    >
-                      Mark Complete
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowEventDetails(false);
-                        setSelectedReminder(null);
-                      }}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
