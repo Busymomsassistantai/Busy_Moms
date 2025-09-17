@@ -94,6 +94,7 @@ export function Calendar() {
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
+  const [selectedReminder, setSelectedReminder] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -397,8 +398,12 @@ export function Calendar() {
                 {itemsForSelectedDate.events.map((ev, i) => (
                   <div
                     key={`event-${ev.id}-${i}`}
+                    onClick={() => {
+                      setSelectedEvent(ev);
+                      setShowEventDetails(true);
+                    }}
                     className={[
-                      'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2',
+                      'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 cursor-pointer hover:shadow-md transition-all',
                       getEventBadge(ev.event_type),
                     ].join(' ')}
                   >
@@ -427,7 +432,11 @@ export function Calendar() {
                 {itemsForSelectedDate.reminders.map((reminder, i) => (
                   <div
                     key={`reminder-${reminder.id}-${i}`}
-                    className="border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 bg-orange-50 border-orange-200"
+                    onClick={() => {
+                      setSelectedReminder(reminder);
+                      setShowEventDetails(true);
+                    }}
+                    className="border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 bg-orange-50 border-orange-200 cursor-pointer hover:shadow-md transition-all"
                   >
                     <Bell className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 text-orange-600" />
                     <div className="flex-1">
@@ -478,6 +487,195 @@ export function Calendar() {
               onCancel={() => setShowEventForm(false)}
               onSaved={handleEventSaved}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Event/Reminder Details Modal */}
+      {showEventDetails && (selectedEvent || selectedReminder) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  {selectedEvent ? 'Event Details' : 'Reminder Details'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowEventDetails(false);
+                    setSelectedEvent(null);
+                    setSelectedReminder(null);
+                  }}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+
+              {selectedEvent && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedEvent.title}</h3>
+                    <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getEventBadge(selectedEvent.event_type)}`}>
+                      {selectedEvent.event_type}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <CalendarIcon className="w-4 h-4" />
+                      <span>{new Date(selectedEvent.event_date).toLocaleDateString()}</span>
+                    </div>
+
+                    {(selectedEvent.start_time || selectedEvent.end_time) && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span>{formatTimeRange(selectedEvent.start_time, selectedEvent.end_time)}</span>
+                      </div>
+                    )}
+
+                    {selectedEvent.location && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{selectedEvent.location}</span>
+                      </div>
+                    )}
+
+                    {selectedEvent.participants && selectedEvent.participants.length > 0 && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Users className="w-4 h-4" />
+                        <span>{selectedEvent.participants.join(', ')}</span>
+                      </div>
+                    )}
+
+                    {selectedEvent.description && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-700">{selectedEvent.description}</p>
+                      </div>
+                    )}
+
+                    {selectedEvent.rsvp_required && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <span className="font-medium text-blue-900">RSVP Required:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            selectedEvent.rsvp_status === 'yes' ? 'bg-green-100 text-green-700' :
+                            selectedEvent.rsvp_status === 'no' ? 'bg-red-100 text-red-700' :
+                            selectedEvent.rsvp_status === 'maybe' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {selectedEvent.rsvp_status || 'pending'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={() => {
+                        setShowEventDetails(false);
+                        setShowEventForm(true);
+                      }}
+                      className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    >
+                      Edit Event
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowEventDetails(false);
+                        setSelectedEvent(null);
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedReminder && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedReminder.title}</h3>
+                    <div className="flex items-center space-x-2">
+                      <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedReminder.priority === 'high' ? 'bg-red-100 text-red-700' :
+                        selectedReminder.priority === 'low' ? 'bg-green-100 text-green-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {selectedReminder.priority || 'medium'} priority
+                      </div>
+                      <div className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                        Reminder
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <CalendarIcon className="w-4 h-4" />
+                      <span>{new Date(selectedReminder.reminder_date).toLocaleDateString()}</span>
+                    </div>
+
+                    {selectedReminder.reminder_time && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span>{formatTimeRange(selectedReminder.reminder_time, null)}</span>
+                      </div>
+                    )}
+
+                    {selectedReminder.description && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-700">{selectedReminder.description}</p>
+                      </div>
+                    )}
+
+                    {selectedReminder.recurring && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <span className="font-medium text-blue-900">Recurring:</span>
+                          <span className="text-blue-700">{selectedReminder.recurring_pattern || 'Custom'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const { error } = await supabase
+                            .from('reminders')
+                            .update({ completed: true })
+                            .eq('id', selectedReminder.id);
+                          
+                          if (!error) {
+                            setShowEventDetails(false);
+                            setSelectedReminder(null);
+                            loadEvents(); // Refresh to remove completed reminder
+                          }
+                        } catch (error) {
+                          console.error('Error completing reminder:', error);
+                        }
+                      }}
+                      className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      Mark Complete
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowEventDetails(false);
+                        setSelectedReminder(null);
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
