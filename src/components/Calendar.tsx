@@ -3,22 +3,15 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  KeyboardEvent,
 } from 'react';
 import {
-  Plus,
   MapPin,
   Clock,
   Users,
-  MessageCircle,
-  Gift,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Smartphone,
   X,
-  Info,
-  Loader2,
   Bell,
 } from 'lucide-react';
 
@@ -69,7 +62,7 @@ const formatTimeRange = (startTime?: string | null, endTime?: string | null) => 
 };
 
 // --- Component ---------------------------------------------------------------
-export function Calendar() {
+export function Calendar({ onNavigate }: DashboardProps) {
   const { user } = useAuth();
 
   // Core state
@@ -170,14 +163,6 @@ export function Calendar() {
   }, [selectedDate, events, reminders]);
 
   // --- Calendar grid helpers -------------------------------------------------
-  const monthLabel = useMemo(
-    () =>
-      currentDate.toLocaleString(undefined, {
-        month: 'long',
-        year: 'numeric',
-      }),
-    [currentDate]
-  );
 
   const firstDayOfGrid = useMemo(() => {
     const start = new Date(monthStart);
@@ -210,22 +195,15 @@ export function Calendar() {
     setSelectedDate(now);
   }, []);
 
+  // Helper to format dates without timezone issues
+  const formatLocalDate = (isoDate: string) => {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString();
+  };
   const onDayClick = useCallback((day: Date) => {
     setSelectedDate(day);
   }, []);
 
-  const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      goPrevMonth();
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      goNextMonth();
-    } else if (e.key.toLowerCase() === 't') {
-      e.preventDefault();
-      goToday();
-    }
-  }, [goPrevMonth, goNextMonth, goToday]);
 
   const handleEventSaved = useCallback(() => {
     setShowEventForm(false);
@@ -286,7 +264,7 @@ export function Calendar() {
           <div className="space-y-3">
             {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 ? (
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500 text-sm">No events today</p>
               </div>
             ) : (
@@ -355,7 +333,7 @@ export function Calendar() {
           {/* View All Button */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <button 
-              onClick={() => onNavigate('calendar')}
+              onClick={() => onNavigate('dashboard')}
               className="text-purple-600 text-sm font-medium hover:underline"
             >
               View All →
@@ -498,7 +476,7 @@ export function Calendar() {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <CalendarIcon className="w-4 h-4" />
-                      <span>{new Date(selectedEvent.event_date).toLocaleDateString()}</span>
+                      <span>{formatLocalDate(selectedEvent.event_date)}</span>
                     </div>
 
                     {(selectedEvent.start_time || selectedEvent.end_time) && (
@@ -589,7 +567,7 @@ export function Calendar() {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <CalendarIcon className="w-4 h-4" />
-                      <span>{new Date(selectedReminder.reminder_date).toLocaleDateString()}</span>
+                      <span>{formatLocalDate(selectedReminder.reminder_date)}</span>
                     </div>
 
                     {selectedReminder.reminder_time && (
