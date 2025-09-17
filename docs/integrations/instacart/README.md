@@ -71,6 +71,50 @@ supabase functions serve instacart-proxy
 
 **Note**: Never commit environment files or hardcode secrets in your project.
 
+## Client SDK
+
+### Configuration
+
+Set in your `.env` file:
+
+```bash
+VITE_FUNCTIONS_URL=https://[PROJECT_REF].supabase.co/functions/v1/instacart-proxy
+```
+
+### Available Methods
+
+#### `createRecipeLink(input)`
+Generate shopping list from recipe text and ingredients.
+
+#### `createShoppingListLink(input)`
+Convert shopping list items to Instacart products.
+
+#### `getNearbyRetailers(postal_code, country_code?)`
+Get available retailers by location.
+
+### Validation Rules
+
+**LineItem Requirements:**
+- `name` is required
+- Cannot combine `product_ids` and `upcs` in the same item
+- Must provide either:
+  - `quantity` + `unit` (e.g., `quantity: 2, unit: "lb"`)
+  - `measurements[]` array
+  - `line_item_measurements[]` array
+
+**Example LineItem:**
+```typescript
+{
+  name: "organic milk",
+  quantity: 1,
+  unit: "gallon",
+  filters: {
+    brand_filters: ["Organic Valley"],
+    health_filters: ["organic"]
+  }
+}
+```
+
 
 ## Deployment
 

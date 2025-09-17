@@ -1,58 +1,95 @@
-/*
-  # Instacart Client SDK
+export interface Measurement {
+  unit: string;      // e.g., "oz", "ml", "g", "lb", "ea"
+  quantity: number;  // numeric amount
+}
 
-  Client-side SDK for interacting with Instacart via our Edge Function proxy.
-  Provides type-safe methods and validation for Instacart operations.
+export interface LineItem {
+  name: string;            // generic product name (no brand/size here)
+  display_text?: string;   // human-readable extras (prep notes, size text)
+  quantity?: number;       // use either quantity+unit OR measurements[] / line_item_measurements[]
+  unit?: string;
+  measurements?: Measurement[];
+  line_item_measurements?: Measurement[];
+  filters?: {
+    brand_filters?: string[];   // exact, case-sensitive
+    health_filters?: string[];  // exact, case-sensitive
+  };
+  product_ids?: string[];  // do NOT combine with upcs
+  upcs?: string[];         // do NOT combine with product_ids
+}
 
-  Features:
-  - Product search
-  - Cart management
-  - Order placement
-  - Type validation
-  - Error handling
-*/
+const FUNCTIONS_BASE =
+  (import.meta.env.VITE_FUNCTIONS_URL as string) ??
+  "http://localhost:54321/functions/v1/instacart-proxy";
 
-// Placeholder - implementation will be added in subsequent prompts
+function assertValidLineItem(i: LineItem) {
+  if (!i.name) throw new Error("LineItem.name is required");
+  if (i.product_ids && i.upcs) {
+    throw new Error("Provide either product_ids or upcs, not both");
+  }
+  const hasQtyUnit = typeof i.quantity === "number" && !!i.unit;
+  const hasMeasurements = Array.isArray(i.measurements) && i.measurements.length > 0;
+  const hasLineItemMeasurements = Array.isArray(i.line_item_measurements) && i.line_item_measurements.length > 0;
+  if (!(hasQtyUnit || hasMeasurements || hasLineItemMeasurements)) {
+    throw new Error("Provide quantity+unit OR measurements[]/line_item_measurements[]");
+  }
+}
 
-export interface InstacartProduct {
-  id: string;
-  name: string;
-  price: number;
+export async function createRecipeLink(input: {
+  title: string;
+  servings?: number;
   image_url?: string;
-  brand?: string;
-  size?: string;
+  instructions?: string[];
+  ingredients: LineItem[];
+  expires_in?: number; // seconds (optional)
+  landing_page_configuration?: {
+    partner_linkback_url?: string;
+    enable_pantry_items?: boolean;
+  };
+}) {
+  input.ingredients.forEach(assertValidLineItem);
+  const res = await fetch(`${FUNCTIONS_BASE}/recipe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Instacart recipe error ${res.status}: ${JSON.stringify(err)}`);
+  }
+  return res.json() as Promise<{ products_link_url: string }>;
 }
 
-export interface InstacartSearchParams {
-  query: string;
-  limit?: number;
-  store_id?: string;
+export async function createShoppingListLink(input: {
+  title: string;
+  image_url?: string;
+  line_items: LineItem[];
+  expires_in?: number; // seconds (optional)
+  landing_page_configuration?: {
+    partner_linkback_url?: string;
+  };
+}) {
+  input.line_items.forEach(assertValidLineItem);
+  const res = await fetch(`${FUNCTIONS_BASE}/list`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Instacart list error ${res.status}: ${JSON.stringify(err)}`);
+  }
+  return res.json() as Promise<{ products_link_url: string }>;
 }
 
-export interface InstacartCartItem {
-  product_id: string;
-  quantity: number;
+export async function getNearbyRetailers(postal_code: string, country_code = "US") {
+  const url = new URL(`${FUNCTIONS_BASE}/retailers`);
+  if (postal_code) url.searchParams.set("postal_code", postal_code);
+  if (country_code) url.searchParams.set("country_code", country_code);
+  const res = await fetch(url.toString(), { method: "GET" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Instacart retailers error ${res.status}: ${JSON.stringify(err)}`);
+  }
+  return res.json() as Promise<{ retailers: unknown[] }>;
 }
-
-export class InstacartClient {
-  private baseUrl: string;
-
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || import.meta.env.VITE_FUNCTIONS_URL || '';
-  }
-
-  // Placeholder methods - implementation coming soon
-  async searchProducts(params: InstacartSearchParams): Promise<InstacartProduct[]> {
-    throw new Error('Not implemented yet');
-  }
-
-  async addToCart(items: InstacartCartItem[]): Promise<void> {
-    throw new Error('Not implemented yet');
-  }
-
-  async placeOrder(): Promise<{ order_id: string }> {
-    throw new Error('Not implemented yet');
-  }
-}
-
-export const instacartClient = new InstacartClient();
