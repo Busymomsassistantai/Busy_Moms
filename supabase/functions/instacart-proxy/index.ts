@@ -69,34 +69,13 @@ async function forward(path: string, init: RequestInit & { query?: URLSearchPara
     }, 502);
   }
 }
-    method: init.method ?? "GET",
-    headers,
-    body: init.body,
-  });
-
-  const text = await res.text();
-  const isJSON = (res.headers.get("content-type") ?? "").includes("application/json");
-  const payload = isJSON && text ? JSON.parse(text) : text;
-
-  // Defense in depth — never leak sensitive fields
-  if (typeof payload === "object" && payload) {
-    // @ts-ignore
-    delete payload?.token;
-    // @ts-ignore
-    delete payload?.api_key;
-  }
-
-  return new Response(isJSON ? JSON.stringify(payload) : String(payload), {
-    status: res.status,
-    headers: { "Content-Type": isJSON ? "application/json" : "text/plain", ...corsHeaders },
-  });
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const url = new URL(req.url);
+    const pathname = url.pathname;
     console.log('📍 Instacart proxy request:', req.method, pathname);
     
     // Extract the actual path after the function name
