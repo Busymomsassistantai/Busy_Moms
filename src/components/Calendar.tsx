@@ -374,7 +374,10 @@ export function Calendar() {
                   return (
                     <button
                       key={idx}
-                      onClick={() => onDayClick(day)}
+                      onClick={() => {
+                        onDayClick(day);
+                        setShowEventForm(true);
+                      }}
                       className={`
                         relative h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all
                         ${selected 
@@ -397,30 +400,19 @@ export function Calendar() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={() => setShowEventForm(true)}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl py-4 px-6 font-semibold text-lg hover:shadow-lg transition-all"
-              >
-                Create meeting
-              </button>
-              
+            {/* Instructions */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-2">Quick Actions</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>• Click any day to create a new event</p>
+                <p>• Click on events or reminders to edit them</p>
+                <p>• Use the WhatsApp integration for quick imports</p>
+              </div>
               <button
                 onClick={() => setShowWhatsAppForm(true)}
-                className="w-full bg-white border-2 border-purple-200 text-purple-600 rounded-2xl py-4 px-6 font-semibold text-lg hover:bg-purple-50 transition-all"
+                className="w-full mt-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl py-3 px-4 font-medium hover:shadow-lg transition-all"
               >
-                Book Meeting
-              </button>
-            </div>
-
-            {/* View All Link */}
-            <div className="text-right">
-              <button 
-                onClick={() => setShowEventForm(true)}
-                className="text-purple-500 font-medium hover:text-purple-600 transition-colors"
-              >
-                View All →
+                Import from WhatsApp
               </button>
             </div>
           </div>
@@ -525,6 +517,32 @@ export function Calendar() {
                       Edit Event
                     </button>
                     <button
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this event?')) {
+                          try {
+                            const { error } = await supabase
+                              .from('events')
+                              .delete()
+                              .eq('id', selectedEvent.id);
+                            
+                            if (!error) {
+                              setShowEventDetails(false);
+                              setSelectedEvent(null);
+                              loadEvents(); // Refresh events list
+                            } else {
+                              alert('Error deleting event. Please try again.');
+                            }
+                          } catch (error) {
+                            console.error('Error deleting event:', error);
+                            alert('Error deleting event. Please try again.');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      Delete
+                    </button>
+                    <button
                       onClick={() => {
                         setShowEventDetails(false);
                         setSelectedEvent(null);
@@ -596,6 +614,32 @@ export function Calendar() {
                       className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
                       Mark Complete
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this reminder?')) {
+                          try {
+                            const { error } = await supabase
+                              .from('reminders')
+                              .delete()
+                              .eq('id', selectedReminder.id);
+                            
+                            if (!error) {
+                              setShowEventDetails(false);
+                              setSelectedReminder(null);
+                              loadEvents(); // Refresh reminders list
+                            } else {
+                              alert('Error deleting reminder. Please try again.');
+                            }
+                          } catch (error) {
+                            console.error('Error deleting reminder:', error);
+                            alert('Error deleting reminder. Please try again.');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      Delete
                     </button>
                     <button
                       onClick={() => {
