@@ -14,6 +14,52 @@ Client App → Supabase Edge Function → Instacart API
 - **Edge Function** (`supabase/functions/instacart-proxy/`) - Server-side proxy with auth
 - **Mapping Layer** (`src/lib/instacartMap.ts`) - Data transformation utilities
 
+## Environment
+
+### Client Configuration
+
+Set in your `.env` file:
+
+```bash
+VITE_FUNCTIONS_URL=http://localhost:54321/functions/v1/instacart-proxy
+```
+
+### Server Configuration (Supabase Secrets)
+
+Set these in your Supabase project dashboard under Settings → Edge Functions:
+
+- **INSTACART_API_KEY** - Your Instacart API key (required)
+- **INSTACART_BASE_URL** - Override base URL if needed (optional, defaults to `https://connect.dev.instacart.tools`)
+
+**Security Note**: API keys are stored ONLY in Supabase project secrets, never in code or local files.
+
+## Local Development
+
+For development, we recommend using the deployed Edge Function to avoid managing local secrets.
+
+**Advanced users** can serve locally by temporarily exporting environment variables:
+
+```bash
+export INSTACART_API_KEY="your_key_here"
+supabase functions serve instacart-proxy
+```
+
+**Note**: Never commit environment files or hardcode secrets in your project.
+
+## Deploy
+
+Deploy the Edge Function to your Supabase project:
+
+```bash
+supabase functions deploy instacart-proxy --project-ref [PROJECT_REF]
+```
+
+Update your client environment to point to the deployed function:
+
+```bash
+VITE_FUNCTIONS_URL=https://[PROJECT_REF].supabase.co/functions/v1/instacart-proxy
+```
+
 ## Edge Function
 
 ### Endpoint Base
@@ -33,43 +79,10 @@ Client App → Supabase Edge Function → Instacart API
   - Query params: `postal_code`, `country_code` (defaults to "US")
 
 ### Security Features
-- **Server-side authentication** - Bearer token injected from `INSTACART_API_KEY_DEV`
+- **Server-side authentication** - Bearer token injected from `INSTACART_API_KEY`
 - **CORS enabled** - Supports browser requests
 - **Secret filtering** - Removes sensitive fields from responses
 - **Environment-based** - All credentials read from env variables
-
-## Environment Variables
-
-### Client Configuration
-
-Set in your `.env` file:
-
-```bash
-VITE_FUNCTIONS_URL=https://[PROJECT_REF].supabase.co/functions/v1/instacart-proxy
-```
-
-### Server Configuration (Supabase Secrets)
-
-Set these in your Supabase project dashboard under Settings → Edge Functions:
-
-- **INSTACART_API_KEY** - Your Instacart API key (required)
-- **INSTACART_BASE_URL** - Override base URL if needed (optional, defaults to `https://connect.dev.instacart.tools`)
-
-**Security Note**: API keys are stored ONLY in Supabase project secrets, never in code or local files.
-
-
-## Local Development
-
-For development, we recommend using the deployed Edge Function to avoid managing local secrets.
-
-**Advanced users** can serve locally by temporarily exporting environment variables:
-
-```bash
-export INSTACART_API_KEY="your_key_here"
-supabase functions serve instacart-proxy
-```
-
-**Note**: Never commit environment files or hardcode secrets in your project.
 
 ## Client SDK
 
@@ -86,11 +99,47 @@ VITE_FUNCTIONS_URL=https://[PROJECT_REF].supabase.co/functions/v1/instacart-prox
 #### `createRecipeLink(input)`
 Generate shopping list from recipe text and ingredients.
 
+```typescript
+import { createRecipeLink } from '@/lib/instacartClient';
+import { toLineItem } from '@/lib/instacartMap';
+
+const result = await createRecipeLink({
+  title: "Chicken Tacos",
+  servings: 4,
+  ingredients: [
+    toLineItem({ name: "chicken breast", quantity: 1.5, unit: "lb" }),
+    toLineItem({ name: "flour tortillas", quantity: 8, unit: "ea" })
+  ]
+});
+// Returns: { products_link_url: "https://www.instacart.com/..." }
+```
+
 #### `createShoppingListLink(input)`
 Convert shopping list items to Instacart products.
 
+```typescript
+import { createShoppingListLink } from '@/lib/instacartClient';
+import { toLineItem } from '@/lib/instacartMap';
+
+const result = await createShoppingListLink({
+  title: "Weekly Groceries",
+  line_items: [
+    toLineItem({ name: "milk", quantity: 1, unit: "gallon" }),
+    toLineItem({ name: "bread", quantity: 1, unit: "ea" })
+  ]
+});
+// Returns: { products_link_url: "https://www.instacart.com/..." }
+```
+
 #### `getNearbyRetailers(postal_code, country_code?)`
 Get available retailers by location.
+
+```typescript
+import { getNearbyRetailers } from '@/lib/instacartClient';
+
+const retailers = await getNearbyRetailers("10001", "US");
+// Returns: { retailers: [...] }
+```
 
 ### Validation Rules
 
@@ -159,125 +208,31 @@ const lineItem = toLineItem({
 });
 ```
 
-## Deployment
+## Guardrails
 
-### 1. Set environment variables in Supabase Dashboard
+### Security
+- **Never expose secrets in client** - All API keys stored in Supabase project secrets
+- **Server-side proxy only** - Client never directly calls Instacart API
+- **Environment-based configuration** - No hardcoded credentials
 
-Go to your project settings and add the required environment variables.
+### Data Integrity
+- **Don't mix product_ids and upcs** - Use one identification method per item
+- **Keep names generic** - Move specific details to `display_text` and `measurements`
+- **Validate all inputs** - Client SDK enforces proper LineItem structure
 
-### 2. Deploy the function
+### Performance
+- **Reuse products_link_url** - URLs are valid until content changes
+- **Cache retailer data** - Store location-based retailer lists locally
+- **Batch operations** - Group multiple items in single API calls
 
-```bash
-supabase functions deploy instacart-proxy
-```
+## Acceptance Criteria
 
-### 3. Update client environment
-
-Update `VITE_FUNCTIONS_URL` to point to your deployed function URL.
-
-## API Examples
-
-### Search Products
-
-```typescript
-import { instacartClient } from '@/lib/instacartClient';
-
-// Generate shopping list from recipe
-const products = await instacartClient.generateFromRecipe(
-  "Spaghetti Bolognese recipe with ground beef, tomatoes, pasta"
-);
-
-// Convert shopping list to products
-const productLinks = await instacartClient.convertShoppingList([
-  "organic milk",
-  "whole wheat bread", 
-  "fresh spinach"
-]);
-
-// Get local retailers
-const retailers = await instacartClient.getRetailers({
-  postal_code: "10001",
-  country_code: "US"
-});
-```
-
-### Example Payloads
-
-```typescript
-// POST /recipe
-{
-  "recipe": "Chicken stir fry with broccoli, carrots, and soy sauce"
-}
-
-// POST /list  
-{
-  "items": ["milk", "bread", "eggs", "butter"]
-}
-
-// GET /retailers?postal_code=10001&country_code=US
-// No body required
-```
-
-### Map Shopping List
-
-```typescript
-import { InstacartMapper } from '@/lib/instacartMap';
-
-// Convert shopping list items to search queries
-const queries = shoppingItems.map(item => 
-  InstacartMapper.toSearchQuery(item)
-);
-
-// Map categories
-const instacartCategory = InstacartMapper.mapCategory('dairy');
-```
-
-## Error Handling
-
-The client SDK includes comprehensive error handling:
-
-```typescript
-try {
-  const products = await instacartClient.searchProducts({ query: 'milk' });
-} catch (error) {
-  if (error.code === 'INSTACART_API_ERROR') {
-    // Handle Instacart API errors
-  } else if (error.code === 'NETWORK_ERROR') {
-    // Handle network issues
-  }
-}
-```
-
-## Security Notes
-
-- API keys are never exposed to the client
-- All requests go through our secure Edge Function proxy
-- CORS is properly configured for browser requests
-- Input validation prevents malicious requests
-
-## Testing
-
-Run the integration tests:
-
-```bash
-npm run test:instacart
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **CORS errors** - Ensure the Edge Function is deployed and CORS headers are set
-2. **API key errors** - Verify environment variables are set in Supabase Dashboard
-3. **Network timeouts** - Check Instacart API status and increase timeout values
-
-### Debug Mode
-
-Enable debug logging:
-
-```typescript
-const client = new InstacartClient(process.env.VITE_FUNCTIONS_URL, { debug: true });
-```
+- [ ] **Edge Function compiles & serves** - Proper CORS and environment-driven authentication
+- [ ] **API routes functional** - POST /recipe, POST /list, GET /retailers return Instacart responses
+- [ ] **Client SDK validates inputs** - Proper validation and returns `{ products_link_url }`
+- [ ] **Documentation complete** - README covers setup, deployment, and examples
+- [ ] **Security verified** - No secrets in client code or repository
+- [ ] **End-to-end tested** - Generated URLs work in Instacart checkout flow
 
 ## Quick QA
 
