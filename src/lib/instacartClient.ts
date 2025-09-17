@@ -48,7 +48,8 @@ export async function createRecipeLink(input: {
   };
 }) {
   input.ingredients.forEach(assertValidLineItem);
-  const res = await fetch(`${FUNCTIONS_BASE}/recipe`, {
+  const baseUrl = FUNCTIONS_BASE || `${SUPABASE_URL}/functions/v1`;
+  const res = await fetch(`${baseUrl}/instacart-proxy/recipe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -70,7 +71,8 @@ export async function createShoppingListLink(input: {
   };
 }) {
   input.line_items.forEach(assertValidLineItem);
-  const res = await fetch(`${FUNCTIONS_BASE}/list`, {
+  const baseUrl = FUNCTIONS_BASE || `${SUPABASE_URL}/functions/v1`;
+  const res = await fetch(`${baseUrl}/instacart-proxy/list`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -83,7 +85,8 @@ export async function createShoppingListLink(input: {
 }
 
 export async function getNearbyRetailers(postal_code: string, country_code = "US") {
-  const url = new URL(`${FUNCTIONS_BASE}/retailers`);
+  const baseUrl = FUNCTIONS_BASE || `${SUPABASE_URL}/functions/v1`;
+  const url = new URL(`${baseUrl}/instacart-proxy/retailers`);
   if (postal_code) url.searchParams.set("postal_code", postal_code);
   if (country_code) url.searchParams.set("country_code", country_code);
   const res = await fetch(url.toString(), { method: "GET" });
