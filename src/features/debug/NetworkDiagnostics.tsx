@@ -92,10 +92,6 @@ export default function NetworkDiagnostics() {
         ok: false,
         detail: (e?.message || String(e)) + " — If DNS_PROBE_FINISHED_NXDOMAIN, check project ref. Expected: " + EXPECTED_REF
       });
-        name: "Supabase /auth/v1/health",
-        ok: false,
-        detail: (e?.message || String(e)) + " — If DNS_PROBE_FINISHED_NXDOMAIN, check project ref. Expected: " + EXPECTED_REF
-      });
     }
 
     setChecks(results);
