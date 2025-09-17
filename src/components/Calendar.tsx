@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { EventForm } from './forms/EventForm';
+import { ReminderForm } from './forms/ReminderForm';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { supabase } from '../lib/supabase';
 import type { Event as DbEvent } from '../lib/supabase';
@@ -71,8 +72,10 @@ export function Calendar({ onNavigate }: DashboardProps) {
 
   // UI modals
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showReminderForm, setShowReminderForm] = useState(false);
   const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
 
   // Data
   const [events, setEvents] = useState<DbEvent[]>([]);
@@ -202,11 +205,13 @@ export function Calendar({ onNavigate }: DashboardProps) {
   };
   const onDayClick = useCallback((day: Date) => {
     setSelectedDate(day);
+    setShowCreateOptions(true);
   }, []);
 
 
   const handleEventSaved = useCallback(() => {
     setShowEventForm(false);
+    setShowReminderForm(false);
     void loadEvents();
   }, [loadEvents]);
 
@@ -238,24 +243,15 @@ export function Calendar({ onNavigate }: DashboardProps) {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-gray-900">Calendar</h1>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setShowEventForm(true)}
-                className="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors"
-              >
-                Create meeting
-              </button>
-              <button
-                onClick={() => setShowWhatsAppForm(true)}
-                className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
-              >
-                Book Meeting
-              </button>
-            </div>
           </div>
           
           <div className="text-sm text-gray-600">
-            TODAY {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            {selectedDate ? selectedDate.toLocaleDateString('en-US', { 
+              weekday: 'long',
+              month: 'long', 
+              day: 'numeric',
+              year: 'numeric'
+            }) : 'Select a date'}
           </div>
         </div>
 
@@ -333,7 +329,7 @@ export function Calendar({ onNavigate }: DashboardProps) {
           {/* View All Button */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <button 
-              onClick={() => onNavigate('dashboard')}
+              onClick={() => onNavigate?.('dashboard')}
               className="text-purple-600 text-sm font-medium hover:underline"
             >
               View All →
@@ -419,6 +415,65 @@ export function Calendar({ onNavigate }: DashboardProps) {
         </div>
       </div>
 
+      {/* Create Options Modal */}
+      {showCreateOptions && selectedDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-sm">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {selectedDate.toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </h2>
+                <button
+                  onClick={() => setShowCreateOptions(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowCreateOptions(false);
+                    setShowEventForm(true);
+                  }}
+                  className="w-full p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-center space-x-3">
+                    <CalendarIcon className="w-5 h-5" />
+                    <div className="text-left">
+                      <h3 className="font-semibold">Create Event</h3>
+                      <p className="text-sm opacity-90">Schedule a meeting or appointment</p>
+                    </div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowCreateOptions(false);
+                    setShowReminderForm(true);
+                  }}
+                  className="w-full p-4 bg-gradient-to-r from-orange-400 to-red-400 text-white rounded-xl hover:shadow-lg transition-all"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Bell className="w-5 h-5" />
+                    <div className="text-left">
+                      <h3 className="font-semibold">Create Reminder</h3>
+                      <p className="text-sm opacity-90">Set a personal reminder</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Event form modal */}
       {showEventForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -437,6 +492,30 @@ export function Calendar({ onNavigate }: DashboardProps) {
               defaultDate={selectedDate ? toLocalISODate(selectedDate) : undefined}
               event={selectedEvent ?? undefined}
               onCancel={() => setShowEventForm(false)}
+              onSaved={handleEventSaved}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Reminder form modal */}
+      {showReminderForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-sm sm:text-base">Create / Edit Reminder</h4>
+              <button
+                onClick={() => setShowReminderForm(false)}
+                className="p-0.5 sm:p-1 rounded hover:bg-gray-100"
+                aria-label="Close reminder form"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+            <ReminderForm
+              defaultDate={selectedDate ? toLocalISODate(selectedDate) : undefined}
+              reminder={selectedReminder ?? undefined}
+              onCancel={() => setShowReminderForm(false)}
               onSaved={handleEventSaved}
             />
           </div>
