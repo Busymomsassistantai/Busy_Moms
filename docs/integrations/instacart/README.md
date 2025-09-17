@@ -335,6 +335,7 @@ const lineItem = toLineItem({
 - Client envs must point to:
   - `VITE_SUPABASE_URL=https://rtvwcyrksplhsgycyfzo.supabase.co`
   - `VITE_FUNCTIONS_URL=https://rtvwcyrksplhsgycyfzo.functions.supabase.co/instacart-proxy`
+- To avoid future mismatches, we set `VITE_SUPABASE_PROJECT_REF=rtvwcyrksplhsgycyfzo`. The app normalizes `VITE_SUPABASE_URL` at runtime to match this ref and will **warn** instead of crashing if envs disagree.
 - If you see `DNS_PROBE_FINISHED_NXDOMAIN`, you likely used the wrong host. Fix the envs and restart the dev server.
 
 ## UI QA Checklist

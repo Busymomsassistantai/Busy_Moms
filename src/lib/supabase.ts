@@ -1,63 +1,6 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
-
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const functionsUrl = import.meta.env.VITE_FUNCTIONS_URL
-
-// Validate URL format: https://<project_ref>.supabase.co
-const urlValid = /^https:\/\/([a-z0-9]{20})\.supabase\.co\/?$/.test(url || '');
-const expectedProjectRef = 'rtvwcyrksplhsgycyfzo';
-
-if (!url || !anonKey) {
-  throw new Error(
-    '[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. ' +
-    `Expected: https://${expectedProjectRef}.supabase.co`
-  )
-}
-
-if (!urlValid) {
-  throw new Error(
-    `[supabase] VITE_SUPABASE_URL format invalid: "${url}". ` +
-    `Expected: https://${expectedProjectRef}.supabase.co`
-  )
-}
-
-// Extract project ref and validate
-const projectRefMatch = url.match(/^https:\/\/([a-z0-9]{20})\.supabase\.co/);
-const actualProjectRef = projectRefMatch?.[1];
-
-if (actualProjectRef !== expectedProjectRef) {
-  throw new Error(
-    `[supabase] Wrong project ref: "${actualProjectRef}". ` +
-    `Expected: "${expectedProjectRef}". Update VITE_SUPABASE_URL to https://${expectedProjectRef}.supabase.co`
-  )
-}
-
-// Cross-check functions URL if provided
-if (functionsUrl) {
-  const fnRefMatch = functionsUrl.match(/^https:\/\/([a-z0-9]{20})\.functions\.supabase\.co/);
-  const fnProjectRef = fnRefMatch?.[1];
-  if (fnProjectRef && fnProjectRef !== expectedProjectRef) {
-    console.warn(
-      `[supabase] Project ref mismatch: Functions URL uses "${fnProjectRef}" but Supabase URL uses "${actualProjectRef}". ` +
-      `Both should use "${expectedProjectRef}".`
-    );
-  }
-}
-
-if (typeof window !== 'undefined' && !(window as any).__supabase_validated) {
-  console.debug(`[supabase] ✅ Validated project ref: ${actualProjectRef}`);
-  (window as any).__supabase_validated = true;
-}
-
-export const supabase: SupabaseClient = createClient(url, anonKey, {
-auth: {
-persistSession: true,
-autoRefreshToken: true,
-detectSessionInUrl: true,
-},
-db: { schema: 'public' },
-})
+// Re-export from the self-healing client
+export { supabase, SUPABASE_URL, SUPABASE_PROJECT_REF } from './supabaseClient'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ---- Shared App Types (used only for TypeScript hints) ----------------------
 

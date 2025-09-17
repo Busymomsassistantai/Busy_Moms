@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 const FN_BASE = (import.meta.env.VITE_FUNCTIONS_URL as string) || "NOT SET";
 const SB_URL = (import.meta.env.VITE_SUPABASE_URL as string) || "NOT SET";
+const SB_REF = (import.meta.env.VITE_SUPABASE_PROJECT_REF as string) || "NOT SET";
 const SB_VALID = /^https:\/\/[a-z0-9]{20}\.supabase\.co\/?$/.test(SB_URL);
 const EXPECTED_REF = 'rtvwcyrksplhsgycyfzo';
 
@@ -18,6 +19,7 @@ export default function NetworkDiagnostics() {
     // 1) Report envs (safe)
     results.push({ name: "Env: VITE_FUNCTIONS_URL", ok: FN_BASE !== "NOT SET", detail: FN_BASE });
     results.push({ name: "Env: VITE_SUPABASE_URL", ok: SB_URL !== "NOT SET", detail: SB_URL });
+    results.push({ name: "Env: VITE_SUPABASE_PROJECT_REF", ok: SB_REF !== "NOT SET", detail: SB_REF });
     results.push({
       name: "Format: VITE_SUPABASE_URL",
       ok: SB_VALID,
