@@ -319,3 +319,37 @@ const lineItem = toLineItem({
 ```
 
 **Note**: The `products_link_url` expires after the configured time (default: 24 hours).
+
+## Shopping Tab
+
+The Shopping tab (`src/features/shopping/ShoppingTab.tsx`) provides a user-friendly interface for testing the Instacart integration with three main panels:
+
+### Panels
+
+1. **Retailers Lookup** - Find available Instacart stores by postal code
+   - Enter postal code and country
+   - Returns list of nearby retailers that support delivery
+
+2. **Recipe Link Creator** - Convert recipes to Instacart shopping lists
+   - Enter recipe title, ingredients (one per line), and instructions
+   - Generates Instacart URL with all ingredients ready for purchase
+
+3. **Shopping List Creator** - Transform item lists to Instacart carts
+   - Enter list title and items (one per line)
+   - Creates Instacart URL with items added to cart
+
+### Usage Notes
+
+- **One item per line** - Each text area expects items separated by newlines
+- **Smart parsing** - Uses `toLineItem()` heuristics to extract sizes and measurements
+- **Validation** - Requires at least one non-empty line before creating links
+- **Error handling** - Shows helpful messages for validation and API errors
+- **Quick actions** - Generated URLs can be opened directly or copied to clipboard
+
+### Testing Workflow
+
+1. Navigate to the Shopping tab in the app
+2. Use the pre-filled examples or enter your own data
+3. Click "Create Recipe Link" or "Create Shopping List Link"
+4. Copy the generated URL and open in a new tab
+5. Select a local store and verify items are added correctly
