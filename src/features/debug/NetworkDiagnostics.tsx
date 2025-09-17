@@ -2,6 +2,8 @@ import React, { useState } from "react";
 
 const FN_BASE = (import.meta.env.VITE_FUNCTIONS_URL as string) || "NOT SET";
 const SB_URL = (import.meta.env.VITE_SUPABASE_URL as string) || "NOT SET";
+const SB_VALID = /^https:\/\/[a-z0-9]{20}\.supabase\.co\/?$/.test(SB_URL);
+const EXPECTED_REF = 'rtvwcyrksplhsgycyfzo';
 
 type Check = { name: string; ok: boolean; detail?: string };
 
@@ -16,6 +18,11 @@ export default function NetworkDiagnostics() {
     // 1) Report envs (safe)
     results.push({ name: "Env: VITE_FUNCTIONS_URL", ok: FN_BASE !== "NOT SET", detail: FN_BASE });
     results.push({ name: "Env: VITE_SUPABASE_URL", ok: SB_URL !== "NOT SET", detail: SB_URL });
+    results.push({
+      name: "Format: VITE_SUPABASE_URL",
+      ok: SB_VALID,
+      detail: SB_VALID ? `✅ Valid format (project ref: ${SB_URL.match(/([a-z0-9]{20})/)?.[1] || 'unknown'})` : `❌ Invalid format. Expected: https://${EXPECTED_REF}.supabase.co`
+    });
     results.push({ name: "Context", ok: true, detail: JSON.stringify({
       origin: window.location.origin,
       secureContext: window.isSecureContext,
@@ -49,7 +56,11 @@ export default function NetworkDiagnostics() {
       const j = await r.json().catch(() => ({}));
       results.push({ name: "Supabase /auth/v1/health", ok: r.ok, detail: r.ok ? "OK" : JSON.stringify(j) });
     } catch (e: any) {
-      results.push({ name: "Supabase /auth/v1/health", ok: false, detail: e?.message || String(e) });
+      results.push({
+        name: "Supabase /auth/v1/health",
+        ok: false,
+        detail: (e?.message || String(e)) + " — If DNS_PROBE_FINISHED_NXDOMAIN, check project ref. Expected: " + EXPECTED_REF
+      });
     }
 
     setChecks(results);

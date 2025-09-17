@@ -301,6 +301,24 @@ const lineItem = toLineItem({
 3. Client calls `POST /ai-proxy/chat` via `src/lib/aiProxy.ts`.
 4. Health check: `GET /ai-proxy/ping` should return `{ ok: true, hasKey: true }` once secret is set.
 
+### AI Usage (Server-side Only)
+- All OpenAI requests now go through a Supabase Edge Function: **ai-proxy**.
+- The browser never instantiates the OpenAI SDK and never needs an OpenAI key.
+- Public env (safe): `VITE_AI_FUNCTIONS_URL=https://rtvwcyrksplhsgycyfzo.functions.supabase.co/ai-proxy`
+- Server secret required in Supabase (no repo files): `OPENAI_API_KEY`
+
+#### Deploy / Configure
+1. Set project secrets (replace YOUR_KEY):
+   ```
+   supabase secrets set --project-ref rtvwcyrksplhsgycyfzo OPENAI_API_KEY='[YOUR_OPENAI_API_KEY]'
+   ```
+2. Deploy the function:
+   ```
+   supabase functions deploy ai-proxy --project-ref rtvwcyrksplhsgycyfzo
+   ```
+3. Client calls `POST /ai-proxy/chat` via `src/lib/aiProxy.ts`.
+4. Health check: `GET /ai-proxy/ping` should return `{ ok: true, hasKey: true }` once secret is set.
+
 - Open **Settings → Network Diagnostics** and click **Run Checks**.
 - Ensure:
   - `VITE_FUNCTIONS_URL` shows your Supabase Function base.
@@ -311,6 +329,13 @@ const lineItem = toLineItem({
   - Check env vars are set and dev server restarted.
   - For 401/403 on proxy, set `VITE_SUPABASE_ANON_KEY` so the client sends `Authorization: Bearer <anon>`.
   - Verify the function URL matches your project ref and ends with `/instacart-proxy`.
+
+### Correct Project Ref (NXDOMAIN fix)
+- Your project ref is **rtvwcyrksplhsgycyfzo**.
+- Client envs must point to:
+  - `VITE_SUPABASE_URL=https://rtvwcyrksplhsgycyfzo.supabase.co`
+  - `VITE_FUNCTIONS_URL=https://rtvwcyrksplhsgycyfzo.functions.supabase.co/instacart-proxy`
+- If you see `DNS_PROBE_FINISHED_NXDOMAIN`, you likely used the wrong host. Fix the envs and restart the dev server.
 
 ## UI QA Checklist
 
