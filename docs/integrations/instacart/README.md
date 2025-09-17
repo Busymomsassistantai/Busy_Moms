@@ -14,6 +14,30 @@ Client App → Supabase Edge Function → Instacart API
 - **Edge Function** (`supabase/functions/instacart-proxy/`) - Server-side proxy with auth
 - **Mapping Layer** (`src/lib/instacartMap.ts`) - Data transformation utilities
 
+## Edge Function
+
+### Endpoint Base
+`/functions/v1/instacart-proxy`
+
+### Available Routes
+- **POST /recipe** - Generate shopping list from recipe
+  - Forwards to `/idp/v1/products/recipe`
+  - Body: Recipe text or ingredients list
+
+- **POST /list** - Convert shopping list to Instacart products
+  - Forwards to `/idp/v1/products/products_link`
+  - Body: Shopping list items
+
+- **GET /retailers** - Get available retailers by location
+  - Forwards to `/idp/v1/retailers`
+  - Query params: `postal_code`, `country_code` (defaults to "US")
+
+### Security Features
+- **Server-side authentication** - Bearer token injected from `INSTACART_API_KEY_DEV`
+- **CORS enabled** - Supports browser requests
+- **Secret filtering** - Removes sensitive fields from responses
+- **Environment-based** - All credentials read from env variables
+
 ## Environment Variables
 
 ### Required for Edge Function
@@ -21,10 +45,8 @@ Client App → Supabase Edge Function → Instacart API
 Add these to your Supabase project's environment variables:
 
 ```bash
-INSTACART_API_KEY=your_instacart_api_key_here
+INSTACART_API_KEY_DEV=your_instacart_api_key_here
 INSTACART_BASE_URL=https://connect.instacart.tools  # or dev URL
-INSTACART_CLIENT_ID=your_client_id_here
-INSTACART_CLIENT_SECRET=your_client_secret_here
 ```
 
 ### Required for Client
@@ -32,7 +54,7 @@ INSTACART_CLIENT_SECRET=your_client_secret_here
 Add to your `.env` file:
 
 ```bash
-VITE_FUNCTIONS_URL=http://localhost:54321/functions/v1
+VITE_FUNCTIONS_URL=http://localhost:54321/functions/v1/instacart-proxy
 ```
 
 For production, update to your deployed Supabase Functions URL.
@@ -82,27 +104,40 @@ Update `VITE_FUNCTIONS_URL` to point to your deployed function URL.
 ```typescript
 import { instacartClient } from '@/lib/instacartClient';
 
-const products = await instacartClient.searchProducts({
-  query: 'organic milk',
-  limit: 10,
-  store_id: 'store_123'
+// Generate shopping list from recipe
+const products = await instacartClient.generateFromRecipe(
+  "Spaghetti Bolognese recipe with ground beef, tomatoes, pasta"
+);
+
+// Convert shopping list to products
+const productLinks = await instacartClient.convertShoppingList([
+  "organic milk",
+  "whole wheat bread", 
+  "fresh spinach"
+]);
+
+// Get local retailers
+const retailers = await instacartClient.getRetailers({
+  postal_code: "10001",
+  country_code: "US"
 });
 ```
 
-### Add to Cart
+### Example Payloads
 
 ```typescript
-await instacartClient.addToCart([
-  { product_id: 'prod_123', quantity: 2 },
-  { product_id: 'prod_456', quantity: 1 }
-]);
-```
+// POST /recipe
+{
+  "recipe": "Chicken stir fry with broccoli, carrots, and soy sauce"
+}
 
-### Place Order
+// POST /list  
+{
+  "items": ["milk", "bread", "eggs", "butter"]
+}
 
-```typescript
-const order = await instacartClient.placeOrder();
-console.log('Order placed:', order.order_id);
+// GET /retailers?postal_code=10001&country_code=US
+// No body required
 ```
 
 ### Map Shopping List
