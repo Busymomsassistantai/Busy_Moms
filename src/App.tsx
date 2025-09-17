@@ -12,6 +12,7 @@ import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
 import ShoppingTab from './features/shopping/ShoppingTab'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
@@ -101,41 +102,43 @@ function App() {
   console.log('🏠 Showing main app for user:', user.id)
   // Show main app if user is authenticated and has completed onboarding
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation 
-        currentScreen={currentScreen}
-        onScreenChange={setCurrentScreen}
-        onSignOut={signOut}
-        onVoiceChatOpen={() => setShowVoiceChat(true)}
-      />
-      <main className="pb-20">
-        {(() => {
-          switch (currentScreen) {
-            case 'dashboard':
-              return <Dashboard onNavigate={setCurrentScreen} />
-            case 'calendar':
-              return <Calendar />
-            case 'contacts':
-              return <Contacts />
-            case 'shopping':
-              return <Shopping />
-            case 'tasks':
-              return <Tasks />
-            case 'settings':
-              return <Settings />
-            case 'ai-chat':
-              return <AIChat />
-            default:
-              return <Dashboard onNavigate={setCurrentScreen} />
-          }
-        })()}
-      </main>
-      
-      <AIVoiceChat 
-        isOpen={showVoiceChat} 
-        onClose={() => setShowVoiceChat(false)} 
-      />
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+        <Navigation 
+          currentScreen={currentScreen}
+          onScreenChange={setCurrentScreen}
+          onSignOut={signOut}
+          onVoiceChatOpen={() => setShowVoiceChat(true)}
+        />
+        <main className="pb-20">
+          {(() => {
+            switch (currentScreen) {
+              case 'dashboard':
+                return <Dashboard onNavigate={setCurrentScreen} />
+              case 'calendar':
+                return <Calendar />
+              case 'contacts':
+                return <Contacts />
+              case 'shopping':
+                return <Shopping />
+              case 'tasks':
+                return <Tasks />
+              case 'settings':
+                return <Settings />
+              case 'ai-chat':
+                return <AIChat />
+              default:
+                return <Dashboard onNavigate={setCurrentScreen} />
+            }
+          })()}
+        </main>
+        
+        <AIVoiceChat 
+          isOpen={showVoiceChat} 
+          onClose={() => setShowVoiceChat(false)} 
+        />
+      </div>
+    </ErrorBoundary>
   )
 }
 

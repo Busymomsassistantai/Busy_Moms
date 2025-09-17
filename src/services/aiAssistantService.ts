@@ -1,5 +1,5 @@
 import { supabase, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
-import { aiService } from './openai';
+import { chatCompletion, type ChatMessage } from '../lib/aiProxy';
 import { LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
@@ -122,11 +122,17 @@ Examples:
 "schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}`;
 
   try {
-    const response = await aiService.chat([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: `Today is ${today}. Classify: "${message}"` }
-    ]);
+    const resp = await chatCompletion({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Today is ${today}. Classify: "${message}"` }
+      ],
+      model: 'gpt-4o-mini',
+      temperature: 0.2,
+      max_tokens: 300
+    });
 
+    const response = resp?.choices?.[0]?.message?.content ?? '';
     console.log('🤖 AI classification response:', response);
 
     // Extract JSON from response
@@ -444,11 +450,12 @@ class AIAssistantService {
     
     try {
       // Use AI to provide a helpful response
-      const response = await aiService.chat([
-        {
-          role: 'system',
-          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. 
 
+      const resp = await chatCompletion({
+        messages: [
+          {
+            role: 'system',
+            content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. 
 Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.
 
 If the user asks about functionality, explain that you can:
@@ -457,13 +464,18 @@ If the user asks about functionality, explain that you can:
 - Schedule events ("schedule dentist appointment next Friday")
 - Create tasks ("create task to clean room")
 - Answer general questions about parenting and family management`
-        },
-        {
-          role: 'user',
-          content: originalMessage
-        }
-      ]);
+          },
+          {
+            role: 'user',
+            content: originalMessage
+          }
+        ],
+        model: 'gpt-4o-mini',
+        temperature: 0.7,
+        max_tokens: 400
+      });
 
+      const response = resp?.choices?.[0]?.message?.content ?? '';
       return {
         type: 'chat',
         success: true,

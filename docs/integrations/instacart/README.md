@@ -283,6 +283,24 @@ const lineItem = toLineItem({
 
 ## Diagnostics
 
+### AI Usage (Server-side Only)
+- All OpenAI requests now go through a Supabase Edge Function: **ai-proxy**.
+- The browser never instantiates the OpenAI SDK and never needs an OpenAI key.
+- Public env (safe): `VITE_AI_FUNCTIONS_URL=https://rtvwcyrksplhsgycyfzo.functions.supabase.co/ai-proxy`
+- Server secret required in Supabase (no repo files): `OPENAI_API_KEY`
+
+#### Deploy / Configure
+1. Set project secrets (replace YOUR_KEY):
+   ```
+   supabase secrets set --project-ref rtvwcyrksplhsgycyfzo OPENAI_API_KEY='[YOUR_OPENAI_API_KEY]'
+   ```
+2. Deploy the function:
+   ```
+   supabase functions deploy ai-proxy --project-ref rtvwcyrksplhsgycyfzo
+   ```
+3. Client calls `POST /ai-proxy/chat` via `src/lib/aiProxy.ts`.
+4. Health check: `GET /ai-proxy/ping` should return `{ ok: true, hasKey: true }` once secret is set.
+
 - Open **Settings → Network Diagnostics** and click **Run Checks**.
 - Ensure:
   - `VITE_FUNCTIONS_URL` shows your Supabase Function base.
