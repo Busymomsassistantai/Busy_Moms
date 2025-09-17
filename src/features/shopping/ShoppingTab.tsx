@@ -75,11 +75,14 @@ export default function ShoppingTab() {
     setRetLoading(true);
     setRetErr(null);
     setRetailers(null);
+    console.log('🏪 Finding retailers for:', zip, country);
     try {
       const res = await getNearbyRetailers(zip, country);
+      console.log('📡 Retailers response:', res);
       const arr = Array.isArray((res as any).retailers) ? (res as any).retailers : (res as any);
       setRetailers(arr || []);
     } catch (e: any) {
+      console.error('❌ Retailers error:', e);
       setRetErr(e?.message ?? "Failed to fetch retailers");
     } finally {
       setRetLoading(false);
@@ -203,11 +206,17 @@ export default function ShoppingTab() {
         </div>
         {retErr && <p className="mt-2 text-sm text-red-600">{retErr}</p>}
         {retailers && (
-          <ul className="mt-3 list-disc pl-5">
-            {retailers.map((r: any, idx: number) => (
-              <li key={idx} className="text-sm">{r?.name ?? JSON.stringify(r)}</li>
-            ))}
-          </ul>
+          <div className="mt-3">
+            <p className="text-sm text-gray-600 mb-2">Found {retailers.length} retailer(s):</p>
+            <ul className="list-disc pl-5 space-y-1">
+              {retailers.map((r: any, idx: number) => (
+                <li key={idx} className="text-sm">
+                  {r?.name ?? r?.retailer_name ?? 'Unknown retailer'}
+                  {r?.delivery_available && <span className="text-green-600 ml-2">• Delivery available</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </Section>
 
