@@ -74,7 +74,9 @@ export default function ShoppingTab() {
     setRecipeLoading(true);
     setRecipeLink({});
     try {
-      const ingredients = parseLinesToItems(recipeIngredients);
+      const ingLines = recipeIngredients.split("\n").map(s => s.trim()).filter(Boolean);
+      if (ingLines.length === 0) throw new Error("Add at least one ingredient line.");
+      const ingredients = parseLinesToItems(ingLines.join("\n"));
       const instructions = recipeInstructions.split("\n").map(s => s.trim()).filter(Boolean);
       const res = await createRecipeLink({
         title: recipeTitle,
@@ -87,7 +89,8 @@ export default function ShoppingTab() {
       });
       setRecipeLink({ url: (res as any).products_link_url });
     } catch (e: any) {
-      setRecipeLink({ error: e?.message ?? "Failed to create recipe link" });
+      const msg = e?.message ?? "Failed to create recipe link";
+      setRecipeLink({ error: msg });
     } finally {
       setRecipeLoading(false);
     }
@@ -97,7 +100,9 @@ export default function ShoppingTab() {
     setListLoading(true);
     setListLink({});
     try {
-      const line_items = parseLinesToItems(listItems);
+      const itemLines = listItems.split("\n").map(s => s.trim()).filter(Boolean);
+      if (itemLines.length === 0) throw new Error("Add at least one shopping list line.");
+      const line_items = parseLinesToItems(itemLines.join("\n"));
       const res = await createShoppingListLink({
         title: listTitle,
         line_items,
@@ -107,7 +112,8 @@ export default function ShoppingTab() {
       });
       setListLink({ url: (res as any).products_link_url });
     } catch (e: any) {
-      setListLink({ error: e?.message ?? "Failed to create shopping list link" });
+      const msg = e?.message ?? "Failed to create shopping list link";
+      setListLink({ error: msg });
     } finally {
       setListLoading(false);
     }
