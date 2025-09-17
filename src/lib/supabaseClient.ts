@@ -1,12 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-const RAW_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || "";
 const RAW_ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || "";
 const RAW_FN_BASE = (import.meta.env.VITE_FUNCTIONS_URL as string | undefined) || "";
+const RAW_SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || "";
 const RAW_REF = (import.meta.env.VITE_SUPABASE_PROJECT_REF as string | undefined) || "";
 
-/** Extract a 20-char project ref from a Supabase host URL (supabase.co or functions.supabase.co). */
-function extractRefFromUrl(u?: string): string | undefined {
+/** Extract 20-char project ref from a Supabase host URL (supabase.co or functions.supabase.co). */
+function extractRef(u?: string): string | undefined {
   if (!u) return;
   const m =
     u.match(/^https:\/\/([a-z0-9]{20})\.supabase\.co/i) ||
@@ -14,48 +14,41 @@ function extractRefFromUrl(u?: string): string | undefined {
   return m?.[1];
 }
 
-/** Build the canonical Supabase URL for a given ref. */
+/** Build canonical Supabase URL for a given ref. */
 function urlFromRef(ref?: string): string {
   return ref ? `https://${ref}.supabase.co` : "";
 }
 
-function normalizeSupabaseUrl(): { url: string; ref?: string; warned: boolean } {
-  const explicitRef = RAW_REF?.trim() || undefined;
-  const fnRef = extractRefFromUrl(RAW_FN_BASE);
-  const urlRef = extractRefFromUrl(RAW_URL);
-  // Choose authoritative ref: explicit > functions > url
-  const ref = explicitRef || fnRef || urlRef;
-  let url = RAW_URL || urlFromRef(ref);
-  let warned = false;
-
-  if (ref && urlRef && ref !== urlRef) {
-    console.warn(
-      `[Supabase] Project ref mismatch (URL=${urlRef}, expected=${ref}). Using normalized URL for safety.`
-    );
-    url = urlFromRef(ref);
-    warned = true;
-  }
-  return { url, ref, warned };
+/**
+ * Authoritative source of truth:
+ * 1) VITE_SUPABASE_PROJECT_REF (explicit)
+ * 2) ref from VITE_FUNCTIONS_URL (if set)
+ * 3) ref from VITE_SUPABASE_URL (if set)
+ */
+function resolveProjectRef(): string | undefined {
+  return RAW_REF?.trim() || extractRef(RAW_FN_BASE) || extractRef(RAW_SUPABASE_URL);
 }
 
-const { url: SUPABASE_URL_NORM, ref: SUPABASE_REF, warned } = normalizeSupabaseUrl();
+const REF = resolveProjectRef();
+const SUPABASE_URL = urlFromRef(REF);
 
-if (!SUPABASE_URL_NORM) {
+// Fail fast only if we cannot determine a valid URL/ref or anon key is missing.
+if (!SUPABASE_URL) {
   console.error(
-    "[Supabase] VITE_SUPABASE_URL is missing or could not be normalized. Expected https://<project_ref>.supabase.co"
+    "[Supabase] Could not determine project URL. Set VITE_SUPABASE_PROJECT_REF=rtvwcyrksplhsgycyfzo or VITE_SUPABASE_URL=https://rtvwcyrksplhsgycyfzo.supabase.co"
   );
 }
 if (!RAW_ANON) {
   console.error("[Supabase] VITE_SUPABASE_ANON_KEY is missing. Auth calls will fail.");
 }
 
+// Log once (no mismatch warnings; we normalize silently to avoid noisy consoles)
 if (typeof window !== "undefined" && !(window as any).__supabase_boot_logged) {
-  console.debug("[Supabase] Using URL =", SUPABASE_URL_NORM || "(not set)", "ref =", SUPABASE_REF || "(unknown)");
-  if (warned) console.debug("[Supabase] URL was normalized due to mismatch.");
+  console.debug("[Supabase] Using URL =", SUPABASE_URL || "(not set)", "ref =", REF || "(unknown)");
   (window as any).__supabase_boot_logged = true;
 }
 
-export const supabase = createClient(SUPABASE_URL_NORM, RAW_ANON, {
+export const supabase = createClient(SUPABASE_URL, RAW_ANON, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -71,5 +64,4 @@ export const supabase = createClient(SUPABASE_URL_NORM, RAW_ANON, {
   },
 });
 
-export const SUPABASE_URL = SUPABASE_URL_NORM;
-export const SUPABASE_PROJECT_REF = SUPABASE_REF;
+export { SUPABASE_URL, REF as SUPABASE_PROJECT_REF };
