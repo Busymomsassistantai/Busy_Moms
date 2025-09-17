@@ -1,6 +1,6 @@
 import { supabase, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
 import { aiService } from './openai';
-import { ICalendarProvider, LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
+import { LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
 export interface AIAction {
@@ -199,13 +199,13 @@ function fallbackClassify(message: string): IntentResult {
 
 /** ---- Main service ------------------------------------------------------ */
 class AIAssistantService {
-  private calendarProvider: ICalendarProvider;
+  private calendarProvider: LocalCalendarProvider;
 
-  constructor(provider?: ICalendarProvider) {
+  constructor(provider?: LocalCalendarProvider) {
     this.calendarProvider = provider ?? new LocalCalendarProvider();
   }
 
-  setCalendarProvider(provider: ICalendarProvider) {
+  setCalendarProvider(provider: LocalCalendarProvider) {
     this.calendarProvider = provider;
   }
 
