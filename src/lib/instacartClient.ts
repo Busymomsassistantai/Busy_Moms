@@ -26,6 +26,8 @@ const FUNCTIONS_BASE =
 
 const SUPABASE_ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || "";
 
+import { fetchWithTimeout } from "./net";
+
 function getBaseOrThrow() {
   if (!FUNCTIONS_BASE) {
     throw new Error(
@@ -75,11 +77,14 @@ export async function createRecipeLink(input: {
 }) {
   input.ingredients.forEach(assertValidLineItem);
   const base = getBaseOrThrow();
-  const res = await fetch(`${base}/recipe`, withAuthHeaders({
+  const res = await fetchWithTimeout(`${base}/recipe`, withAuthHeaders({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-  }));
+    timeoutMs: 15000,
+  }) as any).catch((e: any) => {
+    throw new Error(`[Instacart] Recipe fetch failed: ${e.type || "unknown"} ${e.status || ""} ${e.bodyText || e.message || ""}`.trim());
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`Instacart recipe error ${res.status}: ${JSON.stringify(err)}`);
@@ -98,11 +103,14 @@ export async function createShoppingListLink(input: {
 }) {
   input.line_items.forEach(assertValidLineItem);
   const base = getBaseOrThrow();
-  const res = await fetch(`${base}/list`, withAuthHeaders({
+  const res = await fetchWithTimeout(`${base}/list`, withAuthHeaders({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-  }));
+    timeoutMs: 15000,
+  }) as any).catch((e: any) => {
+    throw new Error(`[Instacart] List fetch failed: ${e.type || "unknown"} ${e.status || ""} ${e.bodyText || e.message || ""}`.trim());
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`Instacart list error ${res.status}: ${JSON.stringify(err)}`);
@@ -115,7 +123,10 @@ export async function getNearbyRetailers(postal_code: string, country_code = "US
   const url = new URL(`${base}/retailers`);
   if (postal_code) url.searchParams.set("postal_code", postal_code);
   if (country_code) url.searchParams.set("country_code", country_code);
-  const res = await fetch(url.toString(), withAuthHeaders({ method: "GET" }));
+  const res = await fetchWithTimeout(url.toString(), withAuthHeaders({ method: "GET", timeoutMs: 15000 }) as any)
+    .catch((e: any) => {
+      throw new Error(`[Instacart] Retailers fetch failed: ${e.type || "unknown"} ${e.status || ""} ${e.bodyText || e.message || ""}`.trim());
+    });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`Instacart retailers error ${res.status}: ${JSON.stringify(err)}`);

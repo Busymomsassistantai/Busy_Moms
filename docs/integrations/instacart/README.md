@@ -281,6 +281,19 @@ const lineItem = toLineItem({
 
 **Note**: The `products_link_url` expires after the configured time (default: 24 hours).
 
+## Diagnostics
+
+- Open **Settings → Network Diagnostics** and click **Run Checks**.
+- Ensure:
+  - `VITE_FUNCTIONS_URL` shows your Supabase Function base.
+  - **Instacart Proxy /ping** returns `{ ok: true, hasAuthHeader: <bool>, origin: "<your-origin>" }`.
+  - **Instacart Proxy /retailers** returns OK or a clear JSON error from Instacart proxy.
+  - **Supabase /auth/v1/health** returns OK (JSON).
+- If any fail:
+  - Check env vars are set and dev server restarted.
+  - For 401/403 on proxy, set `VITE_SUPABASE_ANON_KEY` so the client sends `Authorization: Bearer <anon>`.
+  - Verify the function URL matches your project ref and ends with `/instacart-proxy`.
+
 ## UI QA Checklist
 
 ### Testing the Shopping Tab Interface

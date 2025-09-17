@@ -78,6 +78,16 @@ Deno.serve(async (req: Request) => {
     const pathname = url.pathname;
     console.log('📍 Instacart proxy request:', req.method, pathname);
     
+    // Lightweight health/diagnostic endpoint (no secrets revealed)
+    if (pathname.endsWith("/ping") && req.method === "GET") {
+      const hasAuthHeader = !!req.headers.get("authorization");
+      const origin = req.headers.get("origin") ?? null;
+      return new Response(JSON.stringify({ ok: true, hasAuthHeader, origin, base: INSTACART_BASE_URL }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Extract the actual path after the function name
     const pathParts = pathname.split('/');
     const functionPath = pathParts[pathParts.length - 1]; // Get the last part (recipe, list, retailers)
