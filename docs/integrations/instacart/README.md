@@ -345,6 +345,8 @@ The Shopping tab (`src/features/shopping/ShoppingTab.tsx`) provides a user-frien
 - **Validation** - Requires at least one non-empty line before creating links
 - **Error handling** - Shows helpful messages for validation and API errors
 - **Quick actions** - Generated URLs can be opened directly or copied to clipboard
+- **Content caching** - Links are cached based on content hash and reused until content changes
+- **Quick fill buttons** - Pre-populate forms with sample data for easy testing
 
 ### Testing Workflow
 
