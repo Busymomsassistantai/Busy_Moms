@@ -49,12 +49,28 @@ export default function ShoppingTab() {
   const [recipeLink, setRecipeLink] = useState<LinkResult>({});
   const [recipeLoading, setRecipeLoading] = useState(false);
   const [recipeReused, setRecipeReused] = useState(false);
+  const [recipeReused, setRecipeReused] = useState(false);
 
   // Shopping list
   const [listTitle, setListTitle] = useState("Weekly Essentials");
   const [listItems, setListItems] = useState("eggs 12 ea\nmilk 1890 ml");
   const [listLink, setListLink] = useState<LinkResult>({});
   const [listLoading, setListLoading] = useState(false);
+  const [listReused, setListReused] = useState(false);
+
+  async function sha256(text: string) {
+    const data = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function cacheGet(key: string) {
+    try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; }
+  }
+  function cacheSet(key: string, value: unknown) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  }
   const [listReused, setListReused] = useState(false);
 
   async function sha256(text: string) {
@@ -90,15 +106,36 @@ export default function ShoppingTab() {
     setRecipeLoading(true);
     setRecipeLink({});
     setRecipeReused(false);
+    setRecipeReused(false);
     try {
       const ingLines = recipeIngredients.split("\n").map(s => s.trim()).filter(Boolean);
       if (ingLines.length === 0) throw new Error("Add at least one ingredient line.");
       const ingredientsStr = ingLines.join("\n");
       const ingredients = parseLinesToItems(ingredientsStr);
+      // 1) Parse and validate lines once
       const ingLines = recipeIngredients.split("\n").map(s => s.trim()).filter(Boolean);
       if (ingLines.length === 0) throw new Error("Add at least one ingredient line.");
-      const ingredients = parseLinesToItems(ingLines.join("\n"));
+
+      // 2) Derive deterministic content and compute hash before API call
+      const ingredientsStr = ingLines.join("\n");
       const instructions = recipeInstructions.split("\n").map(s => s.trim()).filter(Boolean);
+      const contentHash = await sha256(JSON.stringify({
+        title: recipeTitle,
+        ingredients: ingredientsStr,
+        instructions,
+      }));
+      const cacheKey = `instacart:recipe:${contentHash}`;
+      const cached = cacheGet(cacheKey);
+      if (cached?.url) {
+        setRecipeLink({ url: cached.url });
+        setRecipeReused(true);
+        return;
+      }
+
+      // 3) Map to line items once
+      const ingredientsParsed = parseLinesToItems(ingredientsStr);
+
+      // 4) Call API
       const contentHash = await sha256(JSON.stringify({ title: recipeTitle, ingredients: ingredientsStr, instructions: recipeInstructions }));
       const cacheKey = `instacart:recipe:${contentHash}`;
       const cached = cacheGet(cacheKey);
@@ -110,13 +147,15 @@ export default function ShoppingTab() {
       const res = await createRecipeLink({
         title: recipeTitle,
         instructions,
-        ingredients,
+        ingredients: ingredientsParsed,
         landing_page_configuration: {
           partner_linkback_url: "https://app.busymoms.ai/return",
           enable_pantry_items: true,
         },
       });
       const url = (res as any).products_link_url;
+      setRecipeLink({ url });
+      cacheSet(cacheKey, { url, ts: Date.now() });
       setRecipeLink({ url });
       cacheSet(cacheKey, { url, ts: Date.now() });
     } catch (e: any) {
@@ -132,7 +171,9 @@ export default function ShoppingTab() {
     setListLoading(true);
     setListLink({});
     setListReused(false);
+    setListReused(false);
     try {
+      // 1) Parse and validate lines once
       const itemLines = listItems.split("\n").map(s => s.trim()).filter(Boolean);
       if (itemLines.length === 0) throw new Error("Add at least one shopping list line.");
       const itemStr = itemLines.join("\n");
@@ -147,15 +188,35 @@ export default function ShoppingTab() {
       }
       const itemLines = listItems.split("\n").map(s => s.trim()).filter(Boolean);
       if (itemLines.length === 0) throw new Error("Add at least one shopping list line.");
-      const line_items = parseLinesToItems(itemLines.join("\n"));
+
+      // 2) Derive deterministic content and compute hash before API call
+      const itemStr = itemLines.join("\n");
+      const contentHash = await sha256(JSON.stringify({
+        title: listTitle,
+        items: itemStr,
+      }));
+      const cacheKey = `instacart:list:${contentHash}`;
+      const cached = cacheGet(cacheKey);
+      if (cached?.url) {
+        setListLink({ url: cached.url });
+        setListReused(true);
+        return;
+      }
+
+      // 3) Map to line items once
+      const lineItemsParsed = parseLinesToItems(itemStr);
+
+      // 4) Call API
       const res = await createShoppingListLink({
         title: listTitle,
-        line_items,
+        line_items: lineItemsParsed,
         landing_page_configuration: {
           partner_linkback_url: "https://app.busymoms.ai/return",
         },
       });
       const url = (res as any).products_link_url;
+      setListLink({ url });
+      cacheSet(cacheKey, { url, ts: Date.now() });
       setListLink({ url });
       cacheSet(cacheKey, { url, ts: Date.now() });
     } catch (e: any) {
@@ -184,9 +245,18 @@ export default function ShoppingTab() {
               <option value="CA">CA</option>
             </select>
           </label>
-          <button className="rounded-xl border px-4 py-2 hover:bg-gray-50" onClick={onFindRetailers} disabled={retLoading}>
-            {retLoading ? "Loading..." : "Find Stores"}
-          </button>
+          <div className="flex gap-3">
+            <button className="rounded-xl border px-4 py-2 hover:bg-gray-50" onClick={() => {
+              setRecipeTitle("Busy Moms Chicken Tacos");
+              setRecipeIngredients("chicken breast 1.5 lb\nyellow onion 1 ea\nflour tortillas 10 ea\nshredded cheese 8 oz");
+              setRecipeInstructions("Dice onion\nShred lettuce\nWarm tortillas");
+            }}>
+              Quick Fill Sample
+            </button>
+            <button className="rounded-xl border px-4 py-2 hover:bg-gray-50" onClick={onCreateRecipe} disabled={recipeLoading}>
+              {recipeLoading ? "Creating..." : "Create Recipe Link"}
+            </button>
+          </div>
         </div>
         {retErr && <p className="mt-2 text-sm text-red-600">{retErr}</p>}
         {retailers && (
@@ -226,6 +296,7 @@ export default function ShoppingTab() {
           </div>
           {recipeLink.error && <p className="text-sm text-red-600">{recipeLink.error}</p>}
           {recipeReused && !recipeLink.error && <p className="text-sm text-gray-500">Reused cached link for identical content.</p>}
+          {recipeReused && !recipeLink.error && <p className="text-sm text-gray-500">Reused cached link for identical content.</p>}
           <Actions link={recipeLink.url} />
         </div>
       </Section>
@@ -248,10 +319,19 @@ export default function ShoppingTab() {
               Quick Fill Sample
             </button>
             <button className="rounded-xl border px-4 py-2 hover:bg-gray-50" onClick={onCreateList} disabled={listLoading}>
+          <div className="flex gap-3">
+            <button className="rounded-xl border px-4 py-2 hover:bg-gray-50" onClick={() => {
+              setListTitle("Weekly Essentials");
+              setListItems("eggs 12 ea\nmilk 1890 ml");
+            }}>
+              Quick Fill Sample
+            </button>
+            <button className="rounded-xl border px-4 py-2 hover:bg-gray-50" onClick={onCreateList} disabled={listLoading}>
               {listLoading ? "Creating..." : "Create Shopping List Link"}
             </button>
           </div>
           {listLink.error && <p className="text-sm text-red-600">{listLink.error}</p>}
+          {listReused && !listLink.error && <p className="text-sm text-gray-500">Reused cached link for identical content.</p>}
           {listReused && !listLink.error && <p className="text-sm text-gray-500">Reused cached link for identical content.</p>}
           <Actions link={listLink.url} />
         </div>
