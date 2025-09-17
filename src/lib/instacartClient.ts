@@ -18,9 +18,35 @@ export interface LineItem {
   upcs?: string[];         // do NOT combine with product_ids
 }
 
+// Prefer env; fall back to your deployed URL so devs don't get "undefined" during local preview.
+// This fallback contains NO secret and is safe to ship.
 const FUNCTIONS_BASE =
-  (import.meta.env.VITE_FUNCTIONS_URL as string) ??
-  "http://localhost:54321/functions/v1/instacart-proxy";
+  (import.meta.env.VITE_FUNCTIONS_URL as string) ||
+  "https://rtvwcyrksplhsgycyfzo.functions.supabase.co/instacart-proxy";
+
+const SUPABASE_ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || "";
+
+function getBaseOrThrow() {
+  if (!FUNCTIONS_BASE) {
+    throw new Error(
+      "VITE_FUNCTIONS_URL is not set. Set it to your deployed function base: https://[PROJECT_REF].functions.supabase.co/instacart-proxy"
+    );
+  }
+  if (typeof window !== "undefined" && !(window as any).__instacart_base_logged) {
+    console.debug("[Instacart] FUNCTIONS_BASE =", FUNCTIONS_BASE);
+    (window as any).__instacart_base_logged = true;
+  }
+  return FUNCTIONS_BASE.replace(/\/+$/, ""); // trim trailing slash
+}
+
+function withAuthHeaders(init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers ?? {});
+  // Optional: some Supabase setups require anon auth header to invoke functions
+  if (SUPABASE_ANON && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${SUPABASE_ANON}`);
+  }
+  return { ...init, headers };
+}
 
 function assertValidLineItem(i: LineItem) {
   if (!i.name) throw new Error("LineItem.name is required");
@@ -48,12 +74,12 @@ export async function createRecipeLink(input: {
   };
 }) {
   input.ingredients.forEach(assertValidLineItem);
-  const baseUrl = FUNCTIONS_BASE || `${SUPABASE_URL}/functions/v1`;
-  const res = await fetch(`${baseUrl}/instacart-proxy/recipe`, {
+  const base = getBaseOrThrow();
+  const res = await fetch(`${base}/recipe`, withAuthHeaders({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-  });
+  }));
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`Instacart recipe error ${res.status}: ${JSON.stringify(err)}`);
@@ -71,12 +97,12 @@ export async function createShoppingListLink(input: {
   };
 }) {
   input.line_items.forEach(assertValidLineItem);
-  const baseUrl = FUNCTIONS_BASE || `${SUPABASE_URL}/functions/v1`;
-  const res = await fetch(`${baseUrl}/instacart-proxy/list`, {
+  const base = getBaseOrThrow();
+  const res = await fetch(`${base}/list`, withAuthHeaders({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
-  });
+  }));
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`Instacart list error ${res.status}: ${JSON.stringify(err)}`);
@@ -85,11 +111,11 @@ export async function createShoppingListLink(input: {
 }
 
 export async function getNearbyRetailers(postal_code: string, country_code = "US") {
-  const baseUrl = FUNCTIONS_BASE || `${SUPABASE_URL}/functions/v1`;
-  const url = new URL(`${baseUrl}/instacart-proxy/retailers`);
+  const base = getBaseOrThrow();
+  const url = new URL(`${base}/retailers`);
   if (postal_code) url.searchParams.set("postal_code", postal_code);
   if (country_code) url.searchParams.set("country_code", country_code);
-  const res = await fetch(url.toString(), { method: "GET" });
+  const res = await fetch(url.toString(), withAuthHeaders({ method: "GET" }));
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(`Instacart retailers error ${res.status}: ${JSON.stringify(err)}`);

@@ -21,8 +21,12 @@ Client App → Supabase Edge Function → Instacart API
 Set in your `.env` file:
 
 ```bash
-VITE_FUNCTIONS_URL=http://localhost:54321/functions/v1/instacart-proxy
+VITE_FUNCTIONS_URL=https://rtvwcyrksplhsgycyfzo.functions.supabase.co/instacart-proxy
+# Optional; only if your functions require it to invoke:
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+**Security Note**: No Instacart API keys are stored in the client. The server-side Edge Function injects the Bearer token from Supabase project secrets.
 
 ### Server Configuration (Supabase Secrets)
 
