@@ -19,6 +19,7 @@ import {
   X,
   Info,
   Loader2,
+  Bell,
 } from 'lucide-react';
 
 import { EventForm } from './forms/EventForm';
@@ -91,6 +92,7 @@ export function Calendar() {
 
   // Data
   const [events, setEvents] = useState<DbEvent[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,8 @@ export function Calendar() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: qErr } = await supabase
+      // Load events
+      const { data: eventsData, error: eventsErr } = await supabase
         .from('events')
         .select('*')
         .eq('user_id', user.id)
@@ -113,10 +116,24 @@ export function Calendar() {
         .order('event_date', { ascending: true })
         .order('start_time', { ascending: true });
 
-      if (qErr) throw qErr;
-      setEvents(data ?? []);
+      if (eventsErr) throw eventsErr;
+      setEvents(eventsData ?? []);
+
+      // Load reminders for the same date range
+      const { data: remindersData, error: remindersErr } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('reminder_date', toLocalISODate(monthStart))
+        .lte('reminder_date', toLocalISODate(monthEnd))
+        .eq('completed', false)
+        .order('reminder_date', { ascending: true })
+        .order('reminder_time', { ascending: true });
+
+      if (remindersErr) throw remindersErr;
+      setReminders(remindersData ?? []);
     } catch (e) {
-      console.error('❌ Error loading events:', e);
+      console.error('❌ Error loading calendar data:', e);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
@@ -129,10 +146,11 @@ export function Calendar() {
 
   // --- Derived day agenda ----------------------------------------------------
   const itemsForSelectedDate = useMemo(() => {
-    if (!selectedDate) return { events: [] as DbEvent[] };
+    if (!selectedDate) return { events: [] as DbEvent[], reminders: [] as any[] };
     const d = toLocalISODate(selectedDate);
 
     const dayDbEvents = events.filter(ev => ev.event_date === d);
+    const dayReminders = reminders.filter(rem => rem.reminder_date === d);
 
     const sorted = dayDbEvents.sort((a, b) => {
       const minutesKey = (it: DbEvent) => {
@@ -145,8 +163,19 @@ export function Calendar() {
       return minutesKey(a) - minutesKey(b);
     });
 
-    return { events: sorted };
-  }, [selectedDate, events]);
+    const sortedReminders = dayReminders.sort((a, b) => {
+      const minutesKey = (it: any) => {
+        if (it.reminder_time) {
+          const [h, m] = String(it.reminder_time).split(':').map((n: string) => parseInt(n, 10));
+          return (isNaN(h) ? 23 : h) * 60 + (isNaN(m) ? 59 : m);
+        }
+        return 24 * 60;
+      };
+      return minutesKey(a) - minutesKey(b);
+    });
+
+    return { events: sorted, reminders: sortedReminders };
+  }, [selectedDate, events, reminders]);
 
   // --- Calendar grid helpers -------------------------------------------------
   const monthLabel = useMemo(
@@ -221,9 +250,11 @@ export function Calendar() {
   const dayEventsCount = useCallback(
     (day: Date) => {
       const d = toLocalISODate(day);
-      return events.filter(ev => ev.event_date === d).length;
+      const eventCount = events.filter(ev => ev.event_date === d).length;
+      const reminderCount = reminders.filter(rem => rem.reminder_date === d).length;
+      return eventCount + reminderCount;
     },
-    [events]
+    [events, reminders]
   );
 
   // --- UI --------------------------------------------------------------------
@@ -358,37 +389,70 @@ export function Calendar() {
           </div>
         ) : (
           <div className="space-y-2">
-            {itemsForSelectedDate.events.length === 0 ? (
-              <div className="text-xs sm:text-sm text-gray-500">No events for this day.</div>
+            {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 ? (
+              <div className="text-xs sm:text-sm text-gray-500">No events or reminders for this day.</div>
             ) : (
-              itemsForSelectedDate.events.map((ev, i) => (
-                <div
-                  key={`db-${ev.id}-${i}`}
-                  className={[
-                    'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2',
-                    getEventBadge(ev.event_type),
-                  ].join(' ')}
-                >
-                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
-                    <div className="text-xs sm:text-sm">
-                      {formatTimeRange(ev.start_time, ev.end_time)}
+              <>
+                {/* Events */}
+                {itemsForSelectedDate.events.map((ev, i) => (
+                  <div
+                    key={`event-${ev.id}-${i}`}
+                    className={[
+                      'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2',
+                      getEventBadge(ev.event_type),
+                    ].join(' ')}
+                  >
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
+                      <div className="text-xs sm:text-sm">
+                        {formatTimeRange(ev.start_time, ev.end_time)}
+                      </div>
+                      {ev.location && (
+                        <div className="text-xs sm:text-sm flex items-center gap-1">
+                          <MapPin className="w-2 h-2 sm:w-3 sm:h-3" />
+                          {ev.location}
+                        </div>
+                      )}
+                      {ev.description && (
+                        <div className="text-xs sm:text-sm mt-1 text-gray-700">
+                          {ev.description}
+                        </div>
+                      )}
                     </div>
-                    {ev.location && (
-                      <div className="text-xs sm:text-sm flex items-center gap-1">
-                        <MapPin className="w-2 h-2 sm:w-3 sm:h-3" />
-                        {ev.location}
-                      </div>
-                    )}
-                    {ev.description && (
-                      <div className="text-xs sm:text-sm mt-1 text-gray-700">
-                        {ev.description}
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))
+                ))}
+                
+                {/* Reminders */}
+                {itemsForSelectedDate.reminders.map((reminder, i) => (
+                  <div
+                    key={`reminder-${reminder.id}-${i}`}
+                    className="border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 bg-orange-50 border-orange-200"
+                  >
+                    <Bell className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 text-orange-600" />
+                    <div className="flex-1">
+                      <div className="font-semibold text-orange-800">{reminder.title}</div>
+                      <div className="text-xs sm:text-sm text-orange-600">
+                        {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
+                      </div>
+                      {reminder.priority && reminder.priority !== 'medium' && (
+                        <div className={`text-xs inline-block px-1.5 py-0.5 rounded-full mt-1 ${
+                          reminder.priority === 'high' 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          {reminder.priority} priority
+                        </div>
+                      )}
+                      {reminder.description && (
+                        <div className="text-xs sm:text-sm mt-1 text-orange-700">
+                          {reminder.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
           </div>
         )}
