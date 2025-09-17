@@ -14,6 +14,7 @@ import { AIVoiceChat } from './components/AIVoiceChat'
 import ShoppingTab from './features/shopping/ShoppingTab'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import ConfigBanner from './components/ConfigBanner'
+import ConfigBanner from './components/ConfigBanner'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
@@ -104,6 +105,7 @@ function App() {
   // Show main app if user is authenticated and has completed onboarding
   return (
     <ErrorBoundary>
+      <ConfigBanner />
       <ConfigBanner />
       <div className="min-h-screen bg-gray-50">
         <Navigation 

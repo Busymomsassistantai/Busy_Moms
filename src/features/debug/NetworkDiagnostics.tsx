@@ -54,6 +54,11 @@ export default function NetworkDiagnostics() {
       secureContext: window.isSecureContext,
       crossOriginIsolated: (window as any).crossOriginIsolated ?? false
     }) });
+    results.push({ name: "Context", ok: true, detail: JSON.stringify({
+      origin: window.location.origin,
+      secureContext: window.isSecureContext,
+      crossOriginIsolated: (window as any).crossOriginIsolated ?? false
+    }) });
 
     // 2) Ping Edge Function
     try {
@@ -83,6 +88,10 @@ export default function NetworkDiagnostics() {
       results.push({ name: "Supabase /auth/v1/health", ok: r.ok, detail: r.ok ? "OK" : JSON.stringify(j) });
     } catch (e: any) {
       results.push({
+        name: "Supabase /auth/v1/health",
+        ok: false,
+        detail: (e?.message || String(e)) + " — If DNS_PROBE_FINISHED_NXDOMAIN, check project ref. Expected: " + EXPECTED_REF
+      });
         name: "Supabase /auth/v1/health",
         ok: false,
         detail: (e?.message || String(e)) + " — If DNS_PROBE_FINISHED_NXDOMAIN, check project ref. Expected: " + EXPECTED_REF

@@ -1,4 +1,4 @@
-# Netlify + Supabase — Production Env Checklist
+## Netlify + Supabase — Production Env Checklist
 
 Your app must be built with *correct* public envs for the target Supabase project.
 

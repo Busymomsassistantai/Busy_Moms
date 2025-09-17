@@ -90,6 +90,29 @@ try {
   throw e;
 }
 
+// Validate anon key -> decode JWT, confirm 'role' and project ref in 'iss'
+try {
+  if (RAW_ANON) {
+    const payload = decodeJwtPayload(RAW_ANON);
+    const role = payload?.role;
+    const iss = payload?.iss as string | undefined;
+    const anonRef = extractRefFromIss(iss);
+    if (role && role !== "anon") {
+      throw new Error(`[Supabase] The provided key is role="${role}", expected "anon". Use the ANON public key from Project Settings → API.`);
+    }
+    if (REF && anonRef && REF !== anonRef) {
+      throw new Error(
+        `[Supabase] The provided anon key belongs to a different project: "${anonRef}". Expected "${REF}". ` +
+        `Update VITE_SUPABASE_ANON_KEY with the anon key from https://${REF}.supabase.co (Project Settings → API).`
+      );
+    }
+  }
+} catch (e: any) {
+  // Surface a deterministic message and rethrow to prevent confusing 401s later
+  console.error(e?.message || e);
+  throw e;
+}
+
 // Log once (no mismatch warnings; we normalize silently to avoid noisy consoles)
 if (typeof window !== "undefined" && !(window as any).__supabase_boot_logged) {
   console.debug("[Supabase] Using URL =", SUPABASE_URL || "(not set)", "ref =", REF || "(unknown)");
