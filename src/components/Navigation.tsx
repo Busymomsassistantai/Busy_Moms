@@ -15,6 +15,7 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
     { id: 'calendar' as Screen, icon: Calendar, label: 'Calendar' },
     { id: 'shopping' as Screen, icon: ShoppingBag, label: 'Shopping' },
     { id: 'instacart' as Screen, icon: ShoppingCart, label: 'Instacart' },
+    { id: 'instacart' as Screen, icon: ShoppingCart, label: 'Instacart' },
     { id: 'tasks' as Screen, icon: CheckSquare, label: 'Tasks' },
     { id: 'contacts' as Screen, icon: Users, label: 'Contacts' },
     { id: 'settings' as Screen, icon: Settings, label: 'Settings' }

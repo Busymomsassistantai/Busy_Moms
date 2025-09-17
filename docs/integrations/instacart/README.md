@@ -277,6 +277,61 @@ const lineItem = toLineItem({
 
 **Note**: The `products_link_url` expires after the configured time (default: 24 hours).
 
+## UI QA Checklist
+
+### Testing the Shopping Tab Interface
+
+1. **Navigate to Shopping Tab**
+   - Open the app and click the "Instacart" tab in the bottom navigation
+   - Verify the page loads with three panels: Retailers, Recipe, and Shopping List
+
+2. **Test Retailers Lookup**
+   - Enter postal code (e.g., `32801`)
+   - Select country (`US` or `CA`)
+   - Click "Find Retailers"
+   - **Expected**: List of nearby stores OR friendly error message
+   - **Verify**: Loading state shows during API call
+
+3. **Test Recipe Link Creator**
+   - Click "Quick Fill Sample" button
+   - **Expected**: Form populates with chicken tacos recipe
+   - Click "Create Recipe Link"
+   - **Expected**: Generates Instacart URL
+   - Click "Open Link" to test in new tab
+   - **Verify**: Instacart page loads with ingredients in cart
+
+4. **Test Shopping List Creator**
+   - Click "Quick Fill Sample" button
+   - **Expected**: Form populates with weekly essentials
+   - Click "Create Shopping List Link"
+   - **Expected**: Generates Instacart URL
+   - Click "Open Link" to test in new tab
+   - **Verify**: Instacart page loads with items in cart
+
+5. **Test Caching Behavior**
+   - Re-run recipe or list creation with identical content
+   - **Expected**: "Reused cached link for identical content" message appears
+   - **Verify**: Response is instant (no loading state)
+
+6. **Test Copy Functionality**
+   - Generate any link (recipe or shopping list)
+   - Click "Copy URL" button
+   - **Expected**: URL copied to clipboard
+   - **Verify**: Can paste URL in browser address bar
+
+7. **Test Error Handling**
+   - Clear all ingredients/items from text areas
+   - Try to create links
+   - **Expected**: Friendly validation error messages
+   - **Verify**: No API calls made for empty content
+
+8. **End-to-End Instacart Flow**
+   - Generate a shopping list link
+   - Open in new browser tab
+   - Select a local store (Costco, Kroger, etc.)
+   - **Verify**: Items appear correctly in Instacart cart
+   - **Optional**: Complete checkout to test full integration
+
 ## Quick QA
 
 ### Development Setup

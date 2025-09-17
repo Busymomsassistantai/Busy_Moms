@@ -121,6 +121,8 @@ function App() {
               return <Shopping />
             case 'instacart':
               return <ShoppingTab />
+            case 'instacart':
+              return <ShoppingTab />
             case 'tasks':
               return <Tasks />
             case 'settings':
