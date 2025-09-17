@@ -15,7 +15,7 @@ import ShoppingTab from './features/shopping/ShoppingTab'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
-export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'instacart'
+export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat'
 
 function App() {
   const { user, loading, signOut } = useAuth()
@@ -119,10 +119,6 @@ function App() {
               return <Contacts />
             case 'shopping':
               return <Shopping />
-            case 'instacart':
-              return <ShoppingTab />
-            case 'instacart':
-              return <ShoppingTab />
             case 'tasks':
               return <Tasks />
             case 'settings':
