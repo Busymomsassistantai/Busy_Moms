@@ -276,3 +276,46 @@ const lineItem = toLineItem({
 ```
 
 **Note**: The `products_link_url` expires after the configured time (default: 24 hours).
+
+## Quick QA
+
+### Development Setup
+
+1. **Set environment variable** in your `.env` file:
+   ```bash
+   VITE_FUNCTIONS_URL=https://[PROJECT_REF].supabase.co/functions/v1/instacart-proxy
+   ```
+
+2. **Test in browser console** or create a scratch script:
+   ```typescript
+   import { demoRecipe, demoList, demoRetailers } from '@/lib/examples/instacartExamples';
+
+   // Test recipe conversion
+   const recipeResult = await demoRecipe();
+   console.log('Recipe link:', recipeResult.products_link_url);
+
+   // Test shopping list conversion
+   const listResult = await demoList();
+   console.log('Shopping list link:', listResult.products_link_url);
+
+   // Test retailer lookup
+   const retailers = await demoRetailers();
+   console.log('Available retailers:', retailers.retailers);
+   ```
+
+3. **Verify the flow**:
+   - Copy the `products_link_url` from the response
+   - Open the URL in a new browser tab
+   - Select a local store (Costco, Kroger, etc.)
+   - Verify items are added to cart correctly
+   - Complete checkout to test end-to-end flow
+
+### Expected Response Format
+
+```json
+{
+  "products_link_url": "https://www.instacart.com/store/checkout/..."
+}
+```
+
+**Note**: The `products_link_url` expires after the configured time (default: 24 hours).

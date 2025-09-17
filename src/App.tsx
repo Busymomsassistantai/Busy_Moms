@@ -11,10 +11,11 @@ import { Tasks } from './components/Tasks'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
+import ShoppingTab from './features/shopping/ShoppingTab'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
-export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat'
+export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'instacart'
 
 function App() {
   const { user, loading, signOut } = useAuth()
@@ -118,6 +119,8 @@ function App() {
               return <Contacts />
             case 'shopping':
               return <Shopping />
+            case 'instacart':
+              return <ShoppingTab />
             case 'tasks':
               return <Tasks />
             case 'settings':
