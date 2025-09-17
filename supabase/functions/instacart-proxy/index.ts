@@ -6,9 +6,14 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-const INSTACART_API_KEY = Deno.env.get("INSTACART_API_KEY_DEV") ?? "";
+// Prefer project secret INSTACART_API_KEY (set in Supabase), fallback to INSTACART_API_KEY_DEV if present.
+const INSTACART_API_KEY =
+  Deno.env.get("INSTACART_API_KEY") ??
+  Deno.env.get("INSTACART_API_KEY_DEV") ??
+  "";
+// Default to Instacart dev base; override with INSTACART_BASE_URL in Supabase secrets if needed.
 const INSTACART_BASE_URL =
-  Deno.env.get("INSTACART_BASE_URL") ?? "https://connect.dev.instacart.tools"; // dev default
+  Deno.env.get("INSTACART_BASE_URL") ?? "https://connect.dev.instacart.tools";
 
 function json(data: unknown, status = 200, extra: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {

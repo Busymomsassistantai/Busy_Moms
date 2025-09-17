@@ -40,46 +40,37 @@ Client App → Supabase Edge Function → Instacart API
 
 ## Environment Variables
 
-### Required for Edge Function
+### Client Configuration
 
-Add these to your Supabase project's environment variables:
-
-```bash
-INSTACART_API_KEY_DEV=your_instacart_api_key_here
-INSTACART_BASE_URL=https://connect.instacart.tools  # or dev URL
-```
-
-### Required for Client
-
-Add to your `.env` file:
+Set in your `.env` file:
 
 ```bash
-VITE_FUNCTIONS_URL=http://localhost:54321/functions/v1/instacart-proxy
+VITE_FUNCTIONS_URL=https://[PROJECT_REF].supabase.co/functions/v1/instacart-proxy
 ```
 
-For production, update to your deployed Supabase Functions URL.
+### Server Configuration (Supabase Secrets)
+
+Set these in your Supabase project dashboard under Settings → Edge Functions:
+
+- **INSTACART_API_KEY** - Your Instacart API key (required)
+- **INSTACART_BASE_URL** - Override base URL if needed (optional, defaults to `https://connect.dev.instacart.tools`)
+
+**Security Note**: API keys are stored ONLY in Supabase project secrets, never in code or local files.
+
 
 ## Local Development
 
-### 1. Start Supabase locally
+For development, we recommend using the deployed Edge Function to avoid managing local secrets.
+
+**Advanced users** can serve locally by temporarily exporting environment variables:
 
 ```bash
-supabase start
+export INSTACART_API_KEY="your_key_here"
+supabase functions serve instacart-proxy
 ```
 
-### 2. Serve the Edge Function
+**Note**: Never commit environment files or hardcode secrets in your project.
 
-```bash
-supabase functions serve instacart-proxy --env-file supabase/.env.local
-```
-
-### 3. Test the proxy
-
-```bash
-curl -X POST http://localhost:54321/functions/v1/instacart-proxy \
-  -H "Content-Type: application/json" \
-  -d '{"action": "search", "query": "milk"}'
-```
 
 ## Deployment
 
