@@ -1,33 +1,50 @@
-import { chatCompletion, type ChatMessage } from '../lib/aiProxy';
+import OpenAI from 'openai';
 
-export type { ChatMessage };
+type Role = 'user' | 'assistant' | 'system';
+
+export interface ChatMessage {
+  role: Role;
+  content: string;
+}
 
 /**
  * Centralized client for model interactions used by the app.
  * 
- * NOTE: All OpenAI requests now go through our Supabase Edge Function ai-proxy.
- * No OpenAI SDK or API keys are used in the browser.
+ * NOTE: In production you should proxy requests via your own backend or Supabase Edge Functions.
+ * We keep browser SDK enabled for local development convenience.
  */
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  // WARNING: Exposes your key in the browser. Replace with server proxy in production.
+  dangerouslyAllowBrowser: true,
+});
 
 export class AIService {
   /** Basic chat wrapper that returns plain text. */
   async chat(messages: ChatMessage[], model = 'gpt-4o-mini'): Promise<string> {
     try {
-      console.log('🤖 Making AI proxy call with messages:', messages);
+      if (!import.meta.env.VITE_OPENAI_API_KEY) {
+        console.warn('⚠️ No OpenAI API key configured, using fallback response');
+        // Return a helpful fallback response
+        const userMessage = messages[messages.length - 1]?.content || '';
+        return this.getFallbackResponse(userMessage);
+      }
+
+      console.log('🤖 Making OpenAI API call with messages:', messages);
       
-      const resp = await chatCompletion({
-        messages,
+      const resp = await openai.chat.completions.create({
         model,
+        messages: messages,
         temperature: 0.2,
-        max_tokens: 500
+        max_tokens: 500,
       });
 
-      const content = resp?.choices?.[0]?.message?.content ?? '';
-      console.log('🤖 AI proxy response:', content);
+      const content = resp.choices?.[0]?.message?.content ?? '';
+      console.log('🤖 OpenAI response:', content);
       
       return typeof content === 'string' ? content : JSON.stringify(content);
     } catch (err: any) {
-      console.error('❌ AI proxy error:', err?.message || err);
+      console.error('❌ OpenAI API error:', err?.message || err);
       
       // Provide fallback response instead of throwing
       const userMessage = messages[messages.length - 1]?.content || '';
@@ -35,7 +52,7 @@ export class AIService {
     }
   }
 
-  /** Fallback response when AI proxy is not available */
+  /** Fallback response when OpenAI API is not available */
   private getFallbackResponse(userMessage: string): string {
     const lower = userMessage.toLowerCase();
     
@@ -74,23 +91,17 @@ export class AIService {
     };
   }> {
     try {
-      const resp = await chatCompletion({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a WhatsApp message parser. Extract event information from messages. Return JSON with isEvent (boolean) and eventDetails (title, date in YYYY-MM-DD format, time in HH:MM format, location) if found.'
-          },
-          {
-            role: 'user',
-            content: `Parse this WhatsApp message for event information: "${message}"`
-          }
-        ],
-        model: 'gpt-4o-mini',
-        temperature: 0.2,
-        max_tokens: 300
-      });
+      const response = await this.chat([
+        {
+          role: 'system',
+          content: 'You are a WhatsApp message parser. Extract event information from messages. Return JSON with isEvent (boolean) and eventDetails (title, date in YYYY-MM-DD format, time in HH:MM format, location) if found.'
+        },
+        {
+          role: 'user',
+          content: `Parse this WhatsApp message for event information: "${message}"`
+        }
+      ]);
 
-      const response = resp?.choices?.[0]?.message?.content ?? '';
       const parsed = JSON.parse(response);
       return parsed;
     } catch (error) {

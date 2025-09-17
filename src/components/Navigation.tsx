@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Calendar, ShoppingBag, Users, Settings, MessageCircle, CheckSquare, ShoppingCart } from 'lucide-react';
+import { Home, Calendar, ShoppingBag, Users, Settings, MessageCircle, CheckSquare } from 'lucide-react';
 import { Screen } from '../App';
 
 interface NavigationProps {

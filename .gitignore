@@ -23,5 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 .env
-supabase/functions/instacart-proxy/.env*
-supabase/functions/instacart-proxy/.env.local

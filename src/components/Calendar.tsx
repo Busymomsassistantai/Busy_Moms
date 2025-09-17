@@ -3,24 +3,40 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  KeyboardEvent,
 } from 'react';
 import {
+  Plus,
   MapPin,
   Clock,
   Users,
+  MessageCircle,
+  Gift,
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  Smartphone,
   X,
+  Info,
+  Loader2,
   Bell,
 } from 'lucide-react';
 
 import { EventForm } from './forms/EventForm';
-import { ReminderForm } from './forms/ReminderForm';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { supabase } from '../lib/supabase';
 import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+
+/**
+ * Calendar
+ * - Local date (no UTC drift)
+ * - Month-range querying (lighter DB load)
+ * - Keyboard navigation (← → T) & a11y labels
+ * - Click-on-day to create event (pre-filled date)
+ * - Inline agenda for selected day (sorted, handles all-day)
+ * - Keeps original color language (purple, blue, green, etc.)
+ */
 
 // --- Helpers -----------------------------------------------------------------
 const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
@@ -35,7 +51,6 @@ const toLocalISODate = (d: Date) => {
 };
 
 const WEEKDAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const WEEKDAYS_FULL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const EVENT_COLORS: Record<string, string> = {
   sports: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -63,7 +78,7 @@ const formatTimeRange = (startTime?: string | null, endTime?: string | null) => 
 };
 
 // --- Component ---------------------------------------------------------------
-export function Calendar({ onNavigate }: DashboardProps) {
+export function Calendar() {
   const { user } = useAuth();
 
   // Core state
@@ -72,10 +87,8 @@ export function Calendar({ onNavigate }: DashboardProps) {
 
   // UI modals
   const [showEventForm, setShowEventForm] = useState(false);
-  const [showReminderForm, setShowReminderForm] = useState(false);
   const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
-  const [showCreateOptions, setShowCreateOptions] = useState(false);
 
   // Data
   const [events, setEvents] = useState<DbEvent[]>([]);
@@ -166,6 +179,14 @@ export function Calendar({ onNavigate }: DashboardProps) {
   }, [selectedDate, events, reminders]);
 
   // --- Calendar grid helpers -------------------------------------------------
+  const monthLabel = useMemo(
+    () =>
+      currentDate.toLocaleString(undefined, {
+        month: 'long',
+        year: 'numeric',
+      }),
+    [currentDate]
+  );
 
   const firstDayOfGrid = useMemo(() => {
     const start = new Date(monthStart);
@@ -198,20 +219,26 @@ export function Calendar({ onNavigate }: DashboardProps) {
     setSelectedDate(now);
   }, []);
 
-  // Helper to format dates without timezone issues
-  const formatLocalDate = (isoDate: string) => {
-    const [y, m, d] = isoDate.split('-').map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString();
-  };
   const onDayClick = useCallback((day: Date) => {
     setSelectedDate(day);
-    setShowCreateOptions(true);
+    setShowEventForm(true);
   }, []);
 
+  const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goPrevMonth();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goNextMonth();
+    } else if (e.key.toLowerCase() === 't') {
+      e.preventDefault();
+      goToday();
+    }
+  }, [goPrevMonth, goNextMonth, goToday]);
 
   const handleEventSaved = useCallback(() => {
     setShowEventForm(false);
-    setShowReminderForm(false);
     void loadEvents();
   }, [loadEvents]);
 
@@ -231,67 +258,170 @@ export function Calendar({ onNavigate }: DashboardProps) {
     [events, reminders]
   );
 
-  const isToday = (date: Date) => isSameDay(date, new Date());
-  const isCurrentMonth = (date: Date) => date.getMonth() === currentDate.getMonth();
-
   // --- UI --------------------------------------------------------------------
   return (
-    <div className="h-screen bg-gray-50 flex">
-      {/* Left Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-900">Calendar</h1>
-          </div>
-          
-          <div className="text-sm text-gray-600">
-            {selectedDate ? selectedDate.toLocaleDateString('en-US', { 
-              weekday: 'long',
-              month: 'long', 
-              day: 'numeric',
-              year: 'numeric'
-            }) : 'Select a date'}
-          </div>
+    <div className="w-full p-2 sm:p-4" onKeyDown={onKeyDown} tabIndex={0} aria-label="Calendar">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2">
+          <button
+            className="p-1 sm:p-2 rounded hover:bg-gray-100"
+            aria-label="Previous month"
+            onClick={goPrevMonth}
+          >
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-1 sm:gap-2">
+            <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            {monthLabel}
+          </h2>
+          <button
+            className="p-1 sm:p-2 rounded hover:bg-gray-100"
+            aria-label="Next month"
+            onClick={goNextMonth}
+          >
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            className="ml-1 sm:ml-2 px-2 sm:px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-xs sm:text-sm"
+            onClick={goToday}
+            aria-label="Go to today"
+          >
+            <span className="hidden sm:inline">Today (T)</span>
+            <span className="sm:hidden">Today</span>
+          </button>
         </div>
 
-        {/* Today's Events */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="space-y-3">
-            {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 ? (
-              <div className="text-center py-8">
-                <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">No events today</p>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <button
+            onClick={() => setShowEventForm(true)}
+            className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+          >
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">New Event</span>
+            <span className="sm:hidden text-xs">New</span>
+          </button>
+
+          <button
+            onClick={() => setShowWhatsAppForm(true)}
+            className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-md bg-green-600 text-white hover:bg-green-700"
+            title="WhatsApp Integration"
+          >
+            <Smartphone className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-2 sm:mb-3 flex items-start gap-2 rounded border border-red-200 bg-red-50 p-2 sm:p-3 text-red-800">
+          <Info className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
+          <div className="text-xs sm:text-sm">{error}</div>
+        </div>
+      )}
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-1 sm:mb-2">
+        {WEEKDAYS_SHORT.map((wd) => (
+          <div key={wd} className="py-1 sm:py-2">{wd}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-[1px] bg-gray-200 rounded overflow-hidden mb-4 sm:mb-6">
+        {daysInGrid.map((day, idx) => {
+          const isToday = isSameDay(day, new Date());
+          const selected = selectedDate ? isSameDay(day, selectedDate) : false;
+          const count = dayEventsCount(day);
+
+          return (
+            <button
+              key={idx}
+              onClick={() => onDayClick(day)}
+              className={[
+                'relative h-16 sm:h-24 bg-white p-1 sm:p-3 text-left focus:outline-none focus:ring-2 focus:ring-purple-500 hover:bg-gray-50 transition-all duration-200 group',
+                selected ? 'ring-2 ring-purple-500 bg-purple-50' : '',
+              ].join(' ')}
+              aria-label={`Day ${toLocalISODate(day)} (${count} events)`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-xs sm:text-sm font-medium ${selected ? 'text-purple-700' : 'text-gray-700'} group-hover:text-purple-600 transition-colors`}>{day.getDate()}</span>
+                {isToday && (
+                  <span className="rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[8px] sm:text-[10px] px-1 sm:px-2 py-0.5 sm:py-1 font-medium shadow-sm">
+                    <span className="hidden sm:inline">Today</span>
+                    <span className="sm:hidden">•</span>
+                  </span>
+                )}
               </div>
+
+              {count > 0 && (
+                <div className="absolute bottom-0.5 sm:bottom-1 left-0.5 sm:left-1 right-0.5 sm:right-1">
+                  <div className={`text-[8px] sm:text-[10px] font-medium ${selected ? 'text-purple-600' : 'text-gray-500'} group-hover:text-purple-600 transition-colors`}>
+                    <span className="hidden sm:inline">{count} event{count === 1 ? '' : 's'}</span>
+                    <span className="sm:hidden">{count}</span>
+                  </div>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Agenda */}
+      <div className="mt-4 sm:mt-6">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-base sm:text-lg font-semibold">Agenda</h3>
+          {selectedDate && (
+            <span className="text-xs sm:text-sm text-gray-500">
+              {selectedDate.toLocaleDateString(undefined, {
+                weekday: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+            <span>Loading events…</span>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 ? (
+              <div className="text-xs sm:text-sm text-gray-500">No events or reminders for this day.</div>
             ) : (
               <>
                 {/* Events */}
-                {itemsForSelectedDate.events.map((event, i) => (
+                {itemsForSelectedDate.events.map((ev, i) => (
                   <div
-                    key={`event-${event.id}-${i}`}
+                    key={`event-${ev.id}-${i}`}
                     onClick={() => {
-                      setSelectedEvent(event);
+                      setSelectedEvent(ev);
                       setShowEventDetails(true);
                     }}
-                    className="bg-gradient-to-r from-purple-400 to-pink-400 text-white p-4 rounded-xl cursor-pointer hover:shadow-lg transition-all"
+                    className={[
+                      'border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 cursor-pointer hover:shadow-md transition-all',
+                      getEventBadge(ev.event_type),
+                    ].join(' ')}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-sm">{event.title}</h3>
-                      <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                        {event.event_type}
-                      </span>
-                    </div>
-                    <div className="text-xs opacity-90 space-y-1">
-                      {formatTimeRange(event.start_time, event.end_time) && (
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{formatTimeRange(event.start_time, event.end_time)}</span>
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="font-semibold">{ev.title ?? 'Untitled event'}</div>
+                      <div className="text-xs sm:text-sm">
+                        {formatTimeRange(ev.start_time, ev.end_time)}
+                      </div>
+                      {ev.location && (
+                        <div className="text-xs sm:text-sm flex items-center gap-1">
+                          <MapPin className="w-2 h-2 sm:w-3 sm:h-3" />
+                          {ev.location}
                         </div>
                       )}
-                      {event.location && (
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>{event.location}</span>
+                      {ev.description && (
+                        <div className="text-xs sm:text-sm mt-1 text-gray-700">
+                          {ev.description}
                         </div>
                       )}
                     </div>
@@ -306,18 +436,27 @@ export function Calendar({ onNavigate }: DashboardProps) {
                       setSelectedReminder(reminder);
                       setShowEventDetails(true);
                     }}
-                    className="bg-gradient-to-r from-orange-400 to-red-400 text-white p-4 rounded-xl cursor-pointer hover:shadow-lg transition-all"
+                    className="border rounded p-2 sm:p-3 text-xs sm:text-sm flex items-start gap-2 bg-orange-50 border-orange-200 cursor-pointer hover:shadow-md transition-all"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-sm">{reminder.title}</h3>
-                      <Bell className="w-4 h-4" />
-                    </div>
-                    <div className="text-xs opacity-90">
-                      {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
+                    <Bell className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 text-orange-600" />
+                    <div className="flex-1">
+                      <div className="font-semibold text-orange-800">{reminder.title}</div>
+                      <div className="text-xs sm:text-sm text-orange-600">
+                        {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
+                      </div>
                       {reminder.priority && reminder.priority !== 'medium' && (
-                        <span className="ml-2 bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                          {reminder.priority}
-                        </span>
+                        <div className={`text-xs inline-block px-1.5 py-0.5 rounded-full mt-1 ${
+                          reminder.priority === 'high' 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          {reminder.priority} priority
+                        </div>
+                      )}
+                      {reminder.description && (
+                        <div className="text-xs sm:text-sm mt-1 text-orange-700">
+                          {reminder.description}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -325,154 +464,8 @@ export function Calendar({ onNavigate }: DashboardProps) {
               </>
             )}
           </div>
-
-          {/* View All Button */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <button 
-              onClick={() => onNavigate?.('dashboard')}
-              className="text-purple-600 text-sm font-medium hover:underline"
-            >
-              View All →
-            </button>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Right Content */}
-      <div className="flex-1 p-6">
-        {/* Mini Calendar */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </h2>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={goPrevMonth}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
-              </button>
-              <button
-                onClick={goNextMonth}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {WEEKDAYS_FULL.map((day) => (
-              <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-                {day.charAt(0)}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {daysInGrid.map((day, idx) => {
-              const isCurrentDay = isToday(day);
-              const selected = selectedDate ? isSameDay(day, selectedDate) : false;
-              const count = dayEventsCount(day);
-              const inCurrentMonth = isCurrentMonth(day);
-
-              return (
-                <button
-                  key={idx}
-                  onClick={() => onDayClick(day)}
-                  className={`
-                    relative h-8 w-8 text-sm rounded-lg transition-all hover:bg-purple-50
-                    ${selected ? 'bg-purple-500 text-white' : ''}
-                    ${isCurrentDay && !selected ? 'bg-purple-100 text-purple-700 font-semibold' : ''}
-                    ${!inCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                    ${count > 0 && !selected && !isCurrentDay ? 'bg-purple-50' : ''}
-                  `}
-                >
-                  {day.getDate()}
-                  {count > 0 && (
-                    <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full text-[8px] flex items-center justify-center ${
-                      selected ? 'bg-white text-purple-500' : 'bg-purple-500 text-white'
-                    }`}>
-                      {count}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Today Button */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <button
-              onClick={goToday}
-              className="w-full py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-            >
-              Today
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Create Options Modal */}
-      {showCreateOptions && selectedDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-sm">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">
-                  {selectedDate.toLocaleDateString('en-US', { 
-                    weekday: 'long',
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </h2>
-                <button
-                  onClick={() => setShowCreateOptions(false)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    setShowCreateOptions(false);
-                    setShowEventForm(true);
-                  }}
-                  className="w-full p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg transition-all"
-                >
-                  <div className="flex items-center space-x-3">
-                    <CalendarIcon className="w-5 h-5" />
-                    <div className="text-left">
-                      <h3 className="font-semibold">Create Event</h3>
-                      <p className="text-sm opacity-90">Schedule a meeting or appointment</p>
-                    </div>
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setShowCreateOptions(false);
-                    setShowReminderForm(true);
-                  }}
-                  className="w-full p-4 bg-gradient-to-r from-orange-400 to-red-400 text-white rounded-xl hover:shadow-lg transition-all"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Bell className="w-5 h-5" />
-                    <div className="text-left">
-                      <h3 className="font-semibold">Create Reminder</h3>
-                      <p className="text-sm opacity-90">Set a personal reminder</p>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Event form modal */}
       {showEventForm && (
@@ -492,30 +485,6 @@ export function Calendar({ onNavigate }: DashboardProps) {
               defaultDate={selectedDate ? toLocalISODate(selectedDate) : undefined}
               event={selectedEvent ?? undefined}
               onCancel={() => setShowEventForm(false)}
-              onSaved={handleEventSaved}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Reminder form modal */}
-      {showReminderForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-sm sm:text-base">Create / Edit Reminder</h4>
-              <button
-                onClick={() => setShowReminderForm(false)}
-                className="p-0.5 sm:p-1 rounded hover:bg-gray-100"
-                aria-label="Close reminder form"
-              >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
-            <ReminderForm
-              defaultDate={selectedDate ? toLocalISODate(selectedDate) : undefined}
-              reminder={selectedReminder ?? undefined}
-              onCancel={() => setShowReminderForm(false)}
               onSaved={handleEventSaved}
             />
           </div>
@@ -555,7 +524,7 @@ export function Calendar({ onNavigate }: DashboardProps) {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <CalendarIcon className="w-4 h-4" />
-                      <span>{formatLocalDate(selectedEvent.event_date)}</span>
+                      <span>{new Date(selectedEvent.event_date).toLocaleDateString()}</span>
                     </div>
 
                     {(selectedEvent.start_time || selectedEvent.end_time) && (
@@ -646,7 +615,7 @@ export function Calendar({ onNavigate }: DashboardProps) {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <CalendarIcon className="w-4 h-4" />
-                      <span>{formatLocalDate(selectedReminder.reminder_date)}</span>
+                      <span>{new Date(selectedReminder.reminder_date).toLocaleDateString()}</span>
                     </div>
 
                     {selectedReminder.reminder_time && (

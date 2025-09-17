@@ -1,6 +1,23 @@
-// Re-export from the self-healing client
-export { supabase, SUPABASE_URL, SUPABASE_PROJECT_REF } from './supabaseClient'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+
+const url = import.meta.env.VITE_SUPABASE_URL
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!url || !anonKey) {
+throw new Error(
+'[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. ' +
+'Ensure your environment variables are set. Refusing to fall back to a hardcoded project.'
+)
+}
+
+export const supabase: SupabaseClient = createClient(url, anonKey, {
+auth: {
+persistSession: true,
+autoRefreshToken: true,
+detectSessionInUrl: true,
+},
+db: { schema: 'public' },
+})
 
 // ---- Shared App Types (used only for TypeScript hints) ----------------------
 

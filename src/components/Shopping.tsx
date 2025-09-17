@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, User, Package } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, User } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
-import ShoppingTab from '../features/shopping/ShoppingTab';
 import { ShoppingItem, FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -116,7 +115,6 @@ export function Shopping() {
         <div className="flex space-x-0.5 sm:space-x-1 bg-gray-100 rounded-lg p-1">
           {[
             { id: 'list', label: 'Shopping List', icon: ShoppingCart },
-            { id: 'instacart', label: 'Instacart', icon: Package },
             { id: 'gifts', label: 'Gift Ideas', icon: Gift },
             { id: 'auto', label: 'Auto-Reorder', icon: Repeat }
           ].map((tab) => (
@@ -227,13 +225,6 @@ export function Shopping() {
                 </button>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Instacart Tab */}
-        {activeTab === 'instacart' && (
-          <div className="bg-white rounded-xl p-4 sm:p-6">
-            <ShoppingTab />
           </div>
         )}
 

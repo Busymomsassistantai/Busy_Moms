@@ -1,6 +1,6 @@
 import { supabase, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
-import { chatCompletion, type ChatMessage } from '../lib/aiProxy';
-import { LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
+import { aiService } from './openai';
+import { ICalendarProvider, LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
 export interface AIAction {
@@ -122,17 +122,11 @@ Examples:
 "schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}`;
 
   try {
-    const resp = await chatCompletion({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Today is ${today}. Classify: "${message}"` }
-      ],
-      model: 'gpt-4o-mini',
-      temperature: 0.2,
-      max_tokens: 300
-    });
+    const response = await aiService.chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Today is ${today}. Classify: "${message}"` }
+    ]);
 
-    const response = resp?.choices?.[0]?.message?.content ?? '';
     console.log('🤖 AI classification response:', response);
 
     // Extract JSON from response
@@ -205,13 +199,13 @@ function fallbackClassify(message: string): IntentResult {
 
 /** ---- Main service ------------------------------------------------------ */
 class AIAssistantService {
-  private calendarProvider: LocalCalendarProvider;
+  private calendarProvider: ICalendarProvider;
 
-  constructor(provider?: LocalCalendarProvider) {
+  constructor(provider?: ICalendarProvider) {
     this.calendarProvider = provider ?? new LocalCalendarProvider();
   }
 
-  setCalendarProvider(provider: LocalCalendarProvider) {
+  setCalendarProvider(provider: ICalendarProvider) {
     this.calendarProvider = provider;
   }
 
@@ -450,12 +444,11 @@ class AIAssistantService {
     
     try {
       // Use AI to provide a helpful response
+      const response = await aiService.chat([
+        {
+          role: 'system',
+          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. 
 
-      const resp = await chatCompletion({
-        messages: [
-          {
-            role: 'system',
-            content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. 
 Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.
 
 If the user asks about functionality, explain that you can:
@@ -464,18 +457,13 @@ If the user asks about functionality, explain that you can:
 - Schedule events ("schedule dentist appointment next Friday")
 - Create tasks ("create task to clean room")
 - Answer general questions about parenting and family management`
-          },
-          {
-            role: 'user',
-            content: originalMessage
-          }
-        ],
-        model: 'gpt-4o-mini',
-        temperature: 0.7,
-        max_tokens: 400
-      });
+        },
+        {
+          role: 'user',
+          content: originalMessage
+        }
+      ]);
 
-      const response = resp?.choices?.[0]?.message?.content ?? '';
       return {
         type: 'chat',
         success: true,

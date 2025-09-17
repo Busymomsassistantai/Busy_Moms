@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, Edit, Volume2, Network } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, Edit, Volume2 } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
-import NetworkDiagnostics from '../features/debug/NetworkDiagnostics';
+import { GoogleCalendarTest } from './GoogleCalendarTest';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -15,7 +15,7 @@ export function Settings() {
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
-  const [showNetworkDiagnostics, setShowNetworkDiagnostics] = useState(false);
+  const [showGoogleCalendarTest, setShowGoogleCalendarTest] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
@@ -147,11 +147,11 @@ export function Settings() {
           onClick: () => setShowAuthTest(true)
         },
         {
-          icon: Network,
-          title: 'Network Diagnostics',
-          description: 'Test API endpoints and connectivity',
+          icon: Calendar,
+          title: 'Test Google Calendar',
+          description: 'Verify Google Calendar API integration', 
           action: 'Test',
-          onClick: () => setShowNetworkDiagnostics(true)
+          onClick: () => setShowGoogleCalendarTest(true)
         }
       ]
     },
@@ -517,24 +517,10 @@ export function Settings() {
         onClose={() => setShowAuthTest(false)}
       />
 
-      {showNetworkDiagnostics && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Network Diagnostics</h2>
-                <button
-                  onClick={() => setShowNetworkDiagnostics(false)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-              <NetworkDiagnostics />
-            </div>
-          </div>
-        </div>
-      )}
+      <GoogleCalendarTest
+        isOpen={showGoogleCalendarTest}
+        onClose={() => setShowGoogleCalendarTest(false)}
+      />
 
       <ProfileForm
         isOpen={showProfileForm}
