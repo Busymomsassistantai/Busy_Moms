@@ -115,6 +115,49 @@ Get available retailers by location.
 }
 ```
 
+## Mapping Layer
+
+### Data Transformation
+
+The mapping utilities help convert between our app's shopping list format and Instacart's API requirements:
+
+#### `normalizeNameAndMeasurements(rawName, maybeDisplay?)`
+Intelligently extracts size information from product names:
+- **Keeps `name` generic** - Removes size tokens like "8 oz", "1 lb"
+- **Moves size to measurements** - Converts "milk 8 oz" → `name: "milk"`, `measurements: [{unit: "oz", quantity: 8}]`
+- **Preserves display text** - Optional human-readable extras
+
+#### `toLineItem(input)`
+Converts shopping list items to Instacart-compatible format:
+- **Smart defaults** - Falls back to `quantity: 1, unit: "ea"` if no measurements provided
+- **Filter support** - Optional `brand_filters` and `health_filters` for precise matching
+- **UPC support** - Use product UPCs when available (cannot mix with `product_ids`)
+
+### Best Practices
+
+- **Keep names generic** - "milk" instead of "Organic Valley 2% Milk 64oz"
+- **Use measurements** - Specify size requirements separately from product name
+- **Apply filters** - Use brand/health filters for specific product requirements
+- **Validate inputs** - All LineItems are validated before API calls
+
+### Example Usage
+
+```typescript
+import { toLineItem, normalizeNameAndMeasurements } from '@/lib/instacartMap';
+
+// Normalize a product name
+const normalized = normalizeNameAndMeasurements("organic milk 64 oz");
+// Result: { name: "organic milk", display_text: "64 oz", measurements: [{unit: "oz", quantity: 64}] }
+
+// Convert to LineItem
+const lineItem = toLineItem({
+  name: "milk",
+  quantity: 1,
+  unit: "gallon",
+  brand_filters: ["Organic Valley"],
+  health_filters: ["organic"]
+});
+```
 
 ## Deployment
 
