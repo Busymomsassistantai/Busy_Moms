@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { decodeJwtPayload, extractRefFromIss } from "../../lib/jwt";
 
 const FN_BASE = (import.meta.env.VITE_FUNCTIONS_URL as string) || "NOT SET";
 const SB_URL = (import.meta.env.VITE_SUPABASE_URL as string) || "NOT SET";
 const SB_REF = (import.meta.env.VITE_SUPABASE_PROJECT_REF as string) || "NOT SET";
+const ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || "";
 const SB_VALID = /^https:\/\/[a-z0-9]{20}\.supabase\.co\/?$/.test(SB_URL);
 const EXPECTED_REF = 'rtvwcyrksplhsgycyfzo';
 
@@ -20,6 +22,28 @@ export default function NetworkDiagnostics() {
     results.push({ name: "Env: VITE_FUNCTIONS_URL", ok: FN_BASE !== "NOT SET", detail: FN_BASE });
     results.push({ name: "Env: VITE_SUPABASE_URL", ok: SB_URL !== "NOT SET", detail: SB_URL });
     results.push({ name: "Env: VITE_SUPABASE_PROJECT_REF", ok: SB_REF !== "NOT SET", detail: SB_REF });
+    
+    // Anon key decode and validation
+    try {
+      const short = ANON ? `${ANON.slice(0, 8)}…` : "(not set)";
+      const payload = decodeJwtPayload(ANON);
+      const role = payload?.role ?? "(unknown)";
+      const iss = payload?.iss as string | undefined;
+      const refFromAnon = extractRefFromIss(iss);
+      const matches = SB_REF !== "NOT SET" && refFromAnon === SB_REF;
+      
+      results.push({ name: "Anon Key: present", ok: !!ANON, detail: short });
+      results.push({ name: "Anon Key: role", ok: role === "anon", detail: String(role) });
+      results.push({ name: "Anon Key: iss", ok: !!iss, detail: String(iss || "(none)") });
+      results.push({ name: "Anon Key: project ref", ok: !!refFromAnon, detail: String(refFromAnon || "(none)") });
+      results.push({ 
+        name: "Anon Key matches project ref", 
+        ok: !!matches, 
+        detail: matches ? "✅ Match" : `❌ Expected ${SB_REF}, got ${refFromAnon || "(none)"}` 
+      });
+    } catch (e: any) {
+      results.push({ name: "Anon Key: decode", ok: false, detail: e?.message || String(e) });
+    }
     results.push({
       name: "Format: VITE_SUPABASE_URL",
       ok: SB_VALID,

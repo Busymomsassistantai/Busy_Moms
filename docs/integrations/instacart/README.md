@@ -338,6 +338,18 @@ const lineItem = toLineItem({
 - To avoid future mismatches, we set `VITE_SUPABASE_PROJECT_REF=rtvwcyrksplhsgycyfzo`. The app now **normalizes silently** to this ref at runtime and does not warn on mismatches; it only errors if it cannot determine a URL or if the anon key is missing.
 - If you see `DNS_PROBE_FINISHED_NXDOMAIN`, you likely used the wrong host. Fix the envs and restart the dev server.
 
+### Auth Troubleshooting — 401 "Invalid API key"
+- This means the browser is using a wrong or missing **anon public key**.
+- Fix:
+  1. In Supabase Dashboard → **Project Settings → API**, copy the **anon public** key.
+  2. Set it in your web env: `VITE_SUPABASE_ANON_KEY=[PASTE_ANON_KEY]`
+  3. Ensure your project ref is **rtvwcyrksplhsgycyfzo** and `VITE_SUPABASE_URL=https://rtvwcyrksplhsgycyfzo.supabase.co`
+  4. Restart the dev server.
+- The **/debug/network** page will show:
+  - anon key role must be `anon`
+  - anon key `iss` must include `https://rtvwcyrksplhsgycyfzo.supabase.co/...`
+  - anon key project ref must match `rtvwcyrksplhsgycyfzo`
+
 ## UI QA Checklist
 
 ### Testing the Shopping Tab Interface
