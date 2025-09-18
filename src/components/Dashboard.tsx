@@ -1,8 +1,7 @@
 import React from 'react';
-import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Users, LogOut, Smartphone, Phone, User } from 'lucide-react';
+import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Users, LogOut, Smartphone, User } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
-import { VoiceChat } from './VoiceChat';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
 
@@ -15,7 +14,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = React.useState(false);
-  const [isVoiceChatOpen, setIsVoiceChatOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [showEventsPopup, setShowEventsPopup] = React.useState(false);
   const [showTasksPopup, setShowTasksPopup] = React.useState(false);
@@ -122,8 +120,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const quickActions = [
     { icon: Gift, title: 'Buy Gift', desc: 'For Jessica\'s party', color: 'from-pink-400 to-rose-400', action: null },
     { icon: ShoppingBag, title: 'Grocery Run', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
-    { icon: Smartphone, title: 'Parse WhatsApp', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) },
-    { icon: Phone, title: 'Family Voice Chat', desc: 'Connect with family members', color: 'from-purple-400 to-indigo-400', action: () => setIsVoiceChatOpen(true) }
+    { icon: Smartphone, title: 'Parse WhatsApp', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) }
   ];
 
   const sampleReminders = [
@@ -321,11 +318,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         onEventCreated={(event) => {
           setEvents(prev => [...prev, event]);
         }}
-      />
-      <VoiceChat 
-        isOpen={isVoiceChatOpen} 
-        onClose={() => setIsVoiceChatOpen(false)}
-        roomId="family-chat"
       />
 
       {/* Events Popup */}
