@@ -120,7 +120,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const quickActions = [
     { icon: Gift, title: 'Buy Gift', desc: 'For Jessica\'s party', color: 'from-pink-400 to-rose-400', action: null },
     { icon: ShoppingBag, title: 'Grocery Run', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
-    { icon: Smartphone, title: 'Parse WhatsApp', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) }
+    { icon: Smartphone, title: 'Smart Messages', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) }
   ];
 
   const sampleReminders = [
