@@ -290,7 +290,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
             <h3 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">How it works:</h3>
             <ul className="text-xs sm:text-sm text-blue-700 space-y-1">
-              <li>• Copy and paste WhatsApp messages containing event information</li>
+              <li>• Copy and paste messages containing event information</li>
               <li>• Our AI will automatically detect dates, times, locations, and event details</li>
               <li>• Review the parsed information and add it to your calendar</li>
               <li>• Perfect for birthday party invitations, school events, and group activities</li>

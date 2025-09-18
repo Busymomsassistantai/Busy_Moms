@@ -312,7 +312,7 @@ export function Settings() {
                       {item.toggle ? (
                         <button
                           onClick={() => {
-                            if (item.title.includes('WhatsApp')) {
+                            if (item.title.includes('Smart Messages')) {
                               toggleNotification('whatsapp');
                             } else if (item.title.includes('Event')) {
                               toggleNotification('events');
