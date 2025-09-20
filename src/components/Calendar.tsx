@@ -660,7 +660,11 @@ export function Calendar() {
 
       {/* WhatsApp modal */}
       {showWhatsAppForm && (
-        </div>
+        <WhatsAppIntegration
+          isOpen={showWhatsAppForm}
+          onClose={() => setShowWhatsAppForm(false)}
+          onEventCreated={handleEventSaved}
+        />
       )}
     </div>
     </>
