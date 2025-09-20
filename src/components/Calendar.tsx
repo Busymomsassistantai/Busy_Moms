@@ -20,10 +20,14 @@ import {
   Info,
   Loader2,
   Bell,
+  RefreshCw,
+  Link,
+  CheckCircle,
 } from 'lucide-react';
 
 import { EventForm } from './forms/EventForm';
-//import { WhatsAppIntegration } from './WhatsAppIntegration';
+import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
+import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 import { supabase } from '../lib/supabase';
 import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -74,6 +78,10 @@ export function Calendar() {
   const [selectedReminder, setSelectedReminder] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [syncingGoogle, setSyncingGoogle] = useState(false);
+  const [showGoogleConnect, setShowGoogleConnect] = useState(false);
 
   const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
   const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate]);
@@ -122,6 +130,52 @@ export function Calendar() {
     if (user?.id) loadEvents();
   }, [user?.id, loadEvents]);
 
+  // Check Google Calendar connection status
+  useEffect(() => {
+    checkGoogleConnection();
+  }, []);
+
+  const checkGoogleConnection = async () => {
+    try {
+      await googleCalendarService.initialize();
+      setIsGoogleConnected(googleCalendarService.isSignedIn());
+    } catch (error) {
+      console.error('Error checking Google Calendar connection:', error);
+      setIsGoogleConnected(false);
+    }
+  };
+
+  const syncWithGoogleCalendar = async () => {
+    if (!isGoogleConnected) {
+      setShowGoogleConnect(true);
+      return;
+    }
+
+    setSyncingGoogle(true);
+    try {
+      // Get Google Calendar events for the current month
+      const timeMin = monthStart.toISOString();
+      const timeMax = monthEnd.toISOString();
+      
+      const events = await googleCalendarService.getEvents({
+        timeMin,
+        timeMax,
+        maxResults: 100
+      });
+
+      setGoogleEvents(events);
+      
+      // Optionally sync Google events to local database
+      // This would require additional logic to avoid duplicates
+      
+    } catch (error) {
+      console.error('Error syncing with Google Calendar:', error);
+      setError('Failed to sync with Google Calendar. Please try again.');
+    } finally {
+      setSyncingGoogle(false);
+    }
+  };
+
   // --- Derived day agenda ----------------------------------------------------
   const itemsForSelectedDate = useMemo(() => {
     if (!selectedDate) return { events: [] as DbEvent[], reminders: [] as any[] };
@@ -129,6 +183,11 @@ export function Calendar() {
 
     const dayDbEvents = events.filter(ev => ev.event_date === d);
     const dayReminders = reminders.filter(rem => rem.reminder_date === d);
+    const dayGoogleEvents = googleEvents.filter(ev => {
+      if (ev.start?.date) return ev.start.date === d;
+      if (ev.start?.dateTime) return ev.start.dateTime.split('T')[0] === d;
+      return false;
+    });
 
     const sorted = dayDbEvents.sort((a, b) => {
       const minutesKey = (it: DbEvent) => {
@@ -152,7 +211,7 @@ export function Calendar() {
       return minutesKey(a) - minutesKey(b);
     });
 
-    return { events: sorted, reminders: sortedReminders };
+    return { events: sorted, reminders: sortedReminders, googleEvents: dayGoogleEvents };
   }, [selectedDate, events, reminders]);
 
   // --- Calendar grid helpers -------------------------------------------------
@@ -229,9 +288,14 @@ export function Calendar() {
       const d = toLocalISODate(day);
       const eventCount = events.filter(ev => ev.event_date === d).length;
       const reminderCount = reminders.filter(rem => rem.reminder_date === d).length;
-      return eventCount + reminderCount;
+      const googleEventCount = googleEvents.filter(ev => {
+        if (ev.start?.date) return ev.start.date === d;
+        if (ev.start?.dateTime) return ev.start.dateTime.split('T')[0] === d;
+        return false;
+      }).length;
+      return eventCount + reminderCount + googleEventCount;
     },
-    [events, reminders]
+    [events, reminders, googleEvents]
   );
 
   const isCurrentMonth = (day: Date) => day.getMonth() === currentDate.getMonth();
@@ -259,11 +323,24 @@ export function Calendar() {
                   </p>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-medium">
-                    Online
+                  <button
+                    onClick={() => setShowGoogleConnect(true)}
+                    className={`px-3 py-2 rounded-full text-sm font-medium flex items-center space-x-1 ${
+                      isGoogleConnected 
+                        ? 'bg-green-100 text-green-600' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Link className="w-3 h-3" />
+                    <span>{isGoogleConnected ? 'Connected' : 'Connect'}</span>
                   </button>
-                  <button className="px-4 py-2 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
-                    Offline
+                  <button
+                    onClick={syncWithGoogleCalendar}
+                    disabled={syncingGoogle}
+                    className="px-3 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-blue-200 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${syncingGoogle ? 'animate-spin' : ''}`} />
+                    <span>{syncingGoogle ? 'Syncing...' : 'Sync'}</span>
                   </button>
                 </div>
               </div>
@@ -271,7 +348,7 @@ export function Calendar() {
 
             {/* Today's Events */}
             <div className="space-y-3">
-              {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 ? (
+              {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 && (itemsForSelectedDate.googleEvents?.length || 0) === 0 ? (
                 <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
                   <p className="text-gray-500">No events today</p>
                 </div>
@@ -291,6 +368,38 @@ export function Calendar() {
                         <h3 className="font-semibold text-lg">{ev.title}</h3>
                         <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
                           {formatTimeRange(ev.start_time, ev.end_time) || 'All day'}
+                        </span>
+                      </div>
+                      {ev.location && (
+                        <div className="flex items-center space-x-1 text-sm opacity-90">
+                          <MapPin className="w-3 h-3" />
+                          <span>{ev.location}</span>
+                        </div>
+                      )}
+                      {ev.description && (
+                        <p className="text-sm opacity-90 mt-2">{ev.description}</p>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Google Calendar Events */}
+                  {(itemsForSelectedDate.googleEvents || []).map((ev, i) => (
+                    <div
+                      key={`google-event-${ev.id}-${i}`}
+                      className="bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl p-4 text-white cursor-pointer hover:shadow-lg transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-lg">{ev.summary || 'Untitled Event'}</h3>
+                          <div className="w-4 h-4 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-bold">G</span>
+                          </div>
+                        </div>
+                        <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                          {ev.start?.dateTime 
+                            ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                            : 'All day'
+                          }
                         </span>
                       </div>
                       {ev.location && (
@@ -339,6 +448,12 @@ export function Calendar() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">{monthLabel}</h2>
                 <div className="flex items-center space-x-2">
+                  <button
+                    onClick={goToday}
+                    className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Today
+                  </button>
                   <button
                     onClick={goPrevMonth}
                     className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -408,6 +523,55 @@ export function Calendar() {
                 <p>• Click on events or reminders to edit them</p>
               </div>
             </div>
+
+            {/* Google Calendar Integration */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <CalendarIcon className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Google Calendar</h3>
+                    <p className="text-sm text-gray-500">
+                      {isGoogleConnected ? 'Connected and syncing' : 'Connect to sync your events'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {isGoogleConnected && (
+                    <div className="flex items-center space-x-1 text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm">Connected</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {isGoogleConnected ? (
+                <div className="space-y-3">
+                  <button
+                    onClick={syncWithGoogleCalendar}
+                    disabled={syncingGoogle}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${syncingGoogle ? 'animate-spin' : ''}`} />
+                    <span>{syncingGoogle ? 'Syncing...' : 'Sync with Google Calendar'}</span>
+                  </button>
+                  
+                  {googleEvents.length > 0 && (
+                    <div className="text-sm text-gray-600">
+                      <p>Found {googleEvents.length} Google Calendar events this month</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-gray-600 mb-4">Connect your Google Calendar to sync events automatically</p>
+                  <ConnectGoogleCalendarButton />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -435,6 +599,49 @@ export function Calendar() {
         </div>
       )}
 
+      {/* Google Calendar Connection Modal */}
+      {showGoogleConnect && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Connect Google Calendar</h2>
+                <button
+                  onClick={() => setShowGoogleConnect(false)}
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+              
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                  <CalendarIcon className="w-8 h-8 text-blue-600" />
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Sync with Google Calendar</h3>
+                  <p className="text-gray-600 text-sm">
+                    Connect your Google Calendar to automatically sync events between your calendar and this app.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">What you'll get:</h4>
+                  <ul className="text-sm text-blue-700 space-y-1 text-left">
+                    <li>• View Google Calendar events in this app</li>
+                    <li>• Create events that sync to Google Calendar</li>
+                    <li>• Automatic two-way synchronization</li>
+                    <li>• Never miss an appointment again</li>
+                  </ul>
+                </div>
+
+                <ConnectGoogleCalendarButton />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Event/Reminder Details Modal */}
       {showEventDetails && (selectedEvent || selectedReminder) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
