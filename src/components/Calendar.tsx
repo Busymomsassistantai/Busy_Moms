@@ -657,7 +657,3 @@ export function Calendar() {
           </div>
         </div>
       )}
-
-
-
-}
