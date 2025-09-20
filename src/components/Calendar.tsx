@@ -406,14 +406,7 @@ export function Calendar() {
               <div className="space-y-2 text-sm text-gray-600">
                 <p>• Click any day to create a new event</p>
                 <p>• Click on events or reminders to edit them</p>
-                <p>• Use the WhatsApp integration for quick imports</p>
               </div>
-              <button
-                onClick={() => setShowWhatsAppForm(true)}
-                className="w-full mt-3 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-xl py-3 px-4 font-medium hover:shadow-lg transition-all"
-              >
-                Import from WhatsApp
-              </button>
             </div>
           </div>
         </div>
