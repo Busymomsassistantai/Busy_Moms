@@ -99,6 +99,29 @@ export class GoogleCalendarService {
     this.ready = !!(FUNCTIONS_BASE || SUPABASE_URL);
     const { data: { session } } = await supabase.auth.getSession();
     this.signedIn = !!session?.access_token;
+    
+    // Also check if we have Google tokens stored
+    if (this.signedIn && session?.user?.id) {
+      try {
+        const { data: tokenData } = await supabase
+          .from('google_tokens')
+          .select('access_token, expiry_ts')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        if (tokenData?.access_token) {
+          const expiry = new Date(tokenData.expiry_ts);
+          const now = new Date();
+          this.signedIn = now < expiry; // Only consider signed in if token is not expired
+        } else {
+          this.signedIn = false;
+        }
+      } catch (error) {
+        console.error('Error checking Google tokens:', error);
+        this.signedIn = false;
+      }
+    }
+    
     console.info('[GoogleCalendar] initialize => ready:', this.ready, 'signedIn:', this.signedIn);
   }
 
@@ -110,9 +133,37 @@ export class GoogleCalendarService {
   async signIn(): Promise<void> {
     if (!this.ready) await this.initialize();
     const { data: { session } } = await supabase.auth.getSession();
-    this.signedIn = !!session?.access_token;
-    if (!this.signedIn) {
+    
+    if (!session?.access_token || !session?.user?.id) {
       throw new Error('Please sign into the app first (no Supabase session found).');
+    }
+    
+    // Check if we have valid Google tokens
+    try {
+      const { data: tokenData } = await supabase
+        .from('google_tokens')
+        .select('access_token, expiry_ts, refresh_token')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      if (!tokenData?.access_token) {
+        this.signedIn = false;
+        throw new Error('Google Calendar not connected. Please connect your Google Calendar first.');
+      }
+      
+      const expiry = new Date(tokenData.expiry_ts);
+      const now = new Date();
+      
+      if (now >= expiry && !tokenData.refresh_token) {
+        this.signedIn = false;
+        throw new Error('Google Calendar connection expired. Please reconnect your Google Calendar.');
+      }
+      
+      this.signedIn = true;
+      console.log('✅ Google Calendar authentication verified');
+    } catch (error) {
+      this.signedIn = false;
+      throw error;
     }
   }
 
@@ -136,11 +187,13 @@ export class GoogleCalendarService {
 
   async listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
     if (!this.ready) await this.initialize();
+    if (!this.signedIn) await this.signIn();
     return listUpcoming(maxResults);
   }
 
   async getEvents(params: GetEventsParams = {}): Promise<GoogleCalendarEvent[]> {
     if (!this.ready) await this.initialize();
+    if (!this.signedIn) await this.signIn();
     return getEvents(params);
   }
 

@@ -132,13 +132,25 @@ export function Calendar() {
 
   // Check Google Calendar connection status
   useEffect(() => {
-    checkGoogleConnection();
-  }, []);
+    if (user?.id) {
+      checkGoogleConnection();
+    }
+  }, [user?.id]);
 
   const checkGoogleConnection = async () => {
+    if (!user?.id) return;
+    
     try {
       await googleCalendarService.initialize();
-      setIsGoogleConnected(googleCalendarService.isSignedIn());
+      const isSignedIn = googleCalendarService.isSignedIn();
+      console.log('🔍 Google Calendar connection status:', isSignedIn);
+      setIsGoogleConnected(isSignedIn);
+      
+      // If connected, automatically sync events for current month
+      if (isSignedIn) {
+        console.log('🔄 Auto-syncing Google Calendar events...');
+        await syncWithGoogleCalendar();
+      }
     } catch (error) {
       console.error('Error checking Google Calendar connection:', error);
       setIsGoogleConnected(false);
@@ -146,16 +158,30 @@ export function Calendar() {
   };
 
   const syncWithGoogleCalendar = async () => {
-    if (!isGoogleConnected) {
+    if (!user?.id) {
+      setError('Please sign in to sync with Google Calendar');
+      return;
+    }
+
+    // Always try to initialize and check connection
+    try {
+      await googleCalendarService.initialize();
+      await googleCalendarService.signIn();
+      setIsGoogleConnected(true);
+    } catch (error) {
+      console.error('Google Calendar connection failed:', error);
       setShowGoogleConnect(true);
       return;
     }
 
     setSyncingGoogle(true);
+    setError(null);
     try {
       // Get Google Calendar events for the current month
       const timeMin = monthStart.toISOString();
       const timeMax = monthEnd.toISOString();
+      
+      console.log('🔄 Syncing Google Calendar events from', timeMin, 'to', timeMax);
       
       const events = await googleCalendarService.getEvents({
         timeMin,
@@ -163,14 +189,17 @@ export function Calendar() {
         maxResults: 100
       });
 
+      console.log('📅 Retrieved', events.length, 'Google Calendar events');
       setGoogleEvents(events);
       
-      // Optionally sync Google events to local database
-      // This would require additional logic to avoid duplicates
+      if (events.length === 0) {
+        setError('No Google Calendar events found for this month. Make sure you have events in your Google Calendar.');
+      }
       
     } catch (error) {
       console.error('Error syncing with Google Calendar:', error);
-      setError('Failed to sync with Google Calendar. Please try again.');
+      setError(`Failed to sync with Google Calendar: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your connection and try again.`);
+      setIsGoogleConnected(false);
     } finally {
       setSyncingGoogle(false);
     }
@@ -516,12 +545,32 @@ export function Calendar() {
             </div>
 
             {/* Instructions */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
               <h3 className="font-semibold text-gray-900 mb-2">Quick Actions</h3>
               <div className="space-y-2 text-sm text-gray-600">
                 <p>• Click any day to create a new event</p>
                 <p>• Click on events or reminders to edit them</p>
               </div>
+              
+              {/* Error Display */}
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Info className="w-4 h-4 text-red-500" />
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Loading Display */}
+              {loading && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                    <p className="text-sm text-blue-700">Loading calendar data...</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Google Calendar Integration */}
