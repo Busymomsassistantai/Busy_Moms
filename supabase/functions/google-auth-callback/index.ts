@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
-import { verify } from "npm:djwt@3.0.2";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import * as jose from "npm:jose@5.2.0";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -75,7 +75,8 @@ Deno.serve(async (req: Request) => {
     
     console.log('✅ Received auth code and state');
 
-    const { payload } = await verify(state, stateSecret, "HS256").catch((e) => {
+    const secret = new TextEncoder().encode(stateSecret);
+    const { payload } = await jose.jwtVerify(state, secret).catch((e) => {
       console.error('❌ State verification failed:', e);
       return { payload: null as any };
     });

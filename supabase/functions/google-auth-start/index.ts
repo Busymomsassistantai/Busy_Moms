@@ -1,5 +1,4 @@
 // deno-lint-ignore-file no-explicit-any
-import { create, getNumericDate } from "npm:djwt@3.0.2";
 import * as jose from "npm:jose@5.2.0";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -31,13 +30,17 @@ async function getUserFromAuthHeader(authHeader?: string) {
   return { user_id };
 }
 
-function buildStateJWT(user_id: string, nonce: string) {
+async function buildStateJWT(user_id: string, nonce: string) {
   const stateSecret = Deno.env.get('STATE_SECRET');
   if (!stateSecret) throw new Error('STATE_SECRET not configured');
   
-  const header = { alg: "HS256", typ: "JWT" };
-  const payload = { user_id, nonce, iat: getNumericDate(0), exp: getNumericDate(600) };
-  return create(header, payload, stateSecret);
+  const secret = new TextEncoder().encode(stateSecret);
+  
+  return await new jose.SignJWT({ user_id, nonce })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime('10m')
+    .sign(secret);
 }
 
 Deno.serve(async (req: Request) => {
