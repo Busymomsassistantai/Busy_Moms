@@ -21,19 +21,26 @@ async function fetchSupabaseJWKS() {
 }
 
 async function getUserFromAuthHeader(authHeader?: string) {
-  if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Missing or invalid Authorization header");
+  }
+  
   const token = authHeader.slice("Bearer ".length);
-  const jwks = await fetchSupabaseJWKS();
-  const { payload } = await jose.jwtVerify(token, jose.createLocalJWKSet(jwks));
-  const user_id = payload.sub as string | undefined;
-  if (!user_id) throw new Error("Invalid token payload: no sub");
-  return { user_id };
+  
+  try {
+    const jwks = await fetchSupabaseJWKS();
+    const { payload } = await jose.jwtVerify(token, jose.createLocalJWKSet(jwks));
+    const user_id = payload.sub as string | undefined;
+    if (!user_id) throw new Error("Invalid token payload: no sub");
+    return { user_id };
+  } catch (error) {
+    console.error('JWT verification failed:', error);
+    throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Invalid token'}`);
+  }
 }
 
 async function buildStateJWT(user_id: string, nonce: string) {
-  const stateSecret = Deno.env.get('STATE_SECRET');
-  if (!stateSecret) throw new Error('STATE_SECRET not configured');
-  
+  const stateSecret = Deno.env.get('STATE_SECRET') || 'default-secret-for-development';
   const secret = new TextEncoder().encode(stateSecret);
   
   return await new jose.SignJWT({ user_id, nonce })
@@ -44,6 +51,8 @@ async function buildStateJWT(user_id: string, nonce: string) {
 }
 
 Deno.serve(async (req: Request) => {
+  console.log(`📥 Google auth start request: ${req.method} ${req.url}`);
+  
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -54,14 +63,13 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Check required environment variables
-    const appOrigin = Deno.env.get('APP_ORIGIN') || '*';
     const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
     
     if (!googleClientId) {
       console.error('❌ GOOGLE_CLIENT_ID not configured');
       return new Response(JSON.stringify({ 
         error: "Google Calendar not configured",
-        details: "GOOGLE_CLIENT_ID environment variable is missing"
+        details: "GOOGLE_CLIENT_ID environment variable is missing. Please configure this in your Supabase project settings."
       }), {
         status: 500,
         headers: {
@@ -73,15 +81,33 @@ Deno.serve(async (req: Request) => {
 
     console.log('🔍 Starting Google Calendar auth flow...');
     
-    const { user_id } = await getUserFromAuthHeader(req.headers.get("Authorization") || undefined);
-    console.log('✅ User authenticated:', user_id);
+    // Get user from auth header
+    let user_id: string;
+    try {
+      const authResult = await getUserFromAuthHeader(req.headers.get("Authorization") || undefined);
+      user_id = authResult.user_id;
+      console.log('✅ User authenticated:', user_id);
+    } catch (error) {
+      console.error('❌ Authentication failed:', error);
+      return new Response(JSON.stringify({ 
+        error: "Authentication required",
+        details: error instanceof Error ? error.message : "Please sign in first"
+      }), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
     
     const url = new URL(req.url);
-    const returnTo = url.searchParams.get("return_to") || appOrigin;
+    const returnTo = url.searchParams.get("return_to") || req.headers.get("origin") || "http://localhost:5173";
 
     const nonce = crypto.randomUUID();
     const state = await buildStateJWT(user_id, nonce);
     
+    // Use the current request URL to build the redirect URI
     const redirectUri = `${url.origin}/functions/v1/google-auth-callback`;
     console.log('🔗 Redirect URI:', redirectUri);
 
@@ -112,7 +138,7 @@ Deno.serve(async (req: Request) => {
       error: e instanceof Error ? e.message : 'Unknown error',
       details: 'Check server logs for more information'
     }), { 
-      status: 400, 
+      status: 500, 
       headers: { 
         "Content-Type": "application/json", 
         ...corsHeaders

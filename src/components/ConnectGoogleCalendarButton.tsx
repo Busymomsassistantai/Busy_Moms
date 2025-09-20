@@ -21,47 +21,36 @@ export function ConnectGoogleCalendarButton() {
 
       const return_to = window.location.origin;
       
-      // Try multiple endpoint candidates
-      const candidates = [
-        `${FUNCTIONS_BASE}/google-auth-start`,
-        `${SUPABASE_URL}/functions/v1/google-auth-start`,
-        '/.netlify/functions/google-auth-start',
-        '/google-auth-start',
-        '/api/google-auth-start'
-      ].filter(Boolean);
-
-      let authUrl: string | null = null;
-      const tried: string[] = [];
-
-      for (const url of candidates) {
-        try {
-          console.log(`🔍 Trying Google auth endpoint: ${url}`);
-          const res = await fetch(`${url}?return_to=${encodeURIComponent(return_to)}`, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            redirect: "manual",
-          });
-          
-          tried.push(`${url} -> ${res.status}`);
-          
-          if (res.status === 302) {
-            const loc = res.headers.get("Location");
-            if (loc) {
-              authUrl = loc;
-              console.log(`✅ Found auth URL: ${authUrl}`);
-              break;
-            }
-          }
-        } catch (e) {
-          tried.push(`${url} -> ${e instanceof Error ? e.message : String(e)}`);
-          continue;
+      // Use the Supabase functions endpoint directly
+      const authUrl = `${SUPABASE_URL}/functions/v1/google-auth-start?return_to=${encodeURIComponent(return_to)}`;
+      
+      console.log(`🔍 Starting Google auth at: ${authUrl}`);
+      
+      // Make a request to get the redirect URL
+      const res = await fetch(authUrl, {
+        method: "GET",
+        headers: { 
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        redirect: "manual",
+      });
+      
+      console.log(`📡 Auth endpoint response: ${res.status}`);
+      
+      if (res.status === 302) {
+        const redirectUrl = res.headers.get("Location");
+        if (redirectUrl) {
+          console.log(`✅ Redirecting to Google OAuth: ${redirectUrl}`);
+          window.location.href = redirectUrl;
+        } else {
+          throw new Error("No redirect URL received from auth endpoint");
         }
-      }
-
-      if (authUrl) {
-        window.location.href = authUrl;
       } else {
-        throw new Error(`Google auth endpoint not available. Tried: ${tried.join(' | ')}`);
+        // Try to get error details from response
+        const errorText = await res.text().catch(() => 'Unknown error');
+        console.error(`❌ Auth endpoint error: ${res.status} - ${errorText}`);
+        throw new Error(`Authentication failed: ${res.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('❌ Google Calendar connection failed:', error);
@@ -76,6 +65,9 @@ export function ConnectGoogleCalendarButton() {
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-700">{error}</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Make sure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in your Supabase project settings.
+          </p>
         </div>
       )}
       
