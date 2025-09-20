@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 import { EventForm } from './forms/EventForm';
-import { WhatsAppIntegration } from './WhatsAppIntegration';
+//import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { supabase } from '../lib/supabase';
 import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -658,15 +658,6 @@ export function Calendar() {
         </div>
       )}
 
-      {/* WhatsApp modal */}
-      {showWhatsAppForm && (
-        <WhatsAppIntegration
-          isOpen={showWhatsAppForm}
-          onClose={() => setShowWhatsAppForm(false)}
-          onEventCreated={handleEventSaved}
-        />
-      )}
-    </div>
-    </>
+
   );
 }
