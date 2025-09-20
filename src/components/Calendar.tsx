@@ -132,6 +132,27 @@ export function Calendar() {
 
   // Check Google Calendar connection status
   useEffect(() => {
+    // Check for Google auth callback parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleStatus = urlParams.get('google');
+    
+    if (googleStatus === 'connected') {
+      console.log('✅ Google Calendar connected successfully');
+      setIsGoogleConnected(true);
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Auto-sync after connection
+      setTimeout(() => {
+        syncWithGoogleCalendar();
+      }, 1000);
+    } else if (googleStatus === 'error') {
+      const reason = urlParams.get('reason');
+      console.error('❌ Google Calendar connection failed:', reason);
+      setError(`Google Calendar connection failed: ${reason || 'Unknown error'}`);
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     if (user?.id) {
       checkGoogleConnection();
     }
@@ -613,12 +634,16 @@ export function Calendar() {
                       <p>Found {googleEvents.length} Google Calendar events this month</p>
                     </div>
                   )}
+                  
+                  <button
+                    onClick={() => setShowGoogleConnect(true)}
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Reconnect Google Calendar
+                  </button>
                 </div>
               ) : (
-                <div className="text-center">
-                  <p className="text-gray-600 mb-4">Connect your Google Calendar to sync events automatically</p>
-                  <ConnectGoogleCalendarButton />
-                </div>
+                <ConnectGoogleCalendarButton />
               )}
             </div>
           </div>
