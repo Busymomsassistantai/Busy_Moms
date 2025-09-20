@@ -1,6 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "npm:@supabase/supabase-js@2";
-import * as jose from "npm:jose@5.2.0";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -43,6 +42,29 @@ async function exchangeCodeForTokens(code: string, redirect_uri: string) {
   return await res.json();
 }
 
+function verifyState(state: string): { user_id: string } | null {
+  try {
+    const stateSecret = Deno.env.get('STATE_SECRET') || 'default-secret-for-development';
+    const decoded = JSON.parse(atob(state));
+    
+    // Verify the state contains required fields and secret matches
+    if (!decoded.user_id || !decoded.secret || decoded.secret !== stateSecret) {
+      return null;
+    }
+    
+    // Check if state is not too old (10 minutes)
+    const age = Date.now() - (decoded.timestamp || 0);
+    if (age > 10 * 60 * 1000) {
+      return null;
+    }
+    
+    return { user_id: decoded.user_id };
+  } catch (error) {
+    console.error('State verification failed:', error);
+    return null;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -75,14 +97,13 @@ Deno.serve(async (req: Request) => {
     
     console.log('✅ Received auth code and state');
 
-    const secret = new TextEncoder().encode(stateSecret);
-    const { payload } = await jose.jwtVerify(state, secret).catch((e) => {
-      console.error('❌ State verification failed:', e);
-      return { payload: null as any };
-    });
-    if (!payload?.user_id) return bad("Invalid state");
+    const stateResult = verifyState(state);
+    if (!stateResult?.user_id) {
+      console.error('❌ State verification failed');
+      return bad("Invalid or expired state");
+    }
     
-    console.log('✅ State verified for user:', payload.user_id);
+    console.log('✅ State verified for user:', stateResult.user_id);
 
     const redirect_uri = `${url.origin}/functions/v1/google-auth-callback`;
     console.log('🔗 Using redirect URI:', redirect_uri);
@@ -96,7 +117,7 @@ Deno.serve(async (req: Request) => {
     const expiry_ts = new Date(Date.now() + (expires_in ?? 3600) * 1000).toISOString();
 
     const upsert = await supabase.from("google_tokens").upsert({
-      user_id: payload.user_id,
+      user_id: stateResult.user_id,
       provider_user_id: null,
       access_token,
       refresh_token: refresh_token ?? null,
