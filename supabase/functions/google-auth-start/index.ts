@@ -1,41 +1,80 @@
 // deno-lint-ignore-file no-explicit-any
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
-const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID")!;
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const APP_ORIGIN = Deno.env.get("APP_ORIGIN")!;        // e.g., https://chic-duckanoo-b6e66f.netlify.app
-const STATE_SECRET = Deno.env.get("STATE_SECRET")!;    // reserved for future validation
+const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const SCOPES = ["https://www.googleapis.com/auth/calendar"].join(" ");
 
-function b64url(input: string) {
-  return btoa(input).replaceAll("+","-").replaceAll("/","_").replaceAll("=","");
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Expose-Headers": "Location", // ✅ expose redirect header to the browser
+};
 
-serve(async (req) => {
-  // Support both GET (?return_to=) and POST {return_to}
-  let return_to: string | null = null;
-  if (req.method === "GET") {
-    const u = new URL(req.url);
-    return_to = u.searchParams.get("return_to");
-  } else if (req.method === "POST") {
-    const body = await req.json().catch(() => ({}));
-    return_to = body?.return_to ?? null;
-  } else {
-    return new Response("Method Not Allowed", { status: 405 });
+async function getUserFromAuthHeader(authHeader?: string) {
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Missing or invalid Authorization header");
   }
 
-  const state = b64url(JSON.stringify({ t: Date.now(), rt: return_to ?? APP_ORIGIN }));
-  const redirect_uri = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/google-auth-callback`;
-  const scope = encodeURIComponent("openid email https://www.googleapis.com/auth/calendar");
+  const token = authHeader.slice("Bearer ".length);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase configuration missing");
 
-  const authUrl =
-    `https://accounts.google.com/o/oauth2/v2/auth` +
-    `?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
-    `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
-    `&response_type=code` +
-    `&scope=${scope}` +
-    `&access_type=offline&prompt=consent&include_granted_scopes=true` +
-    `&state=${state}`;
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) throw new Error(`Invalid token: ${error?.message || "User not found"}`);
+  return { user_id: user.id };
+}
 
-  // Pure 302 with Location; the client navigates via window.location.href
-  return new Response(null, { status: 302, headers: new Headers({ "Location": authUrl }) });
+function buildState(user_id: string, nonce: string) {
+  const stateData = { user_id, nonce, timestamp: Date.now(), secret: Deno.env.get("STATE_SECRET") || "dev" };
+  return btoa(JSON.stringify(stateData));
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  try {
+    const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID");
+    if (!googleClientId) {
+      return new Response(JSON.stringify({
+        error: "Google Calendar not configured",
+        details: "GOOGLE_CLIENT_ID environment variable is missing.",
+      }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    // Validate auth & get user ID
+    const { user_id } = await getUserFromAuthHeader(req.headers.get("Authorization") || undefined);
+
+    const return_to = new URL(req.url).searchParams.get("return_to") || Deno.env.get("APP_ORIGIN")!;
+    const nonce = crypto.randomUUID();
+    const state = buildState(user_id, nonce);
+
+    const params = new URLSearchParams({
+      client_id: googleClientId,
+      redirect_uri: `${Deno.env.get("SUPABASE_URL")!.replace(/\/+$/, "")}/functions/v1/google-auth-callback`,
+      response_type: "code",
+      scope: SCOPES,
+      access_type: "offline",
+      include_granted_scopes: "true",
+      prompt: "consent",
+      state,
+    });
+
+    const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
+
+    // 302 with Location + CORS headers (Location is exposed above)
+    return new Response(null, {
+      status: 302,
+      headers: { Location: authUrl, ...corsHeaders },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({
+      error: e instanceof Error ? e.message : "Unknown error",
+      details: "Check server logs for more information",
+    }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+  }
 });
