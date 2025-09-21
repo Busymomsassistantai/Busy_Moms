@@ -19,6 +19,13 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import * as jose from "npm:jose@5.2.0";
+// Add near the top (after imports)
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,6 +56,25 @@ async function refreshGoogleToken(refreshToken: string, clientId: string, client
       grant_type: 'refresh_token',
     }),
   });
+// Inside your request handler, before other actions return,
+// add this branch to support a safe connection status check:
+if (action === "isConnected") {
+  const userId = body?.userId ?? body?.uid ?? body?.user_id ?? null;
+  if (!userId) return json({ connected: false });
+
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+
+  const { data, error } = await supabase
+    .from("google_tokens")
+    .select("expiry_ts")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return json({ connected: !!data && !error, expiry_ts: data?.expiry_ts ?? null });
+}
 
   if (!response.ok) {
     throw new Error(`Token refresh failed: ${response.status} ${response.statusText}`);
