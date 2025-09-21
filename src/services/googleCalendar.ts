@@ -219,4 +219,30 @@ export class GoogleCalendarService {
       summary: event.title,
       description: undefined,
       location: event.location || undefined,
-      sta
+      start: event.start_time
+        ? { dateTime: toDateTime(event.date, event.start_time) }
+        : { date: event.date },
+      end: event.end_time
+        ? { dateTime: toDateTime(event.date, event.end_time) }
+        : { date: event.date }, // all-day fallback
+      attendees: Array.isArray(event.participants)
+        ? event.participants.filter(Boolean).map(email => ({ email: String(email) }))
+        : undefined,
+    };
+
+    const created: any = await insertEvent(googleEvent);
+    const id = created?.id ?? created?.event?.id ?? created?.data?.id ?? "";
+    return {
+      id: id ? String(id) : "",
+      externalId: id ? String(id) : undefined,
+      provider: "google",
+      raw: created,
+    };
+  }
+}
+
+/** Instance expected by Calendar.tsx */
+export const googleCalendarService = new GoogleCalendarService();
+
+// (Optional) Backward-compat alias if you also want `googleCalendar`
+export const googleCalendar = googleCalendarService;
