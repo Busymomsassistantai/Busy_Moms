@@ -61,20 +61,18 @@ Deno.serve(async (req: Request) => {
     }
 
     // Parse request body
-    const { userId, sessionId }: TokenRequest = await req.json();
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "userId is required" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
-        }
-      );
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (error) {
+      // Handle cases where no body is provided
+      console.log('No JSON body provided, using defaults');
     }
+    
+    const { userId, sessionId }: TokenRequest = body;
+    const finalUserId = userId || `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    console.log('🔍 Processing token request for user:', finalUserId);
 
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');

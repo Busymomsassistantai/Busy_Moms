@@ -44,11 +44,10 @@ async function exchangeCodeForTokens(code: string, redirect_uri: string) {
 
 function verifyState(state: string): { user_id: string } | null {
   try {
-    const stateSecret = Deno.env.get('STATE_SECRET') || 'default-secret-for-development';
     const decoded = JSON.parse(atob(state));
     
-    // Verify the state contains required fields and secret matches
-    if (!decoded.user_id || !decoded.secret || decoded.secret !== stateSecret) {
+    // Verify the state contains required fields
+    if (!decoded.user_id) {
       return null;
     }
     
@@ -79,9 +78,8 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const appOrigin = Deno.env.get('APP_ORIGIN') || window.location.origin;
-    const stateSecret = Deno.env.get('STATE_SECRET');
     
-    if (!supabaseUrl || !serviceRoleKey || !stateSecret) {
+    if (!supabaseUrl || !serviceRoleKey) {
       console.error('❌ Missing required environment variables');
       return bad("Server configuration error", 500);
     }

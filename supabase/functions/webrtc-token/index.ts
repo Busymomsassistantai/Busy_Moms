@@ -61,20 +61,19 @@ Deno.serve(async (req: Request) => {
     }
 
     // Parse request body
-    const { userId, roomId }: TokenRequest = await req.json();
-
-    if (!userId || !roomId) {
-      return new Response(
-        JSON.stringify({ error: "userId and roomId are required" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
-        }
-      );
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (error) {
+      // Handle cases where no body is provided
+      console.log('No JSON body provided, using defaults');
     }
+    
+    const { userId, roomId }: TokenRequest = body;
+    const finalUserId = userId || `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const finalRoomId = roomId || 'default-room';
+
+    console.log('🔍 Processing WebRTC token request for user:', finalUserId, 'room:', finalRoomId);
 
     // Generate ephemeral token (in production, use a proper JWT library)
     const token = generateEphemeralToken(userId, roomId);

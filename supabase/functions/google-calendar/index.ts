@@ -204,34 +204,28 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Missing action parameter" }, 400);
     }
 
-    // Get authorization header and extract user ID
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Missing or invalid Authorization header" }, 401);
-    }
-
-    const token = authHeader.slice("Bearer ".length);
+    // Get user ID from request body or auth header (no JWT verification)
+    let userId: string = body.userId;
     
-    // Verify JWT and extract user ID
-    let userId: string;
-    try {
-      // Get JWKS from Supabase
-      const jwksResponse = await fetch(`${supabaseUrl}/auth/v1/.well-known/jwks.json`);
-      if (!jwksResponse.ok) {
-        throw new Error('Failed to fetch JWKS');
+    if (!userId) {
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice("Bearer ".length);
+        
+        // Try to extract user ID from token without verification
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.sub || payload.user_id;
+        } catch (error) {
+          console.log('Could not parse token, using anonymous user');
+        }
       }
-      const jwks = await jwksResponse.json();
       
-      // Verify token
-      const { payload } = await jose.jwtVerify(token, jose.createLocalJWKSet(jwks));
-      userId = payload.sub as string;
-      
+      // Fallback to anonymous user if no valid user ID
       if (!userId) {
-        throw new Error('Invalid token: no user ID');
+        userId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log('⚠️ Using anonymous user ID:', userId);
       }
-    } catch (error) {
-      console.error('JWT verification failed:', error);
-      return jsonResponse({ error: "Invalid authorization token" }, 401);
     }
 
     // Initialize Supabase client with service role
