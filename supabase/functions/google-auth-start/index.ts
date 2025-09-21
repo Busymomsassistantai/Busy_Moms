@@ -1,61 +1,97 @@
 // deno-lint-ignore-file no-explicit-any
-import { createClient } from "npm:@supabase/supabase-js@2";
+// Google OAuth "start" — builds the consent URL and 302 redirects the browser to Google.
+// Key fixes:
+//  - Use esm.sh import (Deno-friendly) instead of `npm:`
+//  - Verify user with ANON key via supabase.auth.getUser(access_token)
+//  - Robust CORS + exposed Location header for fetch(..., { redirect: "manual" })
+//  - Safer fallbacks for APP_ORIGIN / return_to
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+// Scope just for Calendar; you can add "openid email profile" if you also use user info.
 const SCOPES = ["https://www.googleapis.com/auth/calendar"].join(" ");
 
-const corsHeaders = {
+const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Expose-Headers": "Location", // ✅ expose redirect header to the browser
+  "Access-Control-Expose-Headers": "Location", // allow client to read the redirect target
 };
 
-async function getUserFromAuthHeader(authHeader?: string) {
+// Minimal helper — we don’t need SR to verify a JWT
+async function getUserIdFromAuthHeader(authHeader?: string): Promise<string> {
   if (!authHeader?.startsWith("Bearer ")) {
     throw new Error("Missing or invalid Authorization header");
   }
+  const accessToken = authHeader.slice("Bearer ".length);
 
-  const token = authHeader.slice("Bearer ".length);
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase configuration missing");
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error("Supabase URL or ANON key not configured");
+  }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) throw new Error(`Invalid token: ${error?.message || "User not found"}`);
-  return { user_id: user.id };
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false },
+  });
+  const { data, error } = await supabase.auth.getUser(accessToken);
+  if (error || !data?.user?.id) {
+    throw new Error(`Invalid access token: ${error?.message ?? "user not found"}`);
+  }
+  return data.user.id;
 }
 
-function buildState(user_id: string, nonce: string) {
-  const stateData = { user_id, nonce, timestamp: Date.now(), secret: Deno.env.get("STATE_SECRET") || "dev" };
-  return btoa(JSON.stringify(stateData));
+function b64url(obj: unknown): string {
+  const json = JSON.stringify(obj);
+  return btoa(json).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
 Deno.serve(async (req: Request) => {
+  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID");
-    if (!googleClientId) {
-      return new Response(JSON.stringify({
-        error: "Google Calendar not configured",
-        details: "GOOGLE_CLIENT_ID environment variable is missing.",
-      }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
+    const APP_ORIGIN = Deno.env.get("APP_ORIGIN") || ""; // optional, used as a fallback
+
+    if (!SUPABASE_URL) throw new Error("SUPABASE_URL is not set");
+    if (!GOOGLE_CLIENT_ID) throw new Error("GOOGLE_CLIENT_ID is not set");
+
+    // Accept both GET ?return_to= and POST {return_to}
+    let return_to: string | null = null;
+    if (req.method === "GET") {
+      const u = new URL(req.url);
+      return_to = u.searchParams.get("return_to");
+    } else if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      return_to = body?.return_to ?? null;
+    } else {
+      return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
     }
 
-    // Validate auth & get user ID
-    const { user_id } = await getUserFromAuthHeader(req.headers.get("Authorization") || undefined);
+    // Validate the caller (your app) and extract user id from Supabase access token
+    const user_id = await getUserIdFromAuthHeader(req.headers.get("Authorization") || undefined);
 
-    const return_to = new URL(req.url).searchParams.get("return_to") || Deno.env.get("APP_ORIGIN")!;
-    const nonce = crypto.randomUUID();
-    const state = buildState(user_id, nonce);
+    // `return_to` is where your callback will bounce the browser after finishing
+    const rt = return_to || APP_ORIGIN || new URL(req.url).origin;
 
+    const state = b64url({
+      user_id,
+      rt,
+      ts: Date.now(),
+      v: 1,
+      // optional: include a hash/nonce if you want extra validation in the callback
+      // n: crypto.randomUUID(),
+    });
+
+    const redirect_uri = `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/google-auth-callback`;
     const params = new URLSearchParams({
-      client_id: googleClientId,
-      redirect_uri: `${Deno.env.get("SUPABASE_URL")!.replace(/\/+$/, "")}/functions/v1/google-auth-callback`,
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri,
       response_type: "code",
       scope: SCOPES,
       access_type: "offline",
@@ -66,15 +102,17 @@ Deno.serve(async (req: Request) => {
 
     const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
 
-    // 302 with Location + CORS headers (Location is exposed above)
+    // 302 to Google; client can read Location because we expose the header
     return new Response(null, {
       status: 302,
       headers: { Location: authUrl, ...corsHeaders },
     });
   } catch (e) {
-    return new Response(JSON.stringify({
-      error: e instanceof Error ? e.message : "Unknown error",
-      details: "Check server logs for more information",
-    }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    // Surface a precise error to the browser (makes frontend debugging sane)
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return new Response(JSON.stringify({ error: `google-oauth-start: ${msg}` }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 });
