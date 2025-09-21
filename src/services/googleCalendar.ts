@@ -1,266 +1,51 @@
-import { supabase } from "../lib/supabase";
-import { ICalendarProvider, CalendarEventInput, CalendarCreateResult } from "./calendarProvider";
+// Service for Google Calendar calls via Supabase Edge Functions
+const CANDIDATE_BASES = [
+  `${import.meta.env.VITE_SUPABASE_URL?.replace(/\/+$/, "")}/functions/v1`,
+].filter(Boolean) as string[];
 
-const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(/\/+$/, "");
-const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "");
-
-/** Minimal Google Calendar types we use */
-export interface GoogleCalendarEvent {
-  id?: string;
-  summary?: string;
-  description?: string;
-  location?: string;
-  start?: { date?: string; dateTime?: string; timeZone?: string };
-  end?: { date?: string; dateTime?: string; timeZone?: string };
-  attendees?: Array<{ email: string; responseStatus?: string }>;
-  htmlLink?: string;
-}
-
-export interface GetEventsParams {
-  q?: string;
-  timeMin?: string; // RFC3339 string
-  timeMax?: string; // RFC3339 string
-  maxResults?: number;
-}
-
-/** Narrower event payload for inserts */
-type GoogleDateTime = { date?: string; dateTime?: string; timeZone?: string };
-type GoogleEventBody = {
-  summary?: string;
-  description?: string;
-  location?: string;
-  start?: GoogleDateTime;
-  end?: GoogleDateTime;
-  attendees?: Array<{ email: string }>;
-};
-
-/** ---- Low-level helpers that talk to your server/Edge Function ------------- */
-async function callCalendar(action: string, body: Record<string, unknown> = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Not signed in');
-
-  const candidates: string[] = [];
-  if (FUNCTIONS_BASE) {
-    candidates.push(
-      `${FUNCTIONS_BASE}/google-calendar`,
-      `${FUNCTIONS_BASE}/functions/v1/google-calendar`
-    );
-  }
-  if (SUPABASE_URL) {
-    candidates.push(`${SUPABASE_URL}/functions/v1/google-calendar`);
-  }
-  candidates.push('/.netlify/functions/google-calendar');
-  candidates.push('/google-calendar', '/api/google-calendar');
-
-  const tried: string[] = [];
-  for (const url of Array.from(new Set(candidates))) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ action, ...body }),
-      });
-      tried.push(`${url} -> ${res.status}`);
-      const ct = res.headers.get('content-type') || '';
-      if (!res.ok || !ct.includes('application/json')) continue;
-      return await res.json().catch(() => ({}));
-    } catch (e) {
-      tried.push(`${url} -> ${(e as Error).message}`);
-      continue;
-    }
-  }
-  throw new Error(`Google Calendar endpoint not reachable. Tried: ${tried.join(' | ')}`);
-}
-
-export async function listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
-  const data = await callCalendar('listUpcoming', { maxResults });
-  return (data.items as GoogleCalendarEvent[]) || [];
-}
-
-export async function getEvents(params: GetEventsParams = {}): Promise<GoogleCalendarEvent[]> {
-  const data = await callCalendar('getEvents', params);
-  return (data.items as GoogleCalendarEvent[]) || [];
-}
-
-export async function insertEvent(event: GoogleEventBody): Promise<unknown> {
-  const data = await callCalendar('insertEvent', { event });
-  return data;
-}
-
-/** ---- Service class used by UI components --------------------------------- */
 export class GoogleCalendarService {
+  private base!: string;
   private ready = false;
   private signedIn = false;
+  private connected = false;
 
   async initialize(): Promise<void> {
-    this.ready = !!(FUNCTIONS_BASE || SUPABASE_URL);
-    const { data: { session } } = await supabase.auth.getSession();
-    this.signedIn = !!session?.access_token;
-    
-    // Also check if we have Google tokens stored
-    if (this.signedIn && session?.user?.id) {
-      try {
-        const { data: tokenData } = await supabase
-          .from('google_tokens')
-          .select('access_token, expiry_ts')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (tokenData?.access_token) {
-          const expiry = new Date(tokenData.expiry_ts);
-          const now = new Date();
-          this.signedIn = now < expiry; // Only consider signed in if token is not expired
-        } else {
-          this.signedIn = false;
-        }
-      } catch (error) {
-        console.error('Error checking Google tokens:', error);
-        this.signedIn = false;
-      }
-    }
-    
-    console.info('[GoogleCalendar] initialize => ready:', this.ready, 'signedIn:', this.signedIn);
-  }
+    this.base = CANDIDATE_BASES[0];
+    this.ready = !!this.base;
 
-  /**
-   * For this implementation, Google authentication is mediated by your server/Edge Function
-   * using the Supabase user session. There is no separate gapi.signIn() on the client.
-   * This method exists so UI code calling `googleCalendarService.signIn()` does not break.
-   */
-  async signIn(): Promise<void> {
-    if (!this.ready) await this.initialize();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token || !session?.user?.id) {
-      throw new Error('Please sign into the app first (no Supabase session found).');
-    }
-    
-    // Check if we have valid Google tokens
+    // We don't read google_tokens from the browser (RLS). Just ask the server.
     try {
-      const { data: tokenData } = await supabase
-        .from('google_tokens')
-        .select('access_token, expiry_ts, refresh_token')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-      
-      if (!tokenData?.access_token) {
-        this.signedIn = false;
-        throw new Error('Google Calendar not connected. Please connect your Google Calendar first.');
-      }
-      
-      const expiry = new Date(tokenData.expiry_ts);
-      const now = new Date();
-      
-      if (now >= expiry && !tokenData.refresh_token) {
-        this.signedIn = false;
-        throw new Error('Google Calendar connection expired. Please reconnect your Google Calendar.');
-      }
-      
-      this.signedIn = true;
-      console.log('✅ Google Calendar authentication verified');
-    } catch (error) {
-      this.signedIn = false;
-      throw error;
+      const res = await fetch(`${this.base}/google-calendar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "isConnected" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      this.connected = !!json?.connected;
+    } catch {
+      this.connected = false;
     }
   }
 
-  /**
-   * Optional convenience: mark as signed out. If you add a server endpoint to revoke the
-   * Google refresh token, call it here before flipping the local state.
-   */
-  async signOut(): Promise<void> {
-    this.signedIn = false;
+  isReady() { return this.ready; }
+  isSignedIn() { return this.signedIn; } // kept for compatibility
+  isConnected() { return this.connected; }
+
+  // Generic helper for your existing actions
+  async call<T = unknown>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
+    const res = await fetch(`${this.base}/google-calendar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    if (!res.ok) throw new Error(`${action} failed: ${res.status}`);
+    return res.json();
   }
 
-  isAvailable(): boolean {
-    return !!(FUNCTIONS_BASE || SUPABASE_URL);
-  }
-  isReady(): boolean {
-    return this.ready;
-  }
-  isSignedIn(): boolean {
-    return this.signedIn;
-  }
-
-  async listUpcoming(maxResults = 10): Promise<GoogleCalendarEvent[]> {
-    if (!this.ready) await this.initialize();
-    if (!this.signedIn) await this.signIn();
-    return listUpcoming(maxResults);
-  }
-
-  async getEvents(params: GetEventsParams = {}): Promise<GoogleCalendarEvent[]> {
-    if (!this.ready) await this.initialize();
-    if (!this.signedIn) await this.signIn();
-    return getEvents(params);
-  }
-
-  async insertEvent(event: GoogleEventBody): Promise<unknown> {
-    if (!this.ready) await this.initialize();
-    return insertEvent(event);
-  }
+  // Example wrappers (optional)
+  listEvents(params: Record<string, unknown> = {}) { return this.call("listEvents", params); }
+  createEvent(event: unknown) { return this.call("createEvent", { event }); }
+  deleteEvent(id: string) { return this.call("deleteEvent", { id }); }
 }
 
-export const googleCalendarService = new GoogleCalendarService();
-
-/** ---- Provider to fit the generic calendar interface ---------------------- */
-export class GoogleCalendarProvider implements ICalendarProvider {
-  constructor(private svc: GoogleCalendarService) {}
-
-  isAvailable(): boolean | Promise<boolean> { return this.svc.isAvailable(); }
-
-  /**
-   * Create an event by mapping our local schema -> Google Calendar schema.
-   * - If start_time is provided, we create a timed event (30m default length).
-   * - If no start_time, we create an all-day event.
-   */
-  async createEvent(userId: string, event: CalendarEventInput): Promise<CalendarCreateResult> {
-    if (!this.svc.isReady() || !this.svc.isSignedIn()) {
-      await this.svc.initialize();
-      if (!this.svc.isSignedIn()) throw new Error('Please connect Google Calendar first.');
-    }
-
-    // Build start/end
-    let startDateTime: string | undefined;
-    let endDateTime: string | undefined;
-
-    if (event.start_time) {
-      startDateTime = `${event.date}T${event.start_time}`;
-      if (event.end_time) {
-        endDateTime = `${event.date}T${event.end_time}`;
-      } else {
-        const d = new Date(`${event.date}T${event.start_time}`);
-        if (!Number.isNaN(d.getTime())) {
-          d.setMinutes(d.getMinutes() + 30);
-          endDateTime = d.toISOString().slice(0, 19);
-        }
-      }
-    }
-
-    const googleEvent: GoogleEventBody = {
-      summary: event.title,
-      description: event.source === 'ai' ? 'Created by Sara' : undefined,
-      location: event.location || undefined,
-      start: startDateTime
-        ? { dateTime: startDateTime }
-        : { date: event.date },
-      end: endDateTime
-        ? { dateTime: endDateTime }
-        : (event.start_time ? { dateTime: `${event.date}T${event.start_time}` } : { date: event.date }),
-      attendees: Array.isArray(event.participants)
-        ? event.participants.filter(Boolean).map(e => ({ email: String(e) }))
-        : undefined,
-    };
-
-    const created: any = await this.svc.insertEvent(googleEvent);
-    const id = created?.id ?? created?.event?.id ?? created?.data?.id ?? '';
-    return {
-      id: id ? String(id) : '',
-      externalId: id ? String(id) : undefined,
-      provider: 'google',
-      raw: created,
-    };
-  }
-}
+export const googleCalendar = new GoogleCalendarService();
