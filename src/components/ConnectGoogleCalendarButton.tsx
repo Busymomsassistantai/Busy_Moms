@@ -1,47 +1,62 @@
 import { useState } from "react";
-import { Calendar, ExternalLink, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { supabase } from "../lib/supabase"; // ✅ correct path
 
-const FUNCTIONS_BASE = String(import.meta.env.VITE_FUNCTIONS_URL ?? "").replace(/\/+$/, "");
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "");
 
 export function ConnectGoogleCalendarButton() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSetupInstructions, setShowSetupInstructions] = useState(false);
 
   const startAuth = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      if (!SUPABASE_URL) {
+        throw new Error("Missing VITE_SUPABASE_URL");
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         throw new Error("Please sign in first");
       }
 
       const return_to = window.location.origin;
+      const startUrl = `${SUPABASE_URL}/functions/v1/google-auth-start?return_to=${encodeURIComponent(return_to)}`;
 
-      // Call your Edge Function (it will 302 to Google)
-      const authUrl = `${SUPABASE_URL}/functions/v1/google-auth-start?return_to=${encodeURIComponent(return_to)}`;
-      const res = await fetch(authUrl, {
+      // Try fetch with manual redirect so we can read the Location header
+      const res = await fetch(startUrl, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session.access_token}`, // Edge fn expects this
           "Content-Type": "application/json",
         },
-        redirect: "manual", // we want to read the Location header
+        redirect: "manual", // attempt to read Location header
       });
 
+      // Some browsers return an "opaqueredirect" (no status, no headers).
+      // In that case, just let the browser navigate to the start URL
+      // and let the server 302 us to Google.
+      // @ts-expect-error - type isn't in older TS lib dom
+      if (res.type === "opaqueredirect") {
+        window.location.href = startUrl;
+        return;
+      }
+
+      // If we got an explicit 302, try to use the Location header.
       if (res.status === 302) {
         const redirectUrl = res.headers.get("Location");
         if (redirectUrl) {
           window.location.href = redirectUrl;
           return;
         }
+        // No Location header exposed? Fall back to hard navigation.
+        window.location.href = startUrl;
+        return;
       }
 
-      // If we didn’t get a 302 with Location, try to surface a useful error
+      // Not a redirect; try to surface a helpful message.
       let errorMessage = `OAuth start failed: ${res.status}`;
       try {
         const data = await res.json();
@@ -52,7 +67,7 @@ export function ConnectGoogleCalendarButton() {
       }
       throw new Error(errorMessage);
     } catch (e: any) {
-      setError(e.message ?? String(e));
+      setError(e?.message ?? String(e));
       setLoading(false);
     }
   };
@@ -64,8 +79,9 @@ export function ConnectGoogleCalendarButton() {
       </button>
 
       {error && (
-        <div style={{ color: "crimson", marginTop: 8 }}>
-          {error}
+        <div style={{ color: "crimson", marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+          <AlertTriangle size={16} />
+          <span>{error}</span>
         </div>
       )}
     </div>
