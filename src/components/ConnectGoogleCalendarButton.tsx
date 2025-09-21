@@ -47,20 +47,30 @@ export function ConnectGoogleCalendarButton() {
         } else {
           throw new Error("No redirect URL received from auth endpoint");
         }
-      } else if (res.status === 500) {
-        // Check if it's a configuration error
-        const errorData = await res.json().catch(() => ({}));
-        if (errorData.details?.includes('GOOGLE_CLIENT_ID')) {
-          setShowSetupInstructions(true);
-          throw new Error("Google Calendar integration not configured. Please set up Google OAuth credentials.");
-        } else {
-          throw new Error(`Server error: ${errorData.error || 'Unknown error'}`);
-        }
       } else {
-        // Try to get error details from response
-        const errorText = await res.text().catch(() => 'Unknown error');
-        console.error(`❌ Auth endpoint error: ${res.status} - ${errorText}`);
-        throw new Error(`Authentication failed: ${res.status} - ${errorText}`);
+        // Handle other error responses
+        let errorMessage = `Authentication failed: ${res.status}`;
+        try {
+          const errorData = await res.json();
+          if (errorData.details?.includes('GOOGLE_CLIENT_ID')) {
+            setShowSetupInstructions(true);
+            errorMessage = "Google Calendar integration not configured. Please set up Google OAuth credentials.";
+          } else {
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          }
+        } catch {
+          // If JSON parsing fails, try text
+          try {
+            const errorText = await res.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch {
+            // Use default error message
+          }
+        }
+        console.error(`❌ Auth endpoint error: ${res.status} - ${errorMessage}`);
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('❌ Google Calendar connection failed:', error);
@@ -96,18 +106,26 @@ export function ConnectGoogleCalendarButton() {
             <li>Create a new project or select an existing one</li>
             <li>Enable the Google Calendar API</li>
             <li>Go to "Credentials" and create OAuth 2.0 Client IDs</li>
-            <li>Add your domain to authorized origins</li>
+            <li>Add your domain to authorized origins and redirect URIs:
+              <ul className="ml-4 mt-1 space-y-1 text-xs">
+                <li>• Authorized origins: <code>{window.location.origin}</code></li>
+                <li>• Redirect URI: <code>{window.location.origin}/functions/v1/google-auth-callback</code></li>
+              </ul>
+            </li>
             <li>Copy the Client ID and Client Secret</li>
             <li>In your Supabase dashboard, go to Settings → Environment Variables</li>
             <li>Add these variables:
               <ul className="ml-4 mt-1 space-y-1 text-xs">
                 <li>• <code>GOOGLE_CLIENT_ID</code> = your Google OAuth Client ID</li>
                 <li>• <code>GOOGLE_CLIENT_SECRET</code> = your Google OAuth Client Secret</li>
+                <li>• <code>STATE_SECRET</code> = any random string for security</li>
               </ul>
             </li>
+            <li>Redeploy your Supabase Edge Functions</li>
+            <li>Make sure the redirect URI in Google Console exactly matches: <code>{window.location.origin}/functions/v1/google-auth-callback</code></li>
           </ol>
           <p className="text-xs text-blue-600 mt-2">
-            After configuration, redeploy your Supabase Edge Functions for the changes to take effect.
+            The most common issue is mismatched redirect URIs between Google Console and your actual deployment URL.
           </p>
         </div>
       )}
