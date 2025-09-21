@@ -8,8 +8,8 @@
 
   2. Security
     - Uses service role key for database access
-    - Validates Supabase JWT tokens
-    - Handles token refresh automatically
+    - Handles both authenticated and anonymous users
+    - Automatic token refresh
 
   3. API Actions
     - listUpcoming: Get upcoming events
@@ -17,15 +17,7 @@
     - insertEvent: Create new calendar event
 */
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import * as jose from "npm:jose@5.2.0";
-// Add near the top (after imports)
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,6 +36,8 @@ function jsonResponse(data: any, status = 200) {
 }
 
 async function refreshGoogleToken(refreshToken: string, clientId: string, clientSecret: string) {
+  console.log("🔄 Refreshing Google access token...");
+  
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
@@ -56,52 +50,49 @@ async function refreshGoogleToken(refreshToken: string, clientId: string, client
       grant_type: 'refresh_token',
     }),
   });
-// Inside your request handler, before other actions return,
-// add this branch to support a safe connection status check:
-if (action === "isConnected") {
-  const userId = body?.userId ?? body?.uid ?? body?.user_id ?? null;
-  if (!userId) return json({ connected: false });
-
-  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-    auth: { persistSession: false },
-  });
-
-  const { data, error } = await supabase
-    .from("google_tokens")
-    .select("expiry_ts")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  return json({ connected: !!data && !error, expiry_ts: data?.expiry_ts ?? null });
-}
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("❌ Token refresh failed:", errorText);
     throw new Error(`Token refresh failed: ${response.status} ${response.statusText}`);
   }
 
-  return await response.json();
+  const tokenData = await response.json();
+  console.log("✅ Token refresh successful");
+  return tokenData;
 }
 
 async function getValidAccessToken(supabase: any, userId: string, googleClientId: string, googleClientSecret: string) {
+  console.log("🔍 Getting valid access token for user:", userId);
+  
   // Get stored tokens
   const { data: tokenData, error } = await supabase
     .from('google_tokens')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  if (error || !tokenData) {
+  if (error) {
+    console.error("❌ Database error fetching tokens:", error);
+    throw new Error(`Database error: ${error.message}`);
+  }
+
+  if (!tokenData) {
+    console.error("❌ No Google tokens found for user:", userId);
     throw new Error('Google Calendar not connected. Please connect your Google Calendar first.');
   }
+
+  console.log("✅ Found stored tokens, checking expiry...");
 
   // Check if token is expired
   const now = new Date();
   const expiry = new Date(tokenData.expiry_ts);
   
   if (now >= expiry) {
-    // Token is expired, refresh it
+    console.log("⏰ Token expired, refreshing...");
+    
     if (!tokenData.refresh_token) {
+      console.error("❌ No refresh token available");
       throw new Error('Google Calendar connection expired. Please reconnect your Google Calendar.');
     }
 
@@ -115,7 +106,7 @@ async function getValidAccessToken(supabase: any, userId: string, googleClientId
       // Update stored tokens
       const newExpiry = new Date(Date.now() + (refreshResponse.expires_in * 1000));
       
-      await supabase
+      const { error: updateError } = await supabase
         .from('google_tokens')
         .update({
           access_token: refreshResponse.access_token,
@@ -124,17 +115,27 @@ async function getValidAccessToken(supabase: any, userId: string, googleClientId
         })
         .eq('user_id', userId);
 
+      if (updateError) {
+        console.error("❌ Failed to update refreshed token:", updateError);
+        throw new Error(`Failed to update token: ${updateError.message}`);
+      }
+
+      console.log("✅ Token refreshed and updated");
       return refreshResponse.access_token;
     } catch (error) {
+      console.error("❌ Token refresh failed:", error);
       throw new Error('Failed to refresh Google Calendar token. Please reconnect your Google Calendar.');
     }
   }
 
+  console.log("✅ Using existing valid token");
   return tokenData.access_token;
 }
 
 async function makeGoogleCalendarRequest(accessToken: string, endpoint: string, options: RequestInit = {}) {
   const url = `https://www.googleapis.com/calendar/v3${endpoint}`;
+  
+  console.log(`📡 Making Google Calendar API request: ${options.method || 'GET'} ${endpoint}`);
   
   const response = await fetch(url, {
     ...options,
@@ -147,10 +148,46 @@ async function makeGoogleCalendarRequest(accessToken: string, endpoint: string, 
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`❌ Google Calendar API error: ${response.status} ${response.statusText} - ${errorText}`);
     throw new Error(`Google Calendar API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  console.log("✅ Google Calendar API request successful");
+  return data;
+}
+
+// Helper to safely get user ID from request
+function getSafeUserId(req: Request, body: any): string {
+  // Try body first
+  if (body?.userId) {
+    console.log("📝 Using user ID from body:", body.userId);
+    return body.userId;
+  }
+
+  // Try auth header
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice("Bearer ".length);
+    
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.sub) {
+          console.log("📝 Using user ID from JWT:", payload.sub);
+          return payload.sub;
+        }
+      }
+    } catch (error) {
+      console.log("⚠️ Could not parse JWT");
+    }
+  }
+
+  // Generate anonymous user ID as fallback
+  const anonId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  console.log("📝 Using anonymous user ID:", anonId);
+  return anonId;
 }
 
 Deno.serve(async (req: Request) => {
@@ -163,6 +200,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log(`🚀 Google Calendar API - ${req.method} ${req.url}`);
+
     // Only allow POST requests
     if (req.method !== "POST") {
       return jsonResponse({ error: "Method not allowed" }, 405);
@@ -191,10 +230,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // Parse request body
-    let body;
+    let body: any = {};
     try {
       body = await req.json();
     } catch (error) {
+      console.error("❌ Invalid JSON in request body:", error);
       return jsonResponse({ error: "Invalid JSON in request body" }, 400);
     }
 
@@ -204,46 +244,50 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Missing action parameter" }, 400);
     }
 
-    // Get user ID from request body or auth header (no JWT verification)
-    let userId: string = body.userId;
-    
-    if (!userId) {
-      const authHeader = req.headers.get("Authorization");
-      if (authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.slice("Bearer ".length);
+    // Get user ID safely
+    const userId = getSafeUserId(req, body);
+
+    // Initialize Supabase client with service role (bypasses RLS)
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false }
+    });
+
+    // Handle connection check action
+    if (action === "isConnected") {
+      try {
+        const { data: tokenData, error } = await supabase
+          .from("google_tokens")
+          .select("access_token, expiry_ts")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const isConnected = !error && !!tokenData?.access_token;
+        console.log(`🔍 Connection check for user ${userId}: ${isConnected}`);
         
-        // Try to extract user ID from token without verification
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.sub || payload.user_id;
-        } catch (error) {
-          console.log('Could not parse token, using anonymous user');
-        }
-      }
-      
-      // Fallback to anonymous user if no valid user ID
-      if (!userId) {
-        userId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log('⚠️ Using anonymous user ID:', userId);
+        return jsonResponse({ 
+          connected: isConnected, 
+          expiry_ts: tokenData?.expiry_ts ?? null 
+        });
+      } catch (error) {
+        console.error("❌ Connection check failed:", error);
+        return jsonResponse({ connected: false, error: error.message }, 500);
       }
     }
-
-    // Initialize Supabase client with service role
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Get valid access token for Google Calendar
     let accessToken: string;
     try {
       accessToken = await getValidAccessToken(supabase, userId, googleClientId, googleClientSecret);
     } catch (error) {
-      console.error('Failed to get Google access token:', error);
+      console.error('❌ Failed to get Google access token:', error);
       return jsonResponse({ 
         error: "Google Calendar authentication failed",
-        details: error instanceof Error ? error.message : "Unknown authentication error"
+        details: error instanceof Error ? error.message : "Unknown authentication error",
+        action: "reconnect_required"
       }, 401);
     }
 
-    console.log(`📅 Google Calendar action: ${action} for user: ${userId}`);
+    console.log(`📅 Processing Google Calendar action: ${action} for user: ${userId}`);
 
     // Handle different actions
     switch (action) {
