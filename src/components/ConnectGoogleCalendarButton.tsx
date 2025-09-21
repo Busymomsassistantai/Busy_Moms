@@ -51,4 +51,5 @@ export function ConnectGoogleCalendarButton() {
       )}
     </div>
   );
+}
 export default ConnectGoogleCalendarButton;
