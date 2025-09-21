@@ -55,14 +55,66 @@ export interface Reminder {
 id: UUID
 user_id: UUID
 title: string
-notes?: string | null
+description?: string | null
 reminder_date?: string | null // YYYY-MM-DD
 reminder_time?: string | null // HH:MM:SS
 priority?: 'low' | 'medium' | 'high' | null
 completed?: boolean | null
+recurring?: boolean | null
+recurring_pattern?: string | null
+family_member_id?: UUID | null
 created_at?: string
 updated_at?: string
-family_member_id?: UUID | null
+}
+
+export interface Task {
+id: UUID
+user_id: UUID
+assigned_to?: UUID | null
+title: string
+description?: string | null
+category?: string | null
+priority?: 'low' | 'medium' | 'high' | null
+status?: 'pending' | 'in_progress' | 'completed' | 'cancelled' | null
+due_date?: string | null
+due_time?: string | null
+recurring?: boolean | null
+recurring_pattern?: string | null
+points?: number | null
+notes?: string | null
+completed_at?: string | null
+created_at?: string
+updated_at?: string
+}
+
+export interface Contact {
+id: UUID
+user_id: UUID
+name: string
+role: string
+phone?: string | null
+email?: string | null
+category?: string | null
+rating?: number | null
+notes?: string | null
+verified?: boolean | null
+background_check_date?: string | null
+background_check_status?: string | null
+available?: boolean | null
+last_contact?: string | null
+created_at?: string
+updated_at?: string
+}
+
+export interface Profile {
+id: UUID
+email: string
+full_name?: string | null
+user_type?: 'Mom' | 'Dad' | 'Guardian' | 'Other' | null
+onboarding_completed?: boolean | null
+ai_personality?: 'Friendly' | 'Professional' | 'Humorous' | null
+created_at?: string
+updated_at?: string
 }
 
 export interface ShoppingItem {
