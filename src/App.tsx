@@ -11,10 +11,11 @@ import { Tasks } from './components/Tasks'
 import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
+import { FamilyFolders } from './components/FamilyFolders'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
-export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat'
+export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'family-folders'
 
 function App() {
   const { user, loading, signOut } = useAuth()
@@ -124,6 +125,8 @@ function App() {
               return <Settings />
             case 'ai-chat':
               return <AIChat />
+            case 'family-folders':
+              return <FamilyFolders />
             default:
               return <Dashboard onNavigate={setCurrentScreen} />
           }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Calendar, ShoppingBag, Users, Settings, MessageCircle, CheckSquare } from 'lucide-react';
+import { Home, Calendar, ShoppingBag, Users, Settings, MessageCircle, CheckSquare, FolderOpen } from 'lucide-react';
 import { Screen } from '../App';
 
 interface NavigationProps {
@@ -13,6 +13,7 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
   const navItems = [
     { id: 'dashboard' as Screen, icon: Home, label: 'Home' },
     { id: 'calendar' as Screen, icon: Calendar, label: 'Calendar' },
+    { id: 'family-folders' as Screen, icon: FolderOpen, label: 'Family' },
     { id: 'shopping' as Screen, icon: ShoppingBag, label: 'Shopping' },
     { id: 'tasks' as Screen, icon: CheckSquare, label: 'Tasks' },
     { id: 'contacts' as Screen, icon: Users, label: 'Contacts' },

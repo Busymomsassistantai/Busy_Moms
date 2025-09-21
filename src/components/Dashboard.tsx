@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
 
 interface DashboardProps {
-  onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat') => void;
+  onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat' | 'family-folders') => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
@@ -120,7 +120,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const quickActions = [
     { icon: Gift, title: 'Buy Gift', desc: 'For Jessica\'s party', color: 'from-pink-400 to-rose-400', action: null },
     { icon: ShoppingBag, title: 'Grocery Run', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
-    { icon: Smartphone, title: 'Smart Messages', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) }
+    { icon: Smartphone, title: 'Smart Messages', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) },
+    { icon: Users, title: 'Family Folders', desc: 'Organize by family member', color: 'from-purple-400 to-indigo-400', action: () => onNavigate('family-folders') }
   ];
 
   const sampleReminders = [
