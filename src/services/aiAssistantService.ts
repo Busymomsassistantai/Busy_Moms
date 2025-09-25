@@ -1,5 +1,5 @@
 import { supabase, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
-import { aiService } from './openai';
+import { openaiService } from './openai';
 import { ICalendarProvider, LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
@@ -122,7 +122,7 @@ Examples:
 "schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}`;
 
   try {
-    const response = await aiService.chat([
+    const response = await openaiService.chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: `Today is ${today}. Classify: "${message}"` }
     ]);
@@ -444,7 +444,7 @@ class AIAssistantService {
     
     try {
       // Use AI to provide a helpful response
-      const response = await aiService.chat([
+      const response = await openaiService.chat([
         {
           role: 'system',
           content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. 

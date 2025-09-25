@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { MessageCircle, Upload, X, Calendar, MapPin, Clock, Users, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase, Event } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
-import { aiService } from '../services/openai';
+import { openaiService } from '../services/openai';
 
 interface WhatsAppIntegrationProps {
   isOpen: boolean;
@@ -25,7 +25,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
 
     try {
       // Use AI to parse the WhatsApp message
-      const result = await aiService.parseWhatsAppMessage(messageText);
+      const result = await openaiService.parseWhatsAppMessage(messageText);
       
       if (result.isEvent && result.eventDetails) {
         setParsedEvent({
