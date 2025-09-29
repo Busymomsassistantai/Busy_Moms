@@ -61,11 +61,21 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     try {
       const { error } = await signInWithGoogle()
       if (error) {
+        console.error('Google sign-in error:', error)
+        // Handle specific error cases
+        if (error.message.includes('popup')) {
+          alert('Please allow popups for this site and try again.')
+        } else if (error.message.includes('redirect')) {
+          alert('Google sign-in redirect failed. Please try again.')
+        } else {
+          alert(`Google sign-in failed: ${error.message}`)
+        }
         throw error
       }
       // OAuth redirect will handle the rest
     } catch (error: any) {
-      alert(error.message || 'Google sign-in failed')
+      console.error('Google sign-in error:', error)
+      // Don't show alert here as we already handled it above
       setGoogleLoading(false)
     }
   }

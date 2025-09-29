@@ -117,9 +117,12 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Prefer a dedicated callback route:
-        // redirectTo: `${window.location.origin}/auth/callback`
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+        scopes: 'openid email profile https://www.googleapis.com/auth/calendar'
       }
     })
     if (error) console.error('Google sign-in error:', error.message)
