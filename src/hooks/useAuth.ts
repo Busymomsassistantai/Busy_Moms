@@ -114,22 +114,25 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
-    console.log('🚀 Starting Google OAuth flow...');
-    console.log('Current URL:', window.location.href);
+          redirectTo: window.location.origin,
+    console.log('Current origin:', window.location.origin);
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
     
+    console.log('Current URL:', window.location.href);
+          scopes: 'email profile https://www.googleapis.com/auth/calendar'
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/`,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
+        alert(`Google sign-in failed: ${error.message}\n\nConfiguration needed:\n1. In Google Cloud Console, add these URIs:\n   - Authorized origins: ${window.location.origin}\n   - Redirect URI: ${import.meta.env.VITE_SUPABASE_URL}/auth/v1/callback\n2. In Supabase Auth settings, enable Google provider\n3. Set Site URL to: ${window.location.origin}`)
         },
         scopes: 'openid email profile https://www.googleapis.com/auth/calendar'
       }
     })
     
-    console.log('OAuth response:', { data, error });
+      alert(`Google sign-in failed: ${error.message}\n\nPlease ensure:\n1. Google OAuth is properly configured in Supabase\n2. Redirect URI in Google Console: ${import.meta.env.VITE_SUPABASE_URL}/auth/v1/callback\n3. Site URL in Supabase: ${window.location.origin}`)
     if (error) console.error('Google sign-in error:', error.message)
     return { data, error }
   }
