@@ -114,24 +114,16 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
-    console.log('Current origin:', window.location.origin);
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-    console.log('Current URL:', window.location.href);
-    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
-        queryParams: {
-          access_type: 'offline',
-        },
-        scopes: 'openid email profile https://www.googleapis.com/auth/calendar'
+        redirectTo: 'https://chic-duckanoo-b6e66f.netlify.app/auth/callback',
+        queryParams: { access_type: 'offline', prompt: 'consent' }
       }
-    })
+    });
     
     if (error) {
-      console.error('Google sign-in error:', error.message)
-      alert(`Google sign-in failed: ${error.message}\n\nConfiguration needed:\n1. In Google Cloud Console, add these URIs:\n   - Authorized origins: ${window.location.origin}\n   - Redirect URI: ${import.meta.env.VITE_SUPABASE_URL}/auth/v1/callback\n2. In Supabase Auth settings, enable Google provider\n3. Set Site URL to: ${window.location.origin}`)
+      console.error('Google sign-in error:', error.message);
     }
     return { data, error }
   }

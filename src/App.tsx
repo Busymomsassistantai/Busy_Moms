@@ -26,36 +26,37 @@ function App() {
   
   // Debug OAuth callback
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hash = window.location.hash;
-    const accessToken = urlParams.get('access_token');
-    const hashAccessToken = hash.includes('access_token') ? new URLSearchParams(hash.substring(1)).get('access_token') : null;
-    const error = urlParams.get('error');
-    const errorDescription = urlParams.get('error_description');
-    const hashError = hash.includes('error') ? new URLSearchParams(hash.substring(1)).get('error') : null;
+    // Handle OAuth callback
+    const handleOAuthCallback = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      
+      // Check for OAuth success/error in URL or hash
+      const accessToken = urlParams.get('access_token') || 
+        (hash.includes('access_token') ? new URLSearchParams(hash.substring(1)).get('access_token') : null);
+      const error = urlParams.get('error') || 
+        (hash.includes('error') ? new URLSearchParams(hash.substring(1)).get('error') : null);
+      
+      if (accessToken) {
+        console.log('✅ OAuth success - access token found');
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (error) {
+        const errorDescription = urlParams.get('error_description') || 
+          (hash.includes('error_description') ? new URLSearchParams(hash.substring(1)).get('error_description') : null);
+        console.error('❌ OAuth error:', error, errorDescription);
+        alert(`Google sign-in failed: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`);
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      // Clean up any OAuth-related URL parameters
+      if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
     
-    if (accessToken || hashAccessToken) {
-      console.log('✅ OAuth success - access token found in URL', { accessToken, hashAccessToken });
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (error || hashError) {
-      const finalError = error || hashError;
-      const finalDescription = errorDescription || (hash.includes('error_description') ? new URLSearchParams(hash.substring(1)).get('error_description') : null);
-      console.error('❌ OAuth error in URL:', finalError, finalDescription);
-      alert(`Google sign-in failed: ${finalError} - ${finalDescription}`);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-    // Log all URL parameters for debugging
-    if (urlParams.toString() || hash) {
-      console.log('🔍 URL debugging:', {
-        search: urlParams.toString(),
-        hash: hash,
-        pathname: window.location.pathname,
-        fullUrl: window.location.href
-      });
-    }
+    handleOAuthCallback();
   }, []);
 
   useEffect(() => {

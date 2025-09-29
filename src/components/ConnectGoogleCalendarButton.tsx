@@ -11,18 +11,19 @@ export function ConnectGoogleCalendarButton() {
     setError(null);
 
     try {
-      // Get current user info
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id || `anon_${Date.now()}`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://chic-duckanoo-b6e66f.netlify.app/auth/callback',
+          queryParams: { access_type: 'offline', prompt: 'consent' }
+        }
+      });
       
-      // Build the auth start URL with user ID as query parameter
-      const return_to = encodeURIComponent(window.location.origin);
-      const authUrl = `https://chic-duckanoo-b6e66f.netlify.app/.netlify/functions/google-auth-start?user_id=${userId}&return_to=${return_to}`;
+      if (error) {
+        throw error;
+      }
       
-      console.log('🚀 Starting Google OAuth flow:', authUrl);
-      
-      // Direct navigation to avoid CORS issues
-      window.location.href = authUrl;
+      console.log('🚀 Google OAuth redirect initiated');
     } catch (e: any) {
       console.error('❌ Google auth start error:', e);
       setError(e?.message ?? String(e));
