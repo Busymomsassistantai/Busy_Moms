@@ -114,10 +114,13 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
+    console.log('🚀 Starting Google OAuth flow...');
+    console.log('Current URL:', window.location.href);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: `${window.location.origin}/`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -125,6 +128,8 @@ export function useAuth() {
         scopes: 'openid email profile https://www.googleapis.com/auth/calendar'
       }
     })
+    
+    console.log('OAuth response:', { data, error });
     if (error) console.error('Google sign-in error:', error.message)
     return { data, error }
   }

@@ -57,19 +57,21 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   }
 
   const handleGoogleSignIn = async () => {
+    console.log('🔐 Google sign-in button clicked');
     setGoogleLoading(true)
     try {
       const { error } = await signInWithGoogle()
       if (error) {
         console.error('Google sign-in error:', error)
-        alert(`Google sign-in failed: ${error.message}`)
+        alert(`Google sign-in failed: ${error.message}\n\nPlease check:\n1. Google OAuth is configured in Supabase\n2. This domain is added to authorized origins\n3. Redirect URI is set correctly`)
         setGoogleLoading(false)
         return
       }
-      // OAuth redirect will handle the rest, don't set loading to false here
+      console.log('🚀 Google OAuth redirect initiated...');
+      // OAuth redirect will handle the rest, loading state will be reset on page reload
     } catch (error: any) {
       console.error('Google sign-in error:', error)
-      alert(`Google sign-in failed: ${error.message}`)
+      alert(`Google sign-in failed: ${error.message}\n\nThis might be a configuration issue. Please check your Supabase Google OAuth settings.`)
       setGoogleLoading(false)
     }
   }

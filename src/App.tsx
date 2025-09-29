@@ -23,6 +23,25 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showVoiceChat, setShowVoiceChat] = useState(false)
+  
+  // Debug OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    
+    if (accessToken) {
+      console.log('✅ OAuth success - access token found in URL');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (error) {
+      console.error('❌ OAuth error in URL:', error, errorDescription);
+      alert(`Google sign-in failed: ${error} - ${errorDescription}`);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     const checkOnboarding = async () => {
