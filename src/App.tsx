@@ -12,7 +12,6 @@ import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
 import { FamilyFolders } from './components/FamilyFolders'
-import { AuthCallback } from './pages/auth/callback'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
@@ -24,14 +23,6 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showVoiceChat, setShowVoiceChat] = useState(false)
-
-  // Check if this is an auth callback
-  const isAuthCallback = window.location.pathname === '/auth/callback'
-
-  // Show auth callback page if needed
-  if (isAuthCallback) {
-    return <AuthCallback />
-  }
 
   useEffect(() => {
     const checkOnboarding = async () => {

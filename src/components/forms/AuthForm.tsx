@@ -62,20 +62,14 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       const { error } = await signInWithGoogle()
       if (error) {
         console.error('Google sign-in error:', error)
-        // Handle specific error cases
-        if (error.message.includes('popup')) {
-          alert('Please allow popups for this site and try again.')
-        } else if (error.message.includes('redirect')) {
-          alert('Google sign-in redirect failed. Please try again.')
-        } else {
-          alert(`Google sign-in failed: ${error.message}`)
-        }
-        throw error
+        alert(`Google sign-in failed: ${error.message}`)
+        setGoogleLoading(false)
+        return
       }
-      // OAuth redirect will handle the rest
+      // OAuth redirect will handle the rest, don't set loading to false here
     } catch (error: any) {
       console.error('Google sign-in error:', error)
-      // Don't show alert here as we already handled it above
+      alert(`Google sign-in failed: ${error.message}`)
       setGoogleLoading(false)
     }
   }
