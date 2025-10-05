@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { getOAuthConfig } from '../lib/auth-config'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
@@ -116,14 +117,13 @@ export function useAuth() {
   const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: 'https://chic-duckanoo-b6e66f.netlify.app/auth/callback',
-        queryParams: { access_type: 'offline', prompt: 'consent' }
-      }
+      options: getOAuthConfig()
     });
-    
+
     if (error) {
-      console.error('Google sign-in error:', error.message);
+      console.error('❌ Google sign-in error:', error.message, error);
+    } else {
+      console.log('🚀 Google OAuth initiated successfully');
     }
     return { data, error }
   }

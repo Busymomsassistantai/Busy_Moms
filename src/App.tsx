@@ -28,38 +28,59 @@ function App() {
   const [showVoiceChat, setShowVoiceChat] = useState(false)
   const { toasts, removeToast } = useToast()
   
-  // Debug OAuth callback
+  // Handle OAuth callback and errors
   useEffect(() => {
-    // Handle OAuth callback
     const handleOAuthCallback = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
-      
+      const hashParams = hash ? new URLSearchParams(hash.substring(1)) : null;
+
       // Check for OAuth success/error in URL or hash
-      const accessToken = urlParams.get('access_token') || 
-        (hash.includes('access_token') ? new URLSearchParams(hash.substring(1)).get('access_token') : null);
-      const error = urlParams.get('error') || 
-        (hash.includes('error') ? new URLSearchParams(hash.substring(1)).get('error') : null);
-      
+      const accessToken = urlParams.get('access_token') || hashParams?.get('access_token');
+      const error = urlParams.get('error') || hashParams?.get('error');
+      const errorCode = urlParams.get('error_code') || hashParams?.get('error_code');
+      const errorDescription = urlParams.get('error_description') || hashParams?.get('error_description');
+
       if (accessToken) {
         console.log('✅ OAuth success - access token found');
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (error) {
-        const errorDescription = urlParams.get('error_description') || 
-          (hash.includes('error_description') ? new URLSearchParams(hash.substring(1)).get('error_description') : null);
-        console.error('❌ OAuth error:', error, errorDescription);
-        alert(`Google sign-in failed: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`);
+        console.error('❌ OAuth error:', {
+          error,
+          error_code: errorCode,
+          error_description: errorDescription,
+          full_url: window.location.href
+        });
+
+        // Provide user-friendly error messages
+        let userMessage = 'Google sign-in failed';
+
+        if (error === 'server_error' && errorDescription?.includes('Unable to exchange external code')) {
+          userMessage = `Google sign-in configuration error. Please check:\n\n` +
+            `1. Google OAuth credentials are correctly configured in Supabase Dashboard\n` +
+            `2. No extra spaces in Client ID or Client Secret\n` +
+            `3. Authorized redirect URI in Google Cloud Console matches:\n` +
+            `   https://[your-project-ref].supabase.co/auth/v1/callback\n` +
+            `4. Authorized JavaScript origins include your app URL\n\n` +
+            `Error: ${error}`;
+        } else if (errorDescription) {
+          userMessage = `Google sign-in failed: ${errorDescription}`;
+        } else {
+          userMessage = `Google sign-in failed: ${error}`;
+        }
+
+        alert(userMessage);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
-      
+
       // Clean up any OAuth-related URL parameters
       if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     };
-    
+
     handleOAuthCallback();
   }, []);
 

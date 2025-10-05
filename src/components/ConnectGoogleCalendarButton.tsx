@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { getOAuthConfig } from "../lib/auth-config";
 
 export function ConnectGoogleCalendarButton() {
   const [loading, setLoading] = useState(false);
@@ -13,16 +14,13 @@ export function ConnectGoogleCalendarButton() {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: 'https://chic-duckanoo-b6e66f.netlify.app/auth/callback',
-          queryParams: { access_type: 'offline', prompt: 'consent' }
-        }
+        options: getOAuthConfig()
       });
-      
+
       if (error) {
         throw error;
       }
-      
+
       console.log('🚀 Google OAuth redirect initiated');
     } catch (e: any) {
       console.error('❌ Google auth start error:', e);
