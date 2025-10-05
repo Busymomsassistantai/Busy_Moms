@@ -217,6 +217,97 @@ export function OAuthDiagnostics() {
                 </div>
               </div>
             </section>
+
+            <section className="border-t pt-6">
+              <h2 className="text-lg font-semibold mb-3 text-red-600">Error: "Unable to exchange external code"</h2>
+              <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <p className="text-sm text-red-900 mb-3 font-medium">
+                  This error means Supabase cannot exchange the Google authorization code for an access token.
+                  Here's how to fix it:
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-red-900 text-sm mb-2">Step 1: Verify Client ID and Secret</h4>
+                    <ul className="list-decimal list-inside text-sm text-red-800 space-y-1 ml-2">
+                      <li>Copy Client ID from Google Cloud Console to plain text editor</li>
+                      <li>Check for extra spaces or line breaks</li>
+                      <li>Copy clean text to Supabase (no spaces before/after)</li>
+                      <li>Repeat for Client Secret</li>
+                      <li>Click Save in Supabase Dashboard</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-red-900 text-sm mb-2">Step 2: Verify Redirect URI Matches Exactly</h4>
+                    <p className="text-sm text-red-800 mb-2">In Google Cloud Console, the redirect URI must be EXACTLY:</p>
+                    <div className="bg-white p-2 rounded border border-red-300 mb-2">
+                      <code className="text-xs text-red-900 break-all">{callbackUrl}</code>
+                      <button
+                        onClick={() => copyToClipboard(callbackUrl, 'Redirect URI')}
+                        className="ml-2 text-xs text-red-600 hover:text-red-800 underline"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                    <ul className="list-disc list-inside text-sm text-red-800 space-y-1 ml-2">
+                      <li>No trailing slash</li>
+                      <li>Must use https:// not http://</li>
+                      <li>Correct project reference ID</li>
+                      <li>/auth/v1/callback path</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-red-900 text-sm mb-2">Step 3: Verify OAuth Client Type</h4>
+                    <ul className="list-disc list-inside text-sm text-red-800 space-y-1 ml-2">
+                      <li>Must be "Web application" type (not iOS, Android, or Desktop)</li>
+                      <li>Check you're using the correct Google Cloud Project</li>
+                      <li>Verify you copied credentials from the same OAuth client</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-red-900 text-sm mb-2">Step 4: Wait and Retry</h4>
+                    <ul className="list-disc list-inside text-sm text-red-800 space-y-1 ml-2">
+                      <li>Click Save in Supabase Dashboard</li>
+                      <li>Wait 30-60 seconds for changes to propagate</li>
+                      <li>Clear browser cookies</li>
+                      <li>Try OAuth flow again</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-red-900 text-sm mb-2">Still not working?</h4>
+                    <ul className="list-disc list-inside text-sm text-red-800 space-y-1 ml-2">
+                      <li>Create a NEW OAuth client in Google Cloud Console</li>
+                      <li>Use the new Client ID and Secret in Supabase</li>
+                      <li>Check Supabase Dashboard → Logs → Auth Logs for details</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-red-300">
+                  <a
+                    href="https://supabase.com/dashboard/project/_/auth/providers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-red-600 hover:text-red-800 underline font-medium"
+                  >
+                    Open Supabase Auth Providers →
+                  </a>
+                  <span className="mx-2">|</span>
+                  <a
+                    href="https://console.cloud.google.com/apis/credentials"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-red-600 hover:text-red-800 underline font-medium"
+                  >
+                    Open Google Cloud Console →
+                  </a>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
 
