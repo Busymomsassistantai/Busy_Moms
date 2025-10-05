@@ -12,6 +12,7 @@ import { Settings } from './components/Settings'
 import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
 import { FamilyFolders } from './components/FamilyFolders'
+import { OAuthDiagnostics } from './components/OAuthDiagnostics'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { ErrorBoundary, FeatureErrorBoundary } from './components/errors/ErrorBoundary'
@@ -27,7 +28,16 @@ function App() {
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showVoiceChat, setShowVoiceChat] = useState(false)
   const { toasts, removeToast } = useToast()
-  
+
+  // Check if diagnostics mode is enabled
+  const urlParams = new URLSearchParams(window.location.search);
+  const showDiagnostics = urlParams.get('diagnostics') === 'true';
+
+  // Show diagnostics page if requested
+  if (showDiagnostics) {
+    return <OAuthDiagnostics />;
+  }
+
   // Handle OAuth callback and errors
   useEffect(() => {
     const handleOAuthCallback = () => {
@@ -46,28 +56,39 @@ function App() {
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (error) {
-        console.error('❌ OAuth error:', {
+        // Log comprehensive error details
+        const errorDetails = {
           error,
           error_code: errorCode,
           error_description: errorDescription,
-          full_url: window.location.href
-        });
+          full_url: window.location.href,
+          search_params: Object.fromEntries(urlParams.entries()),
+          hash_params: hashParams ? Object.fromEntries(hashParams.entries()) : null
+        };
+
+        console.error('❌ OAuth error:', errorDetails);
+        console.error('Full error object:', JSON.stringify(errorDetails, null, 2));
 
         // Provide user-friendly error messages
         let userMessage = 'Google sign-in failed';
 
         if (error === 'server_error' && errorDescription?.includes('Unable to exchange external code')) {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR-PROJECT-REF.supabase.co';
           userMessage = `Google sign-in configuration error. Please check:\n\n` +
-            `1. Google OAuth credentials are correctly configured in Supabase Dashboard\n` +
-            `2. No extra spaces in Client ID or Client Secret\n` +
-            `3. Authorized redirect URI in Google Cloud Console matches:\n` +
-            `   https://[your-project-ref].supabase.co/auth/v1/callback\n` +
-            `4. Authorized JavaScript origins include your app URL\n\n` +
-            `Error: ${error}`;
+            `1. In Supabase Dashboard (Authentication > Providers > Google):\n` +
+            `   - Google OAuth is enabled\n` +
+            `   - Client ID and Secret have NO extra spaces\n\n` +
+            `2. In Google Cloud Console (APIs & Credentials):\n` +
+            `   - Authorized redirect URI:\n` +
+            `     ${supabaseUrl}/auth/v1/callback\n` +
+            `   - Authorized JavaScript origin:\n` +
+            `     ${window.location.origin}\n\n` +
+            `3. Google Calendar API is enabled in your Google Cloud project\n\n` +
+            `Error: ${errorDescription || error}`;
         } else if (errorDescription) {
-          userMessage = `Google sign-in failed: ${errorDescription}`;
+          userMessage = `Google sign-in failed:\n\n${errorDescription}\n\nPlease check your OAuth configuration.`;
         } else {
-          userMessage = `Google sign-in failed: ${error}`;
+          userMessage = `Google sign-in failed: ${error}\n\nCheck the console for more details.`;
         }
 
         alert(userMessage);

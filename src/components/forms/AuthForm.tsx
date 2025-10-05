@@ -212,6 +212,16 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             Bypass authentication for demonstration purposes
           </p>
         </div>
+
+        {/* OAuth Diagnostics Link */}
+        <div className="mt-3 text-center">
+          <a
+            href="?diagnostics=true"
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+          >
+            OAuth Configuration Diagnostics
+          </a>
+        </div>
       </div>
     </div>
   )

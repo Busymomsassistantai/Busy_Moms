@@ -115,15 +115,23 @@ export function useAuth() {
   }
 
   const signInWithGoogle = async () => {
+    console.log('🔐 Initiating Google OAuth with config:', getOAuthConfig());
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: getOAuthConfig()
     });
 
     if (error) {
-      console.error('❌ Google sign-in error:', error.message, error);
+      console.error('❌ Google sign-in error:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        full_error: error
+      });
     } else {
       console.log('🚀 Google OAuth initiated successfully');
+      console.log('OAuth data:', data);
     }
     return { data, error }
   }
