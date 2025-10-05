@@ -122,11 +122,44 @@ export function OAuthDiagnostics() {
             <section>
               <h2 className="text-lg font-semibold mb-3">Google OAuth Scopes</h2>
               <div className="space-y-2">
-                <ConfigItem
-                  label="Requested Scopes"
-                  value={scopes}
-                  status="info"
-                />
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <AlertTriangle className="w-5 h-5 text-blue-500" />
+                        <span className="font-medium text-sm text-gray-700">Requested Scopes (space-separated)</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(scopes, 'Requested Scopes')}
+                      className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
+                  <code className="text-xs text-gray-600 block whitespace-pre-wrap break-all mb-3">{scopes}</code>
+                  {copied === 'Requested Scopes' && (
+                    <span className="text-xs text-green-600 mt-1 block">Copied!</span>
+                  )}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-600 font-medium mb-2">Individual scopes:</p>
+                    <ul className="space-y-1">
+                      {scopes.split(' ').map((scope, idx) => (
+                        <li key={idx} className="text-xs text-gray-600 flex items-start">
+                          <span className="mr-2">•</span>
+                          <code className="break-all">{scope}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-500 italic">
+                      Note: These scopes are automatically included in the OAuth request.
+                      You don't need to configure them separately in Google Cloud Console.
+                    </p>
+                  </div>
+                </div>
               </div>
             </section>
 
