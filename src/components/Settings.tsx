@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
 import { GoogleCalendarTest } from './GoogleCalendarTest';
+import { ErrorDashboard } from './errors/ErrorDashboard';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -16,6 +17,7 @@ export function Settings() {
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
   const [showGoogleCalendarTest, setShowGoogleCalendarTest] = useState(false);
+  const [showErrorDashboard, setShowErrorDashboard] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
@@ -133,6 +135,13 @@ export function Settings() {
       title: 'System',
       items: [
         {
+          icon: AlertTriangle,
+          title: 'Error Dashboard',
+          description: 'Monitor and resolve application errors',
+          action: 'View',
+          onClick: () => setShowErrorDashboard(true)
+        },
+        {
           icon: Database,
           title: 'Test Supabase Connection',
           description: 'Verify database connectivity',
@@ -149,7 +158,7 @@ export function Settings() {
         {
           icon: Calendar,
           title: 'Test Google Calendar',
-          description: 'Verify Google Calendar API integration', 
+          description: 'Verify Google Calendar API integration',
           action: 'Test',
           onClick: () => setShowGoogleCalendarTest(true)
         }
@@ -521,6 +530,21 @@ export function Settings() {
         isOpen={showGoogleCalendarTest}
         onClose={() => setShowGoogleCalendarTest(false)}
       />
+
+      {showErrorDashboard && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-xl font-bold">Error Dashboard</h2>
+            <button
+              onClick={() => setShowErrorDashboard(false)}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+          <ErrorDashboard />
+        </div>
+      )}
 
       <ProfileForm
         isOpen={showProfileForm}

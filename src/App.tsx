@@ -14,6 +14,9 @@ import { AIVoiceChat } from './components/AIVoiceChat'
 import { FamilyFolders } from './components/FamilyFolders'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
+import { ErrorBoundary, FeatureErrorBoundary } from './components/errors/ErrorBoundary'
+import { ToastContainer } from './components/errors/ErrorToast'
+import { useToast } from './hooks/useErrorHandler'
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'family-folders'
 
@@ -23,6 +26,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showVoiceChat, setShowVoiceChat] = useState(false)
+  const { toasts, removeToast } = useToast()
   
   // Debug OAuth callback
   useEffect(() => {
@@ -136,43 +140,83 @@ function App() {
   console.log('🏠 Showing main app for user:', user.id)
   // Show main app if user is authenticated and has completed onboarding
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation 
-        currentScreen={currentScreen}
-        onScreenChange={setCurrentScreen}
-        onSignOut={signOut}
-        onVoiceChatOpen={() => setShowVoiceChat(true)}
-      />
-      <main className="pb-20">
-        {(() => {
-          switch (currentScreen) {
-            case 'dashboard':
-              return <Dashboard onNavigate={setCurrentScreen} />
-            case 'calendar':
-              return <Calendar />
-            case 'contacts':
-              return <Contacts />
-            case 'shopping':
-              return <Shopping />
-            case 'tasks':
-              return <Tasks />
-            case 'settings':
-              return <Settings />
-            case 'ai-chat':
-              return <AIChat />
-            case 'family-folders':
-              return <FamilyFolders />
-            default:
-              return <Dashboard onNavigate={setCurrentScreen} />
-          }
-        })()}
-      </main>
-      
-      <AIVoiceChat 
-        isOpen={showVoiceChat} 
-        onClose={() => setShowVoiceChat(false)} 
-      />
-    </div>
+    <ErrorBoundary componentName="App">
+      <div className="min-h-screen bg-gray-50">
+        <Navigation
+          currentScreen={currentScreen}
+          onScreenChange={setCurrentScreen}
+          onSignOut={signOut}
+          onVoiceChatOpen={() => setShowVoiceChat(true)}
+        />
+        <main className="pb-20">
+          {(() => {
+            switch (currentScreen) {
+              case 'dashboard':
+                return (
+                  <FeatureErrorBoundary featureName="Dashboard">
+                    <Dashboard onNavigate={setCurrentScreen} />
+                  </FeatureErrorBoundary>
+                )
+              case 'calendar':
+                return (
+                  <FeatureErrorBoundary featureName="Calendar">
+                    <Calendar />
+                  </FeatureErrorBoundary>
+                )
+              case 'contacts':
+                return (
+                  <FeatureErrorBoundary featureName="Contacts">
+                    <Contacts />
+                  </FeatureErrorBoundary>
+                )
+              case 'shopping':
+                return (
+                  <FeatureErrorBoundary featureName="Shopping">
+                    <Shopping />
+                  </FeatureErrorBoundary>
+                )
+              case 'tasks':
+                return (
+                  <FeatureErrorBoundary featureName="Tasks">
+                    <Tasks />
+                  </FeatureErrorBoundary>
+                )
+              case 'settings':
+                return (
+                  <FeatureErrorBoundary featureName="Settings">
+                    <Settings />
+                  </FeatureErrorBoundary>
+                )
+              case 'ai-chat':
+                return (
+                  <FeatureErrorBoundary featureName="AI Chat">
+                    <AIChat />
+                  </FeatureErrorBoundary>
+                )
+              case 'family-folders':
+                return (
+                  <FeatureErrorBoundary featureName="Family Folders">
+                    <FamilyFolders />
+                  </FeatureErrorBoundary>
+                )
+              default:
+                return (
+                  <FeatureErrorBoundary featureName="Dashboard">
+                    <Dashboard onNavigate={setCurrentScreen} />
+                  </FeatureErrorBoundary>
+                )
+            }
+          })()}
+        </main>
+
+        <AIVoiceChat
+          isOpen={showVoiceChat}
+          onClose={() => setShowVoiceChat(false)}
+        />
+
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+      </div>
+    </ErrorBoundary>
   )
 }
 
