@@ -39,17 +39,23 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Events include: INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, USER_UPDATED, etc.
-        console.log('Auth event:', event)
+        console.log('🔔 Auth event:', event, session ? `User: ${session.user.email}` : 'No session')
         if (!mounted) return
 
         setUser(session?.user ?? null)
         setLoading(false)
 
-        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) {
-          // Fire-and-forget; don’t block UI
-          handleUserProfile(session.user).catch((e) =>
-            console.error('Profile init error:', e)
-          )
+        if (session?.user) {
+          console.log('✅ User authenticated:', session.user.email, 'Event:', event)
+
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+            // Fire-and-forget; don't block UI
+            handleUserProfile(session.user).catch((e) =>
+              console.error('Profile init error:', e)
+            )
+          }
+        } else {
+          console.log('🔐 No user authenticated')
         }
       }
     )

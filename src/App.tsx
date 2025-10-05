@@ -40,22 +40,21 @@ function App() {
 
   // Handle OAuth callback and errors
   useEffect(() => {
-    const handleOAuthCallback = () => {
+    const handleOAuthCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
       const hashParams = hash ? new URLSearchParams(hash.substring(1)) : null;
 
-      // Check for OAuth success/error in URL or hash
-      const accessToken = urlParams.get('access_token') || hashParams?.get('access_token');
+      // Check for OAuth error in URL or hash
       const error = urlParams.get('error') || hashParams?.get('error');
       const errorCode = urlParams.get('error_code') || hashParams?.get('error_code');
       const errorDescription = urlParams.get('error_description') || hashParams?.get('error_description');
 
-      if (accessToken) {
-        console.log('✅ OAuth success - access token found');
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (error) {
+      // Check if this is an OAuth callback (has code or access_token)
+      const authCode = urlParams.get('code');
+      const accessToken = hashParams?.get('access_token');
+
+      if (error) {
         // Log comprehensive error details
         const errorDetails = {
           error,
@@ -94,11 +93,34 @@ function App() {
         alert(userMessage);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
-      }
+      } else if (authCode || accessToken) {
+        // This is an OAuth callback - let Supabase handle it
+        console.log('🔄 OAuth callback detected, processing...');
+        console.log('Auth code present:', !!authCode);
+        console.log('Access token present:', !!accessToken);
 
-      // Clean up any OAuth-related URL parameters
-      if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Give Supabase time to process the OAuth callback and establish session
+        // The session will be picked up by the onAuthStateChange listener
+        const cleanupTimer = setTimeout(() => {
+          // Clean up URL after Supabase has processed the callback
+          if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
+            console.log('✅ Cleaning up OAuth parameters from URL');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        }, 2000);
+
+        // Optionally refresh session to ensure it's established
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+          if (error) {
+            console.error('Error getting session after OAuth:', error);
+          } else if (session) {
+            console.log('✅ Session established after OAuth:', session.user.email);
+          } else {
+            console.log('⚠️ No session found after OAuth callback');
+          }
+        });
+
+        return () => clearTimeout(cleanupTimer);
       }
     };
 
