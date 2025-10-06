@@ -324,57 +324,61 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         </div>
 
         {/* Conversation Area */}
-        <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-rose-50 to-white">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-b from-rose-50 to-white">
           {/* Text Chat Mode */}
           {chatMode === 'text' && (
-            <div className="space-y-4">
-              {chatMessages.length === 0 && (
-                <div className="text-center py-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageSquare className="w-10 h-10 text-white" />
+            <div className="h-full flex flex-col">
+              <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-10 h-10 text-white" />
+                    </div>
+                    <p className="text-lg font-semibold text-gray-800 mb-2">Text Chat with Sarah</p>
+                    <p className="text-sm text-gray-600 mb-4">Type your message below to start chatting</p>
+                    <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl max-w-sm mx-auto">
+                      <p className="text-sm text-rose-800 font-medium">
+                        💡 Ask me to schedule events, add shopping items, create tasks, and more!
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-lg font-semibold text-gray-800 mb-2">Text Chat with Sarah</p>
-                  <p className="text-sm text-gray-600 mb-4">Type your message below to start chatting</p>
-                  <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl max-w-sm mx-auto">
-                    <p className="text-sm text-rose-800 font-medium">
-                      💡 Ask me to schedule events, add shopping items, create tasks, and more!
-                    </p>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Chat Messages */}
-              {chatMessages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+                {/* Chat Messages */}
+                {chatMessages.map((message, index) => (
                   <div
-                    className={`max-w-[80%] p-4 rounded-2xl ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-br from-rose-400 to-pink-400 text-white'
-                        : 'bg-white border-2 border-rose-100 text-gray-900'
-                    }`}
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <div
+                      className={`max-w-[80%] p-4 rounded-2xl ${
+                        message.role === 'user'
+                          ? 'bg-gradient-to-br from-rose-400 to-pink-400 text-white'
+                          : 'bg-white border-2 border-rose-100 text-gray-900'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {isProcessing && (
-                <div className="flex justify-start">
-                  <div className="bg-white border-2 border-rose-100 p-4 rounded-2xl">
-                    <Loader2 className="w-5 h-5 animate-spin text-rose-600" />
+                {isProcessing && (
+                  <div className="flex justify-start">
+                    <div className="bg-white border-2 border-rose-100 p-4 rounded-2xl">
+                      <Loader2 className="w-5 h-5 animate-spin text-rose-600" />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} />
+              </div>
             </div>
           )}
 
           {/* Voice Mode */}
-          {chatMode === 'voice' && !isConnected && (
+          {chatMode === 'voice' && (
+          <div className="p-6">
+          {!isConnected && (
             <div className="text-center py-8">
               {isConnecting ? (
                 <>
@@ -441,41 +445,6 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   </p>
                 </div>
               </div>
-
-              {/* Text Input - Always Available */}
-              <div className="bg-white border-2 border-rose-200 p-4 rounded-2xl">
-                <p className="text-sm font-medium text-gray-700 mb-3">Or type a message:</p>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition-all"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const input = e.target as HTMLInputElement;
-                        const value = input.value.trim();
-                        if (value) {
-                          sendTextMessage(value);
-                          input.value = '';
-                        }
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={(e) => {
-                      const input = (e.currentTarget.parentElement?.querySelector('input')) as HTMLInputElement | null;
-                      const value = input?.value.trim();
-                      if (value) {
-                        sendTextMessage(value);
-                        if (input) input.value = '';
-                      }
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -509,42 +478,9 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   <p className="text-sm text-green-900 font-semibold">Listening...</p>
                 </div>
               )}
-
-              {/* Text Input */}
-              <div className="bg-white border-2 border-rose-200 p-4 rounded-2xl">
-                <p className="text-sm font-medium text-gray-700 mb-3">Or type a message:</p>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    placeholder="Type your message..."
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition-all"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const input = e.target as HTMLInputElement;
-                        const value = input.value.trim();
-                        if (value) {
-                          sendTextMessage(value);
-                          input.value = '';
-                        }
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={(e) => {
-                      const input = (e.currentTarget.parentElement?.querySelector('input')) as HTMLInputElement | null;
-                      const value = input?.value.trim();
-                      if (value) {
-                        sendTextMessage(value);
-                        if (input) input.value = '';
-                      }
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
             </div>
+          )}
+          </div>
           )}
         </div>
 
