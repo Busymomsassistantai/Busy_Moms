@@ -314,15 +314,21 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
             <h3 className="font-medium text-gray-900 mb-2">Environment Configuration</h3>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span>Functions URL:</span>
-                <span className={import.meta.env.VITE_FUNCTIONS_URL ? 'text-green-600' : 'text-red-600'}>
-                  {import.meta.env.VITE_FUNCTIONS_URL ? '✅ Set' : '❌ Missing'}
-                </span>
-              </div>
-              <div className="flex justify-between">
                 <span>Supabase URL:</span>
                 <span className={import.meta.env.VITE_SUPABASE_URL ? 'text-green-600' : 'text-red-600'}>
                   {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Supabase Anon Key:</span>
+                <span className={import.meta.env.VITE_SUPABASE_ANON_KEY ? 'text-green-600' : 'text-red-600'}>
+                  {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Edge Functions URL:</span>
+                <span className={import.meta.env.VITE_SUPABASE_URL ? 'text-green-600' : 'text-red-600'}>
+                  {import.meta.env.VITE_SUPABASE_URL ? `✅ ${import.meta.env.VITE_SUPABASE_URL}/functions/v1` : '❌ Missing'}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -357,7 +363,8 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
             <h3 className="font-medium text-yellow-900 mb-2">Setup Instructions</h3>
             <ul className="text-sm text-yellow-700 space-y-1">
               <li>• Ensure you have connected your Google Calendar in the Calendar section</li>
-              <li>• Make sure your Google Calendar API credentials are properly configured</li>
+              <li>• Make sure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in Supabase project secrets</li>
+              <li>• Verify Supabase Edge Functions (google-calendar, store-google-tokens) are deployed</li>
               <li>• The test will create a sample event to verify write permissions</li>
               <li>• Check the browser console for detailed error messages if tests fail</li>
             </ul>

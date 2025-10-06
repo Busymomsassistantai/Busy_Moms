@@ -35,28 +35,57 @@ export interface CalendarListOptions {
 }
 
 class GoogleCalendarService {
-  private baseUrl = 'https://chic-duckanoo-b6e66f.netlify.app/.netlify/functions';
+  private baseUrl: string;
   private initialized = false;
   private available = false;
   private ready = false;
   private signedIn = false;
 
+  constructor() {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.error('❌ VITE_SUPABASE_URL not configured');
+      this.baseUrl = '';
+    } else {
+      this.baseUrl = `${supabaseUrl}/functions/v1`;
+    }
+  }
+
   async initialize(): Promise<void> {
     console.log('🔧 Initializing Google Calendar service...');
-    
+
+    if (!this.baseUrl) {
+      console.error('❌ Supabase URL not configured');
+      this.available = false;
+      this.ready = false;
+      this.signedIn = false;
+      this.initialized = true;
+      return;
+    }
+
     try {
-      // Check if the service is available by testing connection
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id || `anon_${Date.now()}`;
-      
+      const { data: { user, session } } = await supabase.auth.getUser();
+
+      if (!user) {
+        console.warn('⚠️ User not authenticated');
+        this.available = false;
+        this.ready = false;
+        this.signedIn = false;
+        this.initialized = true;
+        return;
+      }
+
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const response = await fetch(`${this.baseUrl}/google-calendar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey
         },
         body: JSON.stringify({
           action: 'isConnected',
-          userId
+          userId: user.id
         })
       });
 
@@ -78,7 +107,7 @@ class GoogleCalendarService {
       this.ready = false;
       this.signedIn = false;
     }
-    
+
     this.initialized = true;
   }
 
@@ -95,22 +124,8 @@ class GoogleCalendarService {
   }
 
   async signIn(): Promise<void> {
-    console.log('🔐 Starting Google Calendar sign-in...');
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id || `anon_${Date.now()}`;
-      
-      // Build the auth URL and redirect
-      const return_to = encodeURIComponent(window.location.origin);
-      const authUrl = `${this.baseUrl}/google-auth-start?user_id=${userId}&return_to=${return_to}`;
-      
-      console.log('🚀 Redirecting to Google OAuth:', authUrl);
-      window.location.href = authUrl;
-    } catch (error) {
-      console.error('❌ Sign-in failed:', error);
-      throw new Error(`Sign-in failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    console.log('🔐 Google Calendar sign-in should use ConnectGoogleCalendarButton component');
+    throw new Error('Use ConnectGoogleCalendarButton component for Google OAuth sign-in');
   }
 
   private async makeApiCall(action: string, params: any = {}): Promise<any> {
@@ -118,18 +133,33 @@ class GoogleCalendarService {
       throw new Error('Google Calendar service not available');
     }
 
+    if (!this.baseUrl) {
+      throw new Error('Supabase URL not configured');
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id || `anon_${Date.now()}`;
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!anonKey) {
+        throw new Error('Supabase anon key not configured');
+      }
 
       const response = await fetch(`${this.baseUrl}/google-calendar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey
         },
         body: JSON.stringify({
           action,
-          userId,
+          userId: user.id,
           ...params
         })
       });
