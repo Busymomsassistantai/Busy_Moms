@@ -40,8 +40,14 @@ export function Settings() {
 
   const checkGoogleConnection = React.useCallback(async () => {
     if (!user) return;
-    const connected = await googleCalendarService.isConnected(user.id);
-    setIsGoogleConnected(connected);
+
+    try {
+      const connected = await googleCalendarService.isConnected(user.id);
+      setIsGoogleConnected(connected);
+    } catch (error) {
+      console.error('Error checking Google Calendar connection:', error);
+      setIsGoogleConnected(false);
+    }
   }, [user]);
 
   const loadCurrentProfile = React.useCallback(async () => {
@@ -54,9 +60,9 @@ export function Settings() {
         .eq('id', user.id)
         .maybeSingle();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.warn('Could not load profile:', error.message);
-      } else {
+      } else if (profile) {
         setCurrentProfile(profile);
       }
     } catch (error) {
@@ -65,23 +71,25 @@ export function Settings() {
   }, [user]);
 
   const loadFamilyMembers = React.useCallback(async () => {
+    if (!user) {
+      setFamilyMembers([]);
+      setLoadingMembers(false);
+      return;
+    }
+
     setLoadingMembers(true);
     try {
-      if (user) {
-        const { data: members, error } = await supabase
-          .from('family_members')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: true });
+      const { data: members, error } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
 
-        if (error) {
-          console.warn('Could not load family members from database:', error.message);
-          setFamilyMembers([]);
-        } else {
-          setFamilyMembers(members || []);
-        }
-      } else {
+      if (error && error.code !== 'PGRST116') {
+        console.warn('Could not load family members from database:', error.message);
         setFamilyMembers([]);
+      } else {
+        setFamilyMembers(members || []);
       }
     } catch (error) {
       console.error('Error loading family members:', error);
@@ -93,10 +101,24 @@ export function Settings() {
 
   // Load data on component mount and when user changes
   React.useEffect(() => {
-    loadFamilyMembers();
-    loadCurrentProfile();
-    checkGoogleConnection();
-  }, [loadFamilyMembers, loadCurrentProfile, checkGoogleConnection]);
+    let mounted = true;
+
+    const loadAllData = async () => {
+      if (!user || !mounted) return;
+
+      await Promise.all([
+        loadFamilyMembers(),
+        loadCurrentProfile(),
+        checkGoogleConnection()
+      ]);
+    };
+
+    loadAllData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, loadFamilyMembers, loadCurrentProfile, checkGoogleConnection]);
 
   // Listen for auth state changes to detect when Google Calendar is connected
   React.useEffect(() => {
@@ -114,11 +136,14 @@ export function Settings() {
   }, [checkGoogleConnection]);
 
   const syncWithGoogleCalendar = async () => {
+    if (syncingGoogle) return;
+
     setSyncingGoogle(true);
     try {
       await performSync();
     } catch (error) {
       console.error('Error syncing with Google Calendar:', error);
+      alert('Failed to sync with Google Calendar. Please try again.');
     } finally {
       setSyncingGoogle(false);
     }
@@ -481,8 +506,17 @@ export function Settings() {
                 <button
                   onClick={async () => {
                     if (confirm('Are you sure you want to disconnect Google Calendar?')) {
-                      await googleCalendarService.disconnect(user?.id || '');
-                      setIsGoogleConnected(false);
+                      try {
+                        const success = await googleCalendarService.disconnect(user?.id || '');
+                        if (success) {
+                          setIsGoogleConnected(false);
+                        } else {
+                          alert('Failed to disconnect Google Calendar. Please try again.');
+                        }
+                      } catch (error) {
+                        console.error('Error disconnecting Google Calendar:', error);
+                        alert('Failed to disconnect Google Calendar. Please try again.');
+                      }
                     }
                   }}
                   className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"

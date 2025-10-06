@@ -118,6 +118,90 @@ class GoogleCalendarService {
     return this.signedIn;
   }
 
+  async isConnected(userId: string): Promise<boolean> {
+    if (!this.baseUrl) {
+      console.log('⚠️ Supabase URL not configured');
+      return false;
+    }
+
+    try {
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!anonKey) {
+        console.log('⚠️ Supabase anon key not configured');
+        return false;
+      }
+
+      const response = await fetch(`${this.baseUrl}/google-calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          action: 'isConnected',
+          userId
+        })
+      });
+
+      if (!response.ok) {
+        console.log('⚠️ Could not check Google Calendar connection status');
+        return false;
+      }
+
+      const data = await response.json();
+      const connected = data.connected || false;
+
+      console.log(`🔍 Google Calendar connection status for user ${userId}:`, connected ? '✅ Connected' : '⭕ Not connected');
+      return connected;
+    } catch (error) {
+      console.log('⚠️ Error checking Google Calendar connection:', error);
+      return false;
+    }
+  }
+
+  async disconnect(userId: string): Promise<boolean> {
+    if (!this.baseUrl) {
+      console.log('⚠️ Supabase URL not configured');
+      return false;
+    }
+
+    try {
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!anonKey) {
+        console.log('⚠️ Supabase anon key not configured');
+        return false;
+      }
+
+      const response = await fetch(`${this.baseUrl}/google-calendar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey
+        },
+        body: JSON.stringify({
+          action: 'disconnect',
+          userId
+        })
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to disconnect Google Calendar');
+        return false;
+      }
+
+      this.signedIn = false;
+      console.log('✅ Google Calendar disconnected successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error disconnecting Google Calendar:', error);
+      return false;
+    }
+  }
+
   async signIn(): Promise<void> {
     throw new Error('Use ConnectGoogleCalendarButton component for Google OAuth sign-in');
   }

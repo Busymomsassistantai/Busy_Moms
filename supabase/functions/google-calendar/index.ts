@@ -249,14 +249,45 @@ Deno.serve(async (req: Request) => {
 
         const isConnected = !error && !!tokenData?.access_token;
         console.log(`🔍 Connection check for user ${userId}: ${isConnected}`);
-        
-        return jsonResponse({ 
-          connected: isConnected, 
-          expiry_ts: tokenData?.expiry_ts ?? null 
+
+        return jsonResponse({
+          connected: isConnected,
+          expiry_ts: tokenData?.expiry_ts ?? null
         });
       } catch (error) {
         console.error("❌ Connection check failed:", error);
         return jsonResponse({ connected: false, error: error.message }, 500);
+      }
+    }
+
+    if (action === "disconnect") {
+      try {
+        const { error } = await supabase
+          .from("google_tokens")
+          .delete()
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error("❌ Failed to disconnect Google Calendar:", error);
+          return jsonResponse({
+            success: false,
+            error: "Failed to disconnect Google Calendar",
+            details: error.message
+          }, 500);
+        }
+
+        console.log(`✅ Google Calendar disconnected for user: ${userId}`);
+        return jsonResponse({
+          success: true,
+          message: "Google Calendar disconnected successfully"
+        });
+      } catch (error) {
+        console.error("❌ Disconnect action failed:", error);
+        return jsonResponse({
+          success: false,
+          error: "Failed to disconnect Google Calendar",
+          details: error instanceof Error ? error.message : "Unknown error"
+        }, 500);
       }
     }
 
@@ -346,17 +377,17 @@ Deno.serve(async (req: Request) => {
 
       case "deleteEvent": {
         const { eventId } = body;
-        
+
         if (!eventId) {
           return jsonResponse({ error: "Missing eventId" }, 400);
         }
-        
+
         await makeGoogleCalendarRequest(
           accessToken,
           `/calendars/primary/events/${eventId}`,
           { method: 'DELETE' }
         );
-        
+
         return jsonResponse({ success: true, message: "Event deleted successfully" });
       }
 

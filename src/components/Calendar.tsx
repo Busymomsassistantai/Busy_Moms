@@ -130,23 +130,36 @@ export function Calendar() {
 
   // Check Google Calendar connection and load events
   useEffect(() => {
-    const checkGoogleAndSync = async () => {
-      if (user?.id) {
-        try {
-          const connected = await googleCalendarService.isConnected(user.id);
-          setIsGoogleConnected(connected);
+    let mounted = true;
 
-          if (connected) {
-            await performSync();
+    const checkGoogleAndSync = async () => {
+      if (!user?.id || !mounted) return;
+
+      try {
+        const connected = await googleCalendarService.isConnected(user.id);
+        if (!mounted) return;
+
+        setIsGoogleConnected(connected);
+
+        if (connected && mounted) {
+          await performSync();
+          if (mounted) {
             await loadGoogleEvents();
           }
-        } catch (error) {
-          console.error('Auto-sync failed:', error);
+        }
+      } catch (error) {
+        console.error('Auto-sync failed:', error);
+        if (mounted) {
+          setIsGoogleConnected(false);
         }
       }
     };
 
     checkGoogleAndSync();
+
+    return () => {
+      mounted = false;
+    };
   }, [user?.id, performSync]);
 
   const loadGoogleEvents = async () => {
