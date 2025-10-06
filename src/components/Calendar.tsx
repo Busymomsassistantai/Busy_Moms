@@ -28,7 +28,6 @@ import {
 import { EventForm } from './forms/EventForm';
 import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
 import { ConflictResolutionModal } from './ConflictResolutionModal';
-import { SyncStatus } from './SyncStatus';
 import { SyncSettings } from './SyncSettings';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 import { supabase } from '../lib/supabase';
@@ -592,9 +591,6 @@ export function Calendar() {
                 </div>
               )}
             </div>
-
-            {/* Sync Status Widget */}
-            <SyncStatus />
 
             {/* Sync Settings Button */}
             {isGoogleConnected && (
