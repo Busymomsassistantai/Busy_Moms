@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Mic, MicOff, MessageCircle, X, Loader2, Phone, PhoneOff
+  Mic, MicOff, MessageCircle, X, Loader2, Phone, PhoneOff, Send, MessageSquare
 } from 'lucide-react';
 import { openaiRealtimeService, RealtimeEvent } from '../services/openaiRealtimeService';
 import { aiAssistantService } from '../services/aiAssistantService';
@@ -23,9 +23,22 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   const [currentResponse, setCurrentResponse] = useState<string>('');
   const [isWaitingForWakeWord, setIsWaitingForWakeWord] = useState(false);
   const [inConversation, setInConversation] = useState(false);
+  const [chatMode, setChatMode] = useState<'voice' | 'text'>('voice');
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [textInput, setTextInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const initializingRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
 
   useEffect(() => {
     if (!isOpen || !user) return;
@@ -145,20 +158,43 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
     }
   };
 
-  const sendTextMessage = (text: string) => {
-    if (!isConnected) {
-      setError('Not connected to Sarah. Please wait for connection.');
-      return;
+  const sendTextMessage = async (text: string) => {
+    if (chatMode === 'text') {
+      // Text-only chat mode using aiAssistantService
+      if (!text.trim() || isProcessing) return;
+
+      const userMessage = { role: 'user' as const, content: text.trim() };
+      setChatMessages(prev => [...prev, userMessage]);
+      setTextInput('');
+      setIsProcessing(true);
+
+      try {
+        const result = await aiAssistantService.processUserMessage(text.trim(), user!.id);
+        const assistantMessage = { role: 'assistant' as const, content: result.message };
+        setChatMessages(prev => [...prev, assistantMessage]);
+      } catch (error) {
+        const errorMessage = {
+          role: 'assistant' as const,
+          content: 'I apologize, but I encountered an error. Please try again.'
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      // Voice mode - send to realtime service
+      if (!isConnected) {
+        setError('Not connected to Sarah. Please wait for connection.');
+        return;
+      }
+
+      openaiRealtimeService.sendMessage?.(text);
+
+      setConversation(prev => [
+        ...prev,
+        { type: 'user_message', content: text, timestamp: Date.now() } as RealtimeEvent
+      ]);
     }
-    
-    // Send message directly to OpenAI Realtime API
-    // The service will handle shopping list processing internally
-    openaiRealtimeService.sendMessage?.(text);
-    
-    setConversation(prev => [
-      ...prev,
-      { type: 'user_message', content: text, timestamp: Date.now() } as RealtimeEvent
-    ]);
   };
 
   const toggleMute = async () => {
@@ -219,6 +255,19 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
     }
   };
 
+  const handleSendTextMessage = () => {
+    if (textInput.trim()) {
+      sendTextMessage(textInput);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendTextMessage();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -232,24 +281,100 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-lg">Sarah Voice Assistant</h3>
+                <h3 className="font-bold text-white text-lg">Sarah Assistant</h3>
                 <p className={`text-sm font-medium ${connectionState === 'connected' ? 'text-green-100' : connectionState === 'connecting' ? 'text-yellow-100' : 'text-rose-100'}`}>
-                  {getConnectionStatusText()}
+                  {chatMode === 'text' ? 'Text Chat Mode' : getConnectionStatusText()}
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 bg-white bg-opacity-20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {/* Mode Toggle */}
+              <div className="flex bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-1">
+                <button
+                  onClick={() => setChatMode('voice')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    chatMode === 'voice'
+                      ? 'bg-white text-rose-600'
+                      : 'text-white hover:bg-white hover:bg-opacity-10'
+                  }`}
+                  title="Voice Mode"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setChatMode('text')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    chatMode === 'text'
+                      ? 'bg-white text-rose-600'
+                      : 'text-white hover:bg-white hover:bg-opacity-10'
+                  }`}
+                  title="Text Mode"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 bg-white bg-opacity-20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Conversation Area */}
         <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-rose-50 to-white">
-          {!isConnected && (
+          {/* Text Chat Mode */}
+          {chatMode === 'text' && (
+            <div className="space-y-4">
+              {chatMessages.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-lg font-semibold text-gray-800 mb-2">Text Chat with Sarah</p>
+                  <p className="text-sm text-gray-600 mb-4">Type your message below to start chatting</p>
+                  <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl max-w-sm mx-auto">
+                    <p className="text-sm text-rose-800 font-medium">
+                      💡 Ask me to schedule events, add shopping items, create tasks, and more!
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Chat Messages */}
+              {chatMessages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] p-4 rounded-2xl ${
+                      message.role === 'user'
+                        ? 'bg-gradient-to-br from-rose-400 to-pink-400 text-white'
+                        : 'bg-white border-2 border-rose-100 text-gray-900'
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </div>
+              ))}
+
+              {isProcessing && (
+                <div className="flex justify-start">
+                  <div className="bg-white border-2 border-rose-100 p-4 rounded-2xl">
+                    <Loader2 className="w-5 h-5 animate-spin text-rose-600" />
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+
+          {/* Voice Mode */}
+          {chatMode === 'voice' && !isConnected && (
             <div className="text-center py-8">
               {isConnecting ? (
                 <>
@@ -423,7 +548,39 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           )}
         </div>
 
-        {/* Controls */}
+        {/* Text Input Area for Text Chat Mode */}
+        {chatMode === 'text' && (
+          <div className="p-6 bg-white border-t-2 border-rose-100">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition-all"
+                disabled={isProcessing}
+              />
+              <button
+                onClick={handleSendTextMessage}
+                disabled={!textInput.trim() || isProcessing}
+                className="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Send</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Controls - Only show in voice mode */}
+        {chatMode === 'voice' && (
         <div className="p-6 bg-gradient-to-r from-rose-50 to-pink-50 border-t-2 border-rose-100 flex items-center justify-center space-x-4">
           <button
             onClick={toggleMute}
@@ -463,10 +620,10 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             </span>
           </div>
         </div>
+        )}
 
-
-        {/* WebRTC Not Supported Warning */}
-        {typeof openaiRealtimeService.isSupported === 'function' && !openaiRealtimeService.isSupported() && (
+        {/* WebRTC Not Supported Warning - Only show in voice mode */}
+        {chatMode === 'voice' && typeof openaiRealtimeService.isSupported === 'function' && !openaiRealtimeService.isSupported() && (
           <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-t-2 border-amber-300">
             <p className="text-sm font-medium text-amber-900">
               ⚠️ WebRTC is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.
