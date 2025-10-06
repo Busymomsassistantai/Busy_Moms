@@ -1,6 +1,5 @@
 import React from 'react';
 import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Users, LogOut, Smartphone, User, Sparkles } from 'lucide-react';
-import { AIChat } from './AIChat';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
 import { DailyAffirmations } from './DailyAffirmations';
 import { useAuth } from '../hooks/useAuth';
@@ -12,12 +11,12 @@ import { SubScreen } from '../App';
 interface DashboardProps {
   onNavigate: (screen: 'calendar' | 'family' | 'more') => void;
   onNavigateToSubScreen: (screen: SubScreen) => void;
+  onVoiceChatOpen?: () => void;
 }
 
-export function Dashboard({ onNavigate }: DashboardProps) {
+export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }: DashboardProps) {
   const { signOut } = useAuth();
   const { user } = useAuth();
-  const [isChatOpen, setIsChatOpen] = React.useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = React.useState(false);
   const [showAffirmations, setShowAffirmations] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
@@ -142,7 +141,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     { icon: Calendar, title: 'View Calendar', desc: 'See all your events', color: 'from-rose-400 to-pink-400', action: () => onNavigate('calendar') },
     { icon: ShoppingBag, title: 'Shopping List', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-amber-400 to-orange-400', action: () => onNavigateToSubScreen('shopping') },
     { icon: Users, title: 'Family Hub', desc: 'Organize by family member', color: 'from-violet-400 to-purple-400', action: () => onNavigate('family') },
-    { icon: MessageCircle, title: 'AI Assistant', desc: 'Get help with anything', color: 'from-fuchsia-400 to-pink-400', action: () => setIsChatOpen(true) }
+    { icon: MessageCircle, title: 'AI Assistant', desc: 'Get help with anything', color: 'from-fuchsia-400 to-pink-400', action: () => onVoiceChatOpen?.() }
   ];
 
   const sampleReminders = [
@@ -331,45 +330,45 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </div>
         </div>
 
-        {/* AI Assistant */}
+        {/* AI Voice Assistant */}
         <div
           className="bg-gradient-to-r from-rose-50 to-pink-50 p-4 sm:p-6 rounded-xl border border-rose-100 cursor-pointer hover:shadow-md transition-all"
-          onClick={() => setIsChatOpen(true)}
+          onClick={() => onVoiceChatOpen?.()}
         >
           <div className="flex items-center space-x-3 mb-3 sm:mb-4">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center">
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Your AI Assistant</h3>
-              <p className="text-xs sm:text-sm text-gray-600">Ask me anything!</p>
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Sarah - Your Voice Assistant</h3>
+              <p className="text-xs sm:text-sm text-gray-600">Talk to me anytime!</p>
             </div>
           </div>
           <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
-            <p className="text-sm sm:text-base text-gray-700 mb-2 sm:mb-3">"What can I help you with today?"</p>
+            <p className="text-sm sm:text-base text-gray-700 mb-2 sm:mb-3">"Hey Sarah, what can you help me with today?"</p>
             <div className="flex flex-wrap gap-1 sm:gap-2">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsChatOpen(true);
+                  onVoiceChatOpen?.();
                 }}
                 className="px-2 py-1 sm:px-3 bg-rose-100 text-rose-700 rounded-full text-xs sm:text-sm hover:bg-rose-200 transition-colors"
               >
                 Add reminder for tomorrow
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsChatOpen(true);
+                  onVoiceChatOpen?.();
                 }}
                 className="px-2 py-1 sm:px-3 bg-rose-100 text-rose-700 rounded-full text-xs sm:text-sm hover:bg-rose-200 transition-colors"
               >
                 Schedule dentist appointment
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsChatOpen(true);
+                  onVoiceChatOpen?.();
                 }}
                 className="px-2 py-1 sm:px-3 bg-rose-100 text-rose-700 rounded-full text-xs sm:text-sm hover:bg-rose-200 transition-colors"
               >
@@ -380,7 +379,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
       <WhatsAppIntegration 
         isOpen={isWhatsAppOpen} 
         onClose={() => setIsWhatsAppOpen(false)}

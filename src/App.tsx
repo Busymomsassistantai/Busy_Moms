@@ -12,7 +12,6 @@ import { Contacts } from './components/Contacts'
 import { Shopping } from './components/Shopping'
 import { Tasks } from './components/Tasks'
 import { Settings } from './components/Settings'
-import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
 import { FamilyFolders } from './components/FamilyFolders'
 import { OAuthDiagnostics } from './components/OAuthDiagnostics'
@@ -26,7 +25,7 @@ import { useToast } from './hooks/useErrorHandler'
 import { useAffirmationNotifier } from './hooks/useAffirmationNotifier'
 import { captureAndStoreGoogleTokens } from './services/googleTokenStorage'
 
-export type Screen = 'dashboard' | 'calendar' | 'family' | 'more' | 'ai-chat'
+export type Screen = 'dashboard' | 'calendar' | 'family' | 'more'
 export type SubScreen = 'shopping' | 'tasks' | 'contacts' | 'family-folders' | 'settings'
 
 function App() {
@@ -263,6 +262,7 @@ function App() {
                   <Dashboard
                     onNavigate={setCurrentScreen}
                     onNavigateToSubScreen={setCurrentSubScreen}
+                    onVoiceChatOpen={() => setShowVoiceChat(true)}
                   />
                 </FeatureErrorBoundary>
               )}
@@ -287,11 +287,6 @@ function App() {
                     userName={user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0]}
                     userEmail={user?.email}
                   />
-                </FeatureErrorBoundary>
-              )}
-              {currentScreen === 'ai-chat' && (
-                <FeatureErrorBoundary featureName="AI Chat">
-                  <AIChat />
                 </FeatureErrorBoundary>
               )}
             </>
