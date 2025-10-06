@@ -64,17 +64,16 @@ export function ThemeSwitcher() {
           const colors = isDark ? theme.dark : theme.light;
 
           return (
-            <button
+            <div
               key={themeId}
-              onClick={() => changeTheme(themeId)}
-              className="w-full p-3 rounded-xl border-2 transition-all bg-theme-surface hover:opacity-90"
+              className="p-3 rounded-xl border-2 transition-all bg-theme-surface"
               style={{
                 borderColor: isActive ? 'var(--color-primary)' : 'var(--color-border)',
                 backgroundColor: isActive ? 'var(--color-secondary)' : 'var(--color-surface)'
               }}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 flex-1">
                   <div className="flex space-x-1">
                     <div
                       className="w-6 h-6 rounded-md border"
@@ -99,7 +98,7 @@ export function ThemeSwitcher() {
                     />
                   </div>
 
-                  <div className="text-left">
+                  <div className="text-left flex-1">
                     <h4 className="font-medium text-sm text-theme-fg">
                       {theme.name}
                     </h4>
@@ -107,13 +106,25 @@ export function ThemeSwitcher() {
                   </div>
                 </div>
 
-                {isActive && (
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center bg-theme-primary text-theme-primary-fg">
-                    <Check className="w-4 h-4" />
-                  </div>
-                )}
+                <div className="flex items-center space-x-2">
+                  {isActive && (
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-theme-primary text-theme-primary-fg">
+                      <Check className="w-4 h-4" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => changeTheme(themeId)}
+                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all"
+                    style={{
+                      backgroundColor: colors.primary,
+                      color: colors.primaryFg
+                    }}
+                  >
+                    Apply
+                  </button>
+                </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
