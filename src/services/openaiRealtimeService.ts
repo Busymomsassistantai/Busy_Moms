@@ -227,6 +227,103 @@ export class OpenAIRealtimeService extends Emitter {
           },
           required: ['title']
         }
+      },
+      {
+        type: 'function',
+        name: 'create_task',
+        description: 'Create a new task or todo item for family members',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'The title/name of the task' },
+            description: { type: 'string', description: 'Detailed description of the task' },
+            category: {
+              type: 'string',
+              enum: ['chores', 'homework', 'sports', 'music', 'health', 'social', 'other'],
+              description: 'Category of the task'
+            },
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description: 'Priority level of the task'
+            },
+            assigned_to: { type: 'string', description: 'Name of family member to assign this task to' },
+            due_date: { type: 'string', description: 'Due date in YYYY-MM-DD format or natural language like "today", "tomorrow"' },
+            due_time: { type: 'string', description: 'Due time in HH:MM format or natural language like "2pm", "14:30"' },
+            points: { type: 'number', description: 'Points awarded for completing this task (for gamification)' },
+            notes: { type: 'string', description: 'Additional notes or instructions for the task' }
+          },
+          required: ['title']
+        }
+      },
+      {
+        type: 'function',
+        name: 'query_tasks',
+        description: 'Query and list tasks, optionally filtered by status, assigned member, or search term',
+        parameters: {
+          type: 'object',
+          properties: {
+            query_type: {
+              type: 'string',
+              enum: ['all', 'pending', 'in_progress', 'completed', 'cancelled', 'search', 'assigned_to'],
+              description: 'Type of query: all (all tasks), pending (pending tasks), in_progress (in progress tasks), completed (completed tasks), cancelled (cancelled tasks), search (search by term), assigned_to (filter by assigned member)'
+            },
+            search_term: { type: 'string', description: 'Search term to find specific tasks (for search queries)' },
+            assigned_to: { type: 'string', description: 'Name of family member to filter tasks by (for assigned_to queries)' }
+          },
+          required: ['query_type']
+        }
+      },
+      {
+        type: 'function',
+        name: 'update_task',
+        description: 'Update an existing task',
+        parameters: {
+          type: 'object',
+          properties: {
+            search_term: { type: 'string', description: 'Term to find the task to update (task title or part of it)' },
+            updates: {
+              type: 'object',
+              properties: {
+                title: { type: 'string', description: 'New title' },
+                description: { type: 'string', description: 'New description' },
+                category: { type: 'string', enum: ['chores', 'homework', 'sports', 'music', 'health', 'social', 'other'], description: 'New category' },
+                priority: { type: 'string', enum: ['low', 'medium', 'high'], description: 'New priority' },
+                status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'cancelled'], description: 'New status' },
+                assigned_to: { type: 'string', description: 'Name of family member to reassign to' },
+                due_date: { type: 'string', description: 'New due date' },
+                due_time: { type: 'string', description: 'New due time' },
+                points: { type: 'number', description: 'New points value' },
+                notes: { type: 'string', description: 'New notes' }
+              }
+            }
+          },
+          required: ['search_term', 'updates']
+        }
+      },
+      {
+        type: 'function',
+        name: 'complete_task',
+        description: 'Mark a task as completed',
+        parameters: {
+          type: 'object',
+          properties: {
+            search_term: { type: 'string', description: 'Term to find the task to complete (task title or part of it)' }
+          },
+          required: ['search_term']
+        }
+      },
+      {
+        type: 'function',
+        name: 'delete_task',
+        description: 'Delete a task',
+        parameters: {
+          type: 'object',
+          properties: {
+            search_term: { type: 'string', description: 'Term to find the task to delete (task title or part of it)' }
+          },
+          required: ['search_term']
+        }
       }
     ];
   }
@@ -535,6 +632,21 @@ export class OpenAIRealtimeService extends Emitter {
         case 'add_shopping_item':
           result = await this.handleAddShoppingItem(args);
           break;
+        case 'create_task':
+          result = await this.handleCreateTask(args);
+          break;
+        case 'query_tasks':
+          result = await this.handleQueryTasks(args);
+          break;
+        case 'update_task':
+          result = await this.handleUpdateTask(args);
+          break;
+        case 'complete_task':
+          result = await this.handleCompleteTask(args);
+          break;
+        case 'delete_task':
+          result = await this.handleDeleteTask(args);
+          break;
         default:
           result = { success: false, message: `Unknown function: ${functionName}` };
       }
@@ -637,6 +749,68 @@ export class OpenAIRealtimeService extends Emitter {
     const message = `add ${args.title} to shopping list${args.quantity ? ' quantity ' + args.quantity : ''}`;
     return await aiAssistantService.processUserMessage(message, this.currentUserId!);
   }
+
+  private async handleCreateTask(args: any) {
+    console.log('✅ Voice AI creating task with args:', args);
+
+    const details: Record<string, unknown> = {
+      title: args.title,
+      description: args.description,
+      category: args.category,
+      priority: args.priority,
+      assigned_to: args.assigned_to,
+      date: args.due_date,
+      time: args.due_time,
+      points: args.points,
+      notes: args.notes
+    };
+
+    return await aiAssistantService.createTask(details, this.currentUserId!);
+  }
+
+  private async handleQueryTasks(args: any) {
+    console.log('📋 Voice AI querying tasks with args:', args);
+
+    const details: Record<string, unknown> = {
+      query_type: args.query_type,
+      search_term: args.search_term,
+      assigned_to: args.assigned_to
+    };
+
+    return await aiAssistantService.queryTasks(details, this.currentUserId!);
+  }
+
+  private async handleUpdateTask(args: any) {
+    console.log('✏️ Voice AI updating task with args:', args);
+
+    const details: Record<string, unknown> = {
+      search_term: args.search_term,
+      updates: args.updates || {}
+    };
+
+    return await aiAssistantService.updateTask(details, this.currentUserId!);
+  }
+
+  private async handleCompleteTask(args: any) {
+    console.log('✅ Voice AI completing task with args:', args);
+
+    const details: Record<string, unknown> = {
+      search_term: args.search_term,
+      updates: { status: 'completed' }
+    };
+
+    return await aiAssistantService.updateTask(details, this.currentUserId!);
+  }
+
+  private async handleDeleteTask(args: any) {
+    console.log('🗑️ Voice AI deleting task with args:', args);
+
+    const details: Record<string, unknown> = {
+      search_term: args.search_term
+    };
+
+    return await aiAssistantService.deleteTask(details, this.currentUserId!);
+  }
 }
 
 export const openaiRealtimeService = new OpenAIRealtimeService({
@@ -646,15 +820,28 @@ export const openaiRealtimeService = new OpenAIRealtimeService({
   voice: 'alloy',
   instructions: `You are Sara, a helpful AI assistant for busy parents embedded in a family organizer app.
 
-You have full access to the user's calendar and can help them manage their schedule. You can:
+You have full access to the user's calendar, tasks, shopping lists, and reminders. You can:
+
+CALENDAR MANAGEMENT:
 - Answer questions about their schedule ("What's on my calendar today?")
 - Check availability ("Am I free tomorrow afternoon?")
 - Find events ("When is my dentist appointment?")
 - Create new events ("Schedule a meeting tomorrow at 2pm")
 - Update events ("Move my dentist appointment to next week")
 - Delete events ("Cancel my meeting tomorrow")
-- Set reminders and create tasks
-- Add items to shopping lists
+
+TASK MANAGEMENT:
+- View all tasks or filter by status ("What tasks do I have?", "Show me pending tasks")
+- Create new tasks for family members ("Create a task for Sarah to clean her room")
+- Assign tasks with priorities and due dates ("Add homework task for tomorrow, high priority")
+- Update existing tasks ("Change the clean room task to high priority")
+- Mark tasks as complete ("Mark the homework task as done")
+- Delete tasks ("Delete the grocery shopping task")
+- Check who's assigned what ("What tasks does Sarah have?")
+
+OTHER FEATURES:
+- Set reminders for important dates and times
+- Add items to shopping lists with categories
 - Provide parenting advice and support
 
 Keep responses natural, conversational, and concise for voice interaction. Always check for schedule conflicts when creating events and proactively warn users. Use a warm, supportive tone and speak like you're having a friendly conversation.`

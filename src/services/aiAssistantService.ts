@@ -11,7 +11,7 @@ export interface AIAction {
   data?: unknown;
 }
 
-type IntentType = 'calendar' | 'calendar_query' | 'calendar_update' | 'calendar_delete' | 'reminder' | 'shopping' | 'task' | 'chat';
+type IntentType = 'calendar' | 'calendar_query' | 'calendar_update' | 'calendar_delete' | 'reminder' | 'shopping' | 'task' | 'task_query' | 'task_update' | 'task_delete' | 'chat';
 
 interface IntentResult {
   type: IntentType;
@@ -108,8 +108,8 @@ async function classifyMessage(message: string, calendarSummary: string): Promis
 
   console.log('🤖 Classifying message:', message);
 
-  const systemPrompt = `You are a smart calendar-aware assistant that classifies user messages into actions.
-Return ONLY valid JSON with this exact format: {"type": "calendar|calendar_query|calendar_update|calendar_delete|reminder|shopping|task|chat", "details": {...}}
+  const systemPrompt = `You are a smart assistant that classifies user messages into actions.
+Return ONLY valid JSON with this exact format: {"type": "calendar|calendar_query|calendar_update|calendar_delete|reminder|shopping|task|task_query|task_update|task_delete|chat", "details": {...}}
 
 Current Calendar Context:
 ${calendarSummary}
@@ -120,7 +120,10 @@ For calendar creation: {"type": "calendar", "details": {"title": "event name", "
 For calendar queries: {"type": "calendar_query", "details": {"query_type": "today|week|availability|search|next", "date": "YYYY-MM-DD", "search_term": "keyword"}}
 For calendar updates: {"type": "calendar_update", "details": {"search_term": "event to find", "updates": {"date": "new date", "time": "new time", "location": "new location"}}}
 For calendar deletion: {"type": "calendar_delete", "details": {"search_term": "event to delete", "date": "YYYY-MM-DD"}}
-For tasks: {"type": "task", "details": {"title": "task name", "category": "chores|homework|sports|music|health|social|other"}}
+For task creation: {"type": "task", "details": {"title": "task name", "category": "chores|homework|sports|music|health|social|other", "priority": "low|medium|high", "assigned_to": "person name", "date": "YYYY-MM-DD", "time": "HH:MM:SS"}}
+For task queries: {"type": "task_query", "details": {"query_type": "all|pending|in_progress|completed|search|assigned_to", "search_term": "keyword", "assigned_to": "person name"}}
+For task updates: {"type": "task_update", "details": {"search_term": "task to find", "updates": {"status": "pending|in_progress|completed|cancelled", "priority": "low|medium|high", "date": "new date"}}}
+For task deletion: {"type": "task_delete", "details": {"search_term": "task to delete"}}
 For chat: {"type": "chat", "details": {"query": "user question"}}
 
 Examples:
@@ -128,9 +131,11 @@ Examples:
 "remind me to call mom tomorrow at 3pm" -> {"type": "reminder", "details": {"title": "call mom", "date": "tomorrow", "time": "15:00:00"}}
 "schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}
 "what's on my calendar today" -> {"type": "calendar_query", "details": {"query_type": "today"}}
-"am I free tomorrow afternoon" -> {"type": "calendar_query", "details": {"query_type": "availability", "date": "tomorrow"}}
-"move my dentist appointment to next week" -> {"type": "calendar_update", "details": {"search_term": "dentist", "updates": {"date": "next week"}}}
-"cancel my meeting tomorrow" -> {"type": "calendar_delete", "details": {"search_term": "meeting", "date": "tomorrow"}}`;
+"create task to clean room" -> {"type": "task", "details": {"title": "clean room", "category": "chores"}}
+"what tasks do I have" -> {"type": "task_query", "details": {"query_type": "all"}}
+"show me pending tasks" -> {"type": "task_query", "details": {"query_type": "pending"}}
+"mark homework as complete" -> {"type": "task_update", "details": {"search_term": "homework", "updates": {"status": "completed"}}}
+"delete the shopping task" -> {"type": "task_delete", "details": {"search_term": "shopping"}}`;
 
   try {
     const response = await openaiService.chat([
@@ -244,6 +249,12 @@ class AIAssistantService {
           return this.handleShoppingAction(intent.details || {}, userId);
         case 'task':
           return this.handleTaskAction(intent.details || {}, userId);
+        case 'task_query':
+          return this.handleTaskQuery(intent.details || {}, userId);
+        case 'task_update':
+          return this.handleTaskUpdate(intent.details || {}, userId);
+        case 'task_delete':
+          return this.handleTaskDelete(intent.details || {}, userId);
         default:
           return this.handleChatAction(intent.details || {}, message, calendarContext);
       }
@@ -270,6 +281,26 @@ class AIAssistantService {
   /** Direct calendar event deletion with structured data (for voice AI, etc.) */
   async deleteCalendarEvent(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
     return this.handleCalendarDelete(details, userId);
+  }
+
+  /** Direct task creation with structured data (for voice AI, etc.) */
+  async createTask(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleTaskAction(details, userId);
+  }
+
+  /** Direct task query with structured data (for voice AI, etc.) */
+  async queryTasks(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleTaskQuery(details, userId);
+  }
+
+  /** Direct task update with structured data (for voice AI, etc.) */
+  async updateTask(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleTaskUpdate(details, userId);
+  }
+
+  /** Direct task deletion with structured data (for voice AI, etc.) */
+  async deleteTask(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleTaskDelete(details, userId);
   }
 
   /** Calendar Creation */
@@ -768,28 +799,51 @@ class AIAssistantService {
   /** Tasks */
   private async handleTaskAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
     console.log('✅ Creating task with details:', details);
-    
+
     const title = String(details.title ?? 'New task');
+    const description = details.description ? String(details.description) : null;
     const due_date = toISODate(details.date);
     const due_time = toISOTime(details.time);
     const p = details.priority ? details.priority.toString().toLowerCase() : undefined;
     const priority = (p === 'low' || p === 'medium' || p === 'high') ? p : 'medium';
     const category = String(details.category ?? 'other');
+    const points = coerceInt(details.points, 0) ?? 0;
+    const notes = details.notes ? String(details.notes) : null;
+
+    let assigned_to = null;
+    if (details.assigned_to) {
+      const memberName = String(details.assigned_to).toLowerCase();
+      const { data: members } = await supabase
+        .from('family_members')
+        .select('id, name')
+        .eq('user_id', userId)
+        .ilike('name', `%${memberName}%`);
+
+      if (members && members.length > 0) {
+        assigned_to = members[0].id;
+      }
+    }
 
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ 
-          user_id: userId, 
-          title, 
-          due_date, 
-          due_time, 
+        .insert([{
+          user_id: userId,
+          title,
+          description,
+          due_date,
+          due_time,
           priority,
           status: 'pending',
           category,
-          points: 0
+          points,
+          notes,
+          assigned_to
         }])
-        .select()
+        .select(`
+          *,
+          assigned_family_member:family_members(id, name, age)
+        `)
         .single();
 
       if (error) {
@@ -798,18 +852,283 @@ class AIAssistantService {
       }
 
       console.log('✅ Task created successfully:', data);
-      return { 
-        type: 'task', 
-        success: true, 
-        message: `✅ Task created: ${title}${due_date ? ' due ' + due_date : ''}`, 
-        data 
+
+      let message = `✅ Task created: ${title}`;
+      if (due_date) message += ` due ${due_date}`;
+      if ((data as any).assigned_family_member) {
+        message += ` assigned to ${(data as any).assigned_family_member.name}`;
+      }
+
+      return {
+        type: 'task',
+        success: true,
+        message,
+        data
       };
     } catch (error) {
       console.error('❌ Task creation error:', error);
-      return { 
-        type: 'task', 
-        success: false, 
-        message: `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        type: 'task',
+        success: false,
+        message: `Failed to create task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Task Query */
+  private async handleTaskQuery(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('📋 Querying tasks with details:', details);
+
+    const queryType = String(details.query_type || 'all');
+    const searchTerm = details.search_term ? String(details.search_term) : null;
+    const assignedTo = details.assigned_to ? String(details.assigned_to) : null;
+
+    try {
+      let query = supabase
+        .from('tasks')
+        .select(`
+          *,
+          assigned_family_member:family_members(id, name, age)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (queryType !== 'all' && queryType !== 'search' && queryType !== 'assigned_to') {
+        query = query.eq('status', queryType);
+      }
+
+      if (searchTerm) {
+        query = query.ilike('title', `%${searchTerm}%`);
+      }
+
+      if (assignedTo) {
+        const { data: members } = await supabase
+          .from('family_members')
+          .select('id')
+          .eq('user_id', userId)
+          .ilike('name', `%${assignedTo}%`);
+
+        if (members && members.length > 0) {
+          query = query.eq('assigned_to', members[0].id);
+        }
+      }
+
+      const { data: tasks, error } = await query;
+
+      if (error) throw error;
+
+      if (!tasks || tasks.length === 0) {
+        return {
+          type: 'task',
+          success: true,
+          message: 'You have no tasks matching your criteria.',
+          data: { tasks: [] }
+        };
+      }
+
+      let message = `You have ${tasks.length} task${tasks.length > 1 ? 's' : ''}:\n`;
+      tasks.forEach((task: any, i: number) => {
+        message += `${i + 1}. ${task.title}`;
+        if (task.status) message += ` (${task.status})`;
+        if (task.assigned_family_member) message += ` - assigned to ${task.assigned_family_member.name}`;
+        if (task.due_date) message += ` - due ${task.due_date}`;
+        message += '\n';
+      });
+
+      return {
+        type: 'task',
+        success: true,
+        message,
+        data: { tasks }
+      };
+    } catch (error) {
+      console.error('❌ Task query error:', error);
+      return {
+        type: 'task',
+        success: false,
+        message: `Failed to query tasks: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Task Update */
+  private async handleTaskUpdate(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('✏️ Updating task with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+    const updates = details.updates as Record<string, unknown> || {};
+
+    if (!searchTerm) {
+      return {
+        type: 'task',
+        success: false,
+        message: 'Please specify which task you want to update.'
+      };
+    }
+
+    try {
+      const { data: tasks, error: searchError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .ilike('title', `%${searchTerm}%`);
+
+      if (searchError) throw searchError;
+
+      if (!tasks || tasks.length === 0) {
+        return {
+          type: 'task',
+          success: false,
+          message: `No tasks found matching "${searchTerm}".`
+        };
+      }
+
+      if (tasks.length > 1) {
+        const taskList = tasks.map((t: any) => t.title).join(', ');
+        return {
+          type: 'task',
+          success: false,
+          message: `Multiple tasks found matching "${searchTerm}": ${taskList}. Please be more specific.`,
+          data: { tasks }
+        };
+      }
+
+      const task = tasks[0];
+      const updatePayload: any = { updated_at: new Date().toISOString() };
+
+      if (updates.title) updatePayload.title = String(updates.title);
+      if (updates.description) updatePayload.description = String(updates.description);
+      if (updates.category) updatePayload.category = String(updates.category);
+      if (updates.priority) updatePayload.priority = String(updates.priority);
+      if (updates.status) {
+        updatePayload.status = String(updates.status);
+        if (updatePayload.status === 'completed') {
+          updatePayload.completed_at = new Date().toISOString();
+        }
+      }
+      if (updates.notes) updatePayload.notes = String(updates.notes);
+      if (updates.points !== undefined) updatePayload.points = coerceInt(updates.points, 0);
+
+      if (updates.date || updates.due_date) {
+        const newDate = toISODate(updates.date || updates.due_date);
+        if (newDate) updatePayload.due_date = newDate;
+      }
+
+      if (updates.time || updates.due_time) {
+        const newTime = toISOTime(updates.time || updates.due_time);
+        if (newTime) updatePayload.due_time = newTime;
+      }
+
+      if (updates.assigned_to) {
+        const memberName = String(updates.assigned_to).toLowerCase();
+        const { data: members } = await supabase
+          .from('family_members')
+          .select('id')
+          .eq('user_id', userId)
+          .ilike('name', `%${memberName}%`);
+
+        if (members && members.length > 0) {
+          updatePayload.assigned_to = members[0].id;
+        }
+      }
+
+      if (Object.keys(updatePayload).length === 1) {
+        return {
+          type: 'task',
+          success: false,
+          message: 'No valid updates provided.'
+        };
+      }
+
+      const { data: updatedTask, error: updateError } = await supabase
+        .from('tasks')
+        .update(updatePayload)
+        .eq('id', task.id)
+        .select(`
+          *,
+          assigned_family_member:family_members(id, name, age)
+        `)
+        .single();
+
+      if (updateError) throw updateError;
+
+      return {
+        type: 'task',
+        success: true,
+        message: `✅ Updated task "${task.title}" successfully!`,
+        data: { task: updatedTask }
+      };
+    } catch (error) {
+      console.error('❌ Task update error:', error);
+      return {
+        type: 'task',
+        success: false,
+        message: `Failed to update task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Task Delete */
+  private async handleTaskDelete(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('🗑️ Deleting task with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+
+    if (!searchTerm) {
+      return {
+        type: 'task',
+        success: false,
+        message: 'Please specify which task you want to delete.'
+      };
+    }
+
+    try {
+      const { data: tasks, error: searchError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .ilike('title', `%${searchTerm}%`);
+
+      if (searchError) throw searchError;
+
+      if (!tasks || tasks.length === 0) {
+        return {
+          type: 'task',
+          success: false,
+          message: `No tasks found matching "${searchTerm}".`
+        };
+      }
+
+      if (tasks.length > 1) {
+        const taskList = tasks.map((t: any) => t.title).join(', ');
+        return {
+          type: 'task',
+          success: false,
+          message: `Multiple tasks found matching "${searchTerm}": ${taskList}. Please be more specific.`,
+          data: { tasks }
+        };
+      }
+
+      const task = tasks[0];
+      const { error: deleteError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', task.id);
+
+      if (deleteError) throw deleteError;
+
+      return {
+        type: 'task',
+        success: true,
+        message: `✅ Deleted task "${task.title}" from your list.`,
+        data: { task }
+      };
+    } catch (error) {
+      console.error('❌ Task delete error:', error);
+      return {
+        type: 'task',
+        success: false,
+        message: `Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   }
@@ -824,23 +1143,33 @@ class AIAssistantService {
       const response = await openaiService.chat([
         {
           role: 'system',
-          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice.${contextInfo}
+          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, task management, shopping lists, reminders, and general parenting advice.${contextInfo}
 
 Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.
 
-You have full access to the user's calendar and can:
+You have full access to the user's calendar and tasks. You can:
+
+CALENDAR:
 - Answer questions about their schedule ("What's on my calendar today?")
 - Check availability ("Am I free tomorrow afternoon?")
 - Find specific events ("When is my dentist appointment?")
 - Create new events ("Schedule a meeting tomorrow at 2pm")
 - Update existing events ("Move my dentist appointment to next week")
 - Delete events ("Cancel my meeting tomorrow")
+
+TASKS:
+- View all tasks or filter by status ("What tasks do I have?", "Show pending tasks")
+- Create new tasks for family members ("Create a task for Sarah to clean her room")
+- Update task details ("Change homework task priority to high")
+- Mark tasks as complete ("Mark the homework task as done")
+- Delete tasks ("Delete the grocery shopping task")
+
+OTHER:
 - Add items to shopping lists ("add milk to shopping list")
 - Set reminders ("remind me to call mom tomorrow at 3pm")
-- Create tasks ("create task to clean room")
 - Answer general questions about parenting and family management
 
-When answering questions, reference the calendar context when relevant. If the user mentions planning something, check for conflicts proactively.`
+When answering questions, reference the calendar and task context when relevant. If the user mentions planning something, check for conflicts proactively.`
         },
         {
           role: 'user',
