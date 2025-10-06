@@ -81,6 +81,7 @@ export function Calendar() {
   const [error, setError] = useState<string | null>(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const [syncedGoogleEventIds, setSyncedGoogleEventIds] = useState<Set<string>>(new Set());
 
   const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
   const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate]);
@@ -117,13 +118,24 @@ export function Calendar() {
 
       if (remindersErr) throw remindersErr;
       setReminders(remindersData ?? []);
+
+      // Load sync mappings to identify which Google events are already in local DB
+      const { data: mappingsData, error: mappingsErr } = await supabase
+        .from('calendar_sync_mappings')
+        .select('google_event_id')
+        .eq('user_id', user.id);
+
+      if (!mappingsErr && mappingsData) {
+        const googleIds = new Set(mappingsData.map(m => m.google_event_id));
+        setSyncedGoogleEventIds(googleIds);
+      }
     } catch (e) {
       console.error('❌ Error loading calendar data:', e);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
-  }, [user?.id, monthStart, monthEnd]);
+  }, [user?.id, monthStart, monthEnd, supabase]);
 
   useEffect(() => {
     if (user?.id) loadEvents();
@@ -187,7 +199,14 @@ export function Calendar() {
 
     const dayDbEvents = events.filter(ev => ev.event_date === d);
     const dayReminders = reminders.filter(rem => rem.reminder_date === d);
+
+    // Filter out Google events that are already synced to local DB
     const dayGoogleEvents = googleEvents.filter(ev => {
+      // Skip if this Google event is already in local database
+      if (syncedGoogleEventIds.has(ev.id)) {
+        return false;
+      }
+
       if (ev.start?.date) return ev.start.date === d;
       if (ev.start?.dateTime) return ev.start.dateTime.split('T')[0] === d;
       return false;
@@ -216,7 +235,7 @@ export function Calendar() {
     });
 
     return { events: sorted, reminders: sortedReminders, googleEvents: dayGoogleEvents };
-  }, [selectedDate, events, reminders]);
+  }, [selectedDate, events, reminders, googleEvents, syncedGoogleEventIds]);
 
   // --- Calendar grid helpers -------------------------------------------------
   const monthLabel = useMemo(
@@ -297,14 +316,19 @@ export function Calendar() {
       const d = toLocalISODate(day);
       const eventCount = events.filter(ev => ev.event_date === d).length;
       const reminderCount = reminders.filter(rem => rem.reminder_date === d).length;
+
+      // Only count Google events that are NOT already synced to local DB
       const googleEventCount = googleEvents.filter(ev => {
+        if (syncedGoogleEventIds.has(ev.id)) return false;
+
         if (ev.start?.date) return ev.start.date === d;
         if (ev.start?.dateTime) return ev.start.dateTime.split('T')[0] === d;
         return false;
       }).length;
+
       return eventCount + reminderCount + googleEventCount;
     },
-    [events, reminders, googleEvents]
+    [events, reminders, googleEvents, syncedGoogleEventIds]
   );
 
   const isCurrentMonth = (day: Date) => day.getMonth() === currentDate.getMonth();
