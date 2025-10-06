@@ -12,32 +12,49 @@ export function ThemeSwitcher() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-            <Palette className="w-5 h-5 text-rose-600" />
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-theme-secondary text-theme-secondary-fg">
+            <Palette className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Theme</h3>
-            <p className="text-sm text-gray-600">Choose your color scheme</p>
+            <h3 className="font-semibold text-theme-fg">Theme</h3>
+            <p className="text-sm text-theme-fg opacity-70">Choose your color scheme</p>
           </div>
         </div>
 
         <button
           onClick={toggleDarkMode}
-          className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors hover:opacity-80 bg-theme-secondary text-theme-secondary-fg"
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {isDark ? (
             <>
-              <Sun className="w-4 h-4 text-gray-700" />
-              <span className="text-sm font-medium text-gray-700">Light</span>
+              <Sun className="w-4 h-4" />
+              <span className="text-sm font-medium">Light</span>
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 text-gray-700" />
-              <span className="text-sm font-medium text-gray-700">Dark</span>
+              <Moon className="w-4 h-4" />
+              <span className="text-sm font-medium">Dark</span>
             </>
           )}
         </button>
+      </div>
+
+      <div className="p-4 rounded-xl border-2 bg-theme-bg border-theme-border">
+        <p className="text-xs font-medium mb-3 text-theme-fg opacity-70">
+          Preview
+        </p>
+        <div className="flex items-center space-x-2 flex-wrap gap-2">
+          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-theme-primary text-theme-primary-fg">
+            Primary
+          </button>
+          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-theme-secondary text-theme-secondary-fg">
+            Secondary
+          </button>
+          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-theme-accent text-theme-accent-fg">
+            Accent
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -50,40 +67,49 @@ export function ThemeSwitcher() {
             <button
               key={themeId}
               onClick={() => changeTheme(themeId)}
-              className={`w-full p-3 rounded-xl border-2 transition-all ${
-                isActive
-                  ? 'border-rose-500 bg-rose-50'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}
+              className="w-full p-3 rounded-xl border-2 transition-all bg-theme-surface hover:opacity-90"
+              style={{
+                borderColor: isActive ? 'var(--color-primary)' : 'var(--color-border)',
+                backgroundColor: isActive ? 'var(--color-secondary)' : 'var(--color-surface)'
+              }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-1">
                     <div
-                      className="w-6 h-6 rounded-md border border-gray-200"
-                      style={{ backgroundColor: colors.primary }}
+                      className="w-6 h-6 rounded-md border"
+                      style={{
+                        backgroundColor: colors.primary,
+                        borderColor: 'var(--color-border)'
+                      }}
                     />
                     <div
-                      className="w-6 h-6 rounded-md border border-gray-200"
-                      style={{ backgroundColor: colors.secondary }}
+                      className="w-6 h-6 rounded-md border"
+                      style={{
+                        backgroundColor: colors.secondary,
+                        borderColor: 'var(--color-border)'
+                      }}
                     />
                     <div
-                      className="w-6 h-6 rounded-md border border-gray-200"
-                      style={{ backgroundColor: colors.accent }}
+                      className="w-6 h-6 rounded-md border"
+                      style={{
+                        backgroundColor: colors.accent,
+                        borderColor: 'var(--color-border)'
+                      }}
                     />
                   </div>
 
                   <div className="text-left">
-                    <h4 className="font-medium text-gray-900 text-sm">
+                    <h4 className="font-medium text-sm text-theme-fg">
                       {theme.name}
                     </h4>
-                    <p className="text-xs text-gray-600">{theme.description}</p>
+                    <p className="text-xs text-theme-fg opacity-70">{theme.description}</p>
                   </div>
                 </div>
 
                 {isActive && (
-                  <div className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center">
-                    <Check className="w-4 h-4 text-white" />
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center bg-theme-primary text-theme-primary-fg">
+                    <Check className="w-4 h-4" />
                   </div>
                 )}
               </div>
