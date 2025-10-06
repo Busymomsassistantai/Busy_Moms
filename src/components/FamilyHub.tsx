@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Users, FolderOpen, UserPlus, ShoppingBag, CheckSquare, Calendar } from 'lucide-react';
 import { NavigationHeader } from './NavigationHeader';
-import { SubScreen } from '../App';
+import { SubScreen, Screen } from '../App';
 
 interface FamilyHubProps {
   onNavigateToSubScreen: (screen: SubScreen) => void;
+  onNavigateToScreen: (screen: Screen) => void;
 }
 
-export function FamilyHub({ onNavigateToSubScreen }: FamilyHubProps) {
+export function FamilyHub({ onNavigateToSubScreen, onNavigateToScreen }: FamilyHubProps) {
   const familyFeatures = [
     {
       id: 'family-folders' as SubScreen,
@@ -74,7 +75,7 @@ export function FamilyHub({ onNavigateToSubScreen }: FamilyHubProps) {
             </div>
           </div>
           <button
-            onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-calendar'))}
+            onClick={() => onNavigateToScreen('calendar')}
             className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
           >
             View Calendar

@@ -273,7 +273,10 @@ function App() {
               )}
               {currentScreen === 'family' && (
                 <FeatureErrorBoundary featureName="Family Hub">
-                  <FamilyHub onNavigateToSubScreen={setCurrentSubScreen} />
+                  <FamilyHub
+                    onNavigateToSubScreen={setCurrentSubScreen}
+                    onNavigateToScreen={setCurrentScreen}
+                  />
                 </FeatureErrorBoundary>
               )}
               {currentScreen === 'more' && (
