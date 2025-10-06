@@ -136,16 +136,6 @@ export function Shopping() {
         {/* Shopping List Tab */}
         {activeTab === 'list' && (
           <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-              <h3 className="font-medium text-blue-900 mb-2 text-sm sm:text-base">Voice Input Ready</h3>
-              <p className="text-xs sm:text-sm text-blue-700 mb-3">
-                Say "Add milk to shopping list" or tap to type manually
-              </p>
-              <button className="w-full py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base">
-                🎤 Tap to Speak
-              </button>
-            </div>
-
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-green-500"></div>
