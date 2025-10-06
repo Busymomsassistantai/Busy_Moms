@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, ShoppingBag, Hash, User } from 'lucide-react'
+import { X, ShoppingBag, Hash } from 'lucide-react'
 import { supabase, ShoppingItem, FamilyMember } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -13,40 +13,14 @@ interface ShoppingFormProps {
 export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: ShoppingFormProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
   const [formData, setFormData] = useState({
     item: editItem?.item || '',
     category: editItem?.category || 'other',
     quantity: editItem?.quantity || 1,
     urgent: editItem?.urgent || false,
-    notes: editItem?.notes || '',
-    assigned_to: editItem?.assigned_to || ''
+    notes: editItem?.notes || ''
   })
 
-  // Load family members when form opens
-  React.useEffect(() => {
-    if (isOpen && user) {
-      loadFamilyMembers()
-    }
-  }, [isOpen, user])
-
-  const loadFamilyMembers = async () => {
-    if (!user?.id) return
-    
-    try {
-      const { data: members, error } = await supabase
-        .from('family_members')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name', { ascending: true })
-
-      if (!error) {
-        setFamilyMembers(members || [])
-      }
-    } catch (error) {
-      console.error('Error loading family members:', error)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,7 +32,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
         ...formData,
         user_id: user.id,
         completed: false,
-        assigned_to: formData.assigned_to || null
+        assigned_to: null
       }
 
       let result
@@ -86,8 +60,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
         category: 'other',
         quantity: 1,
         urgent: false,
-        notes: '',
-        assigned_to: ''
+        notes: ''
       })
     } catch (error) {
       console.error('Error saving shopping item:', error)
@@ -163,30 +136,6 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                   className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-                Assign to Family Member
-              </label>
-              <select
-                value={formData.assigned_to}
-                onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-              >
-                <option value="">No assignment</option>
-                {familyMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name} {member.age && `(${member.age})`}
-                  </option>
-                ))}
-              </select>
-              {familyMembers.length === 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Add family members in Settings to assign tasks
-                </p>
-              )}
             </div>
 
             <div>

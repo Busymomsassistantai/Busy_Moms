@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, User } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
 import { ShoppingItem, FamilyMember, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -24,10 +24,7 @@ export function Shopping() {
       setLoading(true);
       const { data: shoppingData, error: shoppingError } = await supabase
         .from('shopping_lists')
-        .select(`
-          *,
-          assigned_family_member:family_members(id, name, age)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -182,14 +179,6 @@ export function Shopping() {
                           <p>
                             {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
                           </p>
-                          {(item as any).assigned_family_member && (
-                            <div className="flex items-center space-x-1 mt-1">
-                              <User className="w-2 h-2 sm:w-3 sm:h-3" />
-                              <span className="text-xs">
-                                Assigned to {(item as any).assigned_family_member.name}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </div>
                       {item.urgent && !item.completed && (
