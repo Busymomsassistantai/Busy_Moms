@@ -62,9 +62,9 @@ class GoogleCalendarService {
     }
 
     try {
-      const { data: { user, session } } = await supabase.auth.getUser();
+      const { data: { session, user } } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session || !user) {
         this.available = false;
         this.ready = false;
         this.signedIn = false;
@@ -77,7 +77,7 @@ class GoogleCalendarService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
@@ -125,6 +125,13 @@ class GoogleCalendarService {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.log('⚠️ No active session');
+        return false;
+      }
+
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!anonKey) {
@@ -136,7 +143,7 @@ class GoogleCalendarService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
@@ -168,6 +175,13 @@ class GoogleCalendarService {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        console.log('⚠️ No active session');
+        return false;
+      }
+
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!anonKey) {
@@ -179,7 +193,7 @@ class GoogleCalendarService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
@@ -216,10 +230,10 @@ class GoogleCalendarService {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session, user } } = await supabase.auth.getSession();
 
-      if (!user) {
-        throw new Error('User not authenticated');
+      if (!session || !user) {
+        throw new Error('User not authenticated. Please sign in first.');
       }
 
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -228,11 +242,13 @@ class GoogleCalendarService {
         throw new Error('Supabase anon key not configured');
       }
 
+      console.log(`📡 Making API call: ${action} for user ${user.id}`);
+
       const response = await fetch(`${this.baseUrl}/google-calendar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'apikey': anonKey
         },
         body: JSON.stringify({
@@ -243,11 +259,29 @@ class GoogleCalendarService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `API call failed: ${response.status}`);
+        let errorData;
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        } else {
+          const errorText = await response.text();
+          errorData = { error: `Server error: ${errorText || response.statusText}` };
+        }
+
+        const errorMessage = errorData.error || errorData.message || errorData.details || `API call failed with status ${response.status}`;
+        console.error(`❌ API call failed (${action}):`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+
+        throw new Error(errorMessage);
       }
 
-      return await response.json();
+      const result = await response.json();
+      console.log(`✅ API call succeeded (${action})`);
+      return result;
     } catch (error) {
       console.error(`❌ Google Calendar API call failed (${action}):`, error);
       throw error;

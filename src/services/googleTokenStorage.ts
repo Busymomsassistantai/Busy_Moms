@@ -66,6 +66,11 @@ export async function storeGoogleTokens(tokenInfo: GoogleTokenInfo): Promise<boo
       return false;
     }
 
+    if (!anonKey) {
+      console.error('❌ VITE_SUPABASE_ANON_KEY not configured');
+      return false;
+    }
+
     const functionUrl = `${supabaseUrl}/functions/v1/store-google-tokens`;
 
     console.log('📡 Calling store-google-tokens function...');
@@ -74,16 +79,25 @@ export async function storeGoogleTokens(tokenInfo: GoogleTokenInfo): Promise<boo
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
+        'Authorization': `Bearer ${session.access_token}`,
         'apikey': anonKey
       },
       body: JSON.stringify(tokenInfo)
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      const contentType = response.headers.get('content-type');
+      let errorData;
+
+      if (contentType && contentType.includes('application/json')) {
+        errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      } else {
+        const errorText = await response.text();
+        errorData = { error: `Server error: ${errorText || response.statusText}` };
+      }
+
       console.error('❌ Failed to store tokens:', errorData);
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      throw new Error(errorData.error || errorData.message || errorData.details || `HTTP ${response.status}`);
     }
 
     const result = await response.json();
@@ -99,6 +113,13 @@ export async function checkGoogleTokensExist(userId: string): Promise<boolean> {
   console.log('🔍 Checking if Google tokens exist for user:', userId);
 
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      console.log('⚠️ No active session');
+      return false;
+    }
+
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
     if (!supabaseUrl) {
@@ -106,14 +127,21 @@ export async function checkGoogleTokensExist(userId: string): Promise<boolean> {
       return false;
     }
 
-    const functionUrl = `${supabaseUrl}/functions/v1/google-calendar`;
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!anonKey) {
+      console.error('❌ VITE_SUPABASE_ANON_KEY not configured');
+      return false;
+    }
+
+    const functionUrl = `${supabaseUrl}/functions/v1/google-calendar`;
 
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': anonKey
       },
       body: JSON.stringify({
         action: 'isConnected',
