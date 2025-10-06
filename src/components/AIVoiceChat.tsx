@@ -147,7 +147,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
   const sendTextMessage = (text: string) => {
     if (!isConnected) {
-      setError('Not connected to AI. Please wait for connection.');
+      setError('Not connected to Sarah. Please wait for connection.');
       return;
     }
     
@@ -210,8 +210,8 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   const getConnectionStatusText = () => {
     switch (connectionState) {
       case 'new': return 'Initializing...';
-      case 'connecting': return 'Connecting to AI...';
-      case 'connected': return 'Connected to AI';
+      case 'connecting': return 'Connecting to Sarah...';
+      case 'connected': return 'Connected to Sarah';
       case 'disconnected': return 'Disconnected';
       case 'failed': return 'Connection failed';
       case 'closed': return 'Connection closed';
@@ -232,7 +232,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-lg">AI Voice Assistant</h3>
+                <h3 className="font-bold text-white text-lg">Sarah Voice Assistant</h3>
                 <p className={`text-sm font-medium ${connectionState === 'connected' ? 'text-green-100' : connectionState === 'connecting' ? 'text-yellow-100' : 'text-rose-100'}`}>
                   {getConnectionStatusText()}
                 </p>
@@ -256,7 +256,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                     <Loader2 className="w-10 h-10 text-white animate-spin" />
                   </div>
-                  <p className="text-lg font-semibold text-gray-800">Connecting to AI Assistant...</p>
+                  <p className="text-lg font-semibold text-gray-800">Connecting to Sarah...</p>
                   <p className="text-sm text-gray-600">Setting up real-time voice connection</p>
                 </>
               ) : error ? (
@@ -291,7 +291,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
                     <MessageCircle className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-lg font-semibold text-gray-800">Ready to connect</p>
+                  <p className="text-lg font-semibold text-gray-800">Ready to talk to Sarah</p>
                   <p className="text-sm text-gray-600">Click the microphone to start talking</p>
                 </>
               )}
@@ -312,7 +312,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                 <p className="text-base text-gray-600 mb-4">Say <strong className="text-rose-600">"Hey, Sarah"</strong> to start</p>
                 <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl">
                   <p className="text-sm text-rose-800 font-medium">
-                    💡 The AI is waiting for you to say the wake word before it starts listening to your requests
+                    💡 Sarah is waiting for you to say the wake word before she starts listening to your requests
                   </p>
                 </div>
               </div>
@@ -373,7 +373,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
               {currentResponse && (
                 <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl">
                   <p className="text-sm text-rose-900">
-                    <span className="font-semibold">AI is responding:</span> {currentResponse}
+                    <span className="font-semibold">Sarah is responding:</span> {currentResponse}
                   </p>
                 </div>
               )}
@@ -459,7 +459,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           <div className="flex items-center space-x-2 text-sm font-medium text-rose-700">
             <MessageCircle className="w-5 h-5" />
             <span>
-              {isWaitingForWakeWord ? 'Say "Hey, Sarah"' : inConversation ? 'In conversation' : 'Real-time AI Voice'}
+              {isWaitingForWakeWord ? 'Say "Hey, Sarah"' : inConversation ? 'In conversation' : 'Talk to Sarah'}
             </span>
           </div>
         </div>
