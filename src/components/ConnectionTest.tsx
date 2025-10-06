@@ -230,7 +230,7 @@ export function ConnectionTest({ isOpen, onClose }: ConnectionTestProps) {
       case 'error':
         return 'bg-red-50 border-red-200';
       default:
-        return 'bg-gray-50 border-gray-200';
+        return 'bg-theme-bg border-gray-200';
     }
   };
 
@@ -238,7 +238,7 @@ export function ConnectionTest({ isOpen, onClose }: ConnectionTestProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-theme-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
@@ -250,7 +250,7 @@ export function ConnectionTest({ isOpen, onClose }: ConnectionTestProps) {
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               ✕
             </button>
@@ -286,10 +286,10 @@ export function ConnectionTest({ isOpen, onClose }: ConnectionTestProps) {
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{test.name}</h4>
                     {test.message && (
-                      <p className="text-sm text-gray-600 mt-1">{test.message}</p>
+                      <p className="text-sm text-theme-fg opacity-70 mt-1">{test.message}</p>
                     )}
                     {test.details && (
-                      <p className="text-xs text-gray-500 mt-1 font-mono bg-gray-100 p-2 rounded">
+                      <p className="text-xs text-theme-fg opacity-60 mt-1 font-mono bg-theme-secondary p-2 rounded">
                         {test.details}
                       </p>
                     )}
@@ -323,14 +323,14 @@ export function ConnectionTest({ isOpen, onClose }: ConnectionTestProps) {
             <button
               onClick={runConnectionTest}
               disabled={testing}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-theme-primary text-white rounded-lg hover:bg-theme-primary transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
               <span>{testing ? 'Testing...' : 'Run Test'}</span>
             </button>
             <button
               onClick={onClose}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors"
             >
               Close
             </button>

@@ -240,7 +240,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
       case 'error':
         return 'bg-red-50 border-red-200';
       default:
-        return 'bg-gray-50 border-gray-200';
+        return 'bg-theme-bg border-gray-200';
     }
   };
 
@@ -248,7 +248,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-theme-surface rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
@@ -260,7 +260,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-4 h-4 text-gray-600" />
             </button>
@@ -296,10 +296,10 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{test.name}</h4>
                     {test.message && (
-                      <p className="text-sm text-gray-600 mt-1">{test.message}</p>
+                      <p className="text-sm text-theme-fg opacity-70 mt-1">{test.message}</p>
                     )}
                     {test.details && (
-                      <p className="text-xs text-gray-500 mt-1 font-mono bg-gray-100 p-2 rounded">
+                      <p className="text-xs text-theme-fg opacity-60 mt-1 font-mono bg-theme-secondary p-2 rounded">
                         {test.details}
                       </p>
                     )}
@@ -316,7 +316,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
               <div className="space-y-2 text-sm">
                 {results.diagnostics.checks.map((check: any, idx: number) => (
                   check.status === 'fail' && (
-                    <div key={idx} className="bg-white p-2 rounded border border-red-200">
+                    <div key={idx} className="bg-theme-surface p-2 rounded border border-red-200">
                       <div className="font-medium text-gray-900">{check.name}</div>
                       <div className="text-red-700">{check.message}</div>
                       {check.instructions && (
@@ -334,7 +334,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
                 href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-diagnostics`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+                className="mt-3 inline-flex items-center text-sm text-theme-primary hover:text-blue-800"
               >
                 View full diagnostics report
                 <ExternalLink className="w-3 h-3 ml-1" />
@@ -348,7 +348,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
               <h3 className="font-medium text-blue-900 mb-3">Upcoming Events from Google Calendar</h3>
               <div className="space-y-2">
                 {upcomingEvents.slice(0, 3).map((event, index) => (
-                  <div key={index} className="bg-white p-3 rounded border">
+                  <div key={index} className="bg-theme-surface p-3 rounded border">
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium text-gray-900">{event.summary || 'Untitled Event'}</h4>
@@ -369,7 +369,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
                           href={event.htmlLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-500 hover:text-blue-700"
+                          className="text-theme-primary hover:text-blue-700"
                           title="Open in Google Calendar"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -379,7 +379,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
                   </div>
                 ))}
                 {upcomingEvents.length > 3 && (
-                  <p className="text-sm text-gray-500 text-center">
+                  <p className="text-sm text-theme-fg opacity-60 text-center">
                     ... and {upcomingEvents.length - 3} more events
                   </p>
                 )}
@@ -388,8 +388,8 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
           )}
 
           {/* Environment Info */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-            <h3 className="font-medium text-gray-900 mb-2">Environment Configuration</h3>
+          <div className="bg-theme-bg border border-theme-border rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-theme-fg mb-2">Environment Configuration</h3>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Supabase URL:</span>
@@ -423,14 +423,14 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
             <button
               onClick={runGoogleCalendarTest}
               disabled={testing}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-theme-primary text-white rounded-lg hover:bg-theme-primary transition-colors disabled:opacity-50"
             >
               <Calendar className={`w-4 h-4 ${testing ? 'animate-pulse' : ''}`} />
               <span>{testing ? 'Testing...' : 'Run Google Calendar Test'}</span>
             </button>
             <button
               onClick={onClose}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors"
             >
               Close
             </button>

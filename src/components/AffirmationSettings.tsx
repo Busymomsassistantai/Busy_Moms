@@ -59,17 +59,17 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-theme-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-theme-surface bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-theme-surface bg-opacity-20 rounded-full flex items-center justify-center">
               <Bell className="w-6 h-6" />
             </div>
             <div>
@@ -86,7 +86,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
         ) : settings ? (
           <div className="flex-1 overflow-y-auto p-6">
             <div className="space-y-6">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <div className="bg-theme-bg border border-theme-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     <Bell className="w-5 h-5 text-purple-600" />
@@ -99,7 +99,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
                     }`}
                   >
                     <div
-                      className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow ${
+                      className={`w-5 h-5 bg-theme-surface rounded-full absolute top-0.5 transition-all shadow ${
                         settings.enabled ? 'right-0.5' : 'left-0.5'
                       }`}
                     ></div>
@@ -112,7 +112,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
                 </p>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
                 <div className="flex items-center space-x-2 mb-4">
                   <Clock className="w-5 h-5 text-purple-600" />
                   <h3 className="font-semibold text-gray-900">Frequency</h3>
@@ -141,7 +141,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
                 </div>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
                 <div className="flex items-center space-x-2 mb-4">
                   <Clock className="w-5 h-5 text-purple-600" />
                   <h3 className="font-semibold text-gray-900">Timing</h3>
@@ -149,44 +149,44 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-theme-fg opacity-90 mb-2">
                       Primary Time
                     </label>
                     <input
                       type="time"
                       value={settings.preferred_time?.slice(0, 5) || '08:00'}
                       onChange={(e) => updateSetting('preferred_time', `${e.target.value}:00`)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>
 
                   {settings.frequency === 'twice_daily' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-theme-fg opacity-90 mb-2">
                         Secondary Time
                       </label>
                       <input
                         type="time"
                         value={settings.secondary_time?.slice(0, 5) || '20:00'}
                         onChange={(e) => updateSetting('secondary_time', `${e.target.value}:00`)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
                 <div className="flex items-center space-x-2 mb-4">
                   <CheckSquare className="w-5 h-5 text-purple-600" />
                   <h3 className="font-semibold text-gray-900">Data Sources</h3>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-theme-fg opacity-70 mb-4">
                   Select which information to include when generating your affirmations
                 </p>
 
                 <div className="space-y-3">
-                  <label className="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-theme-bg rounded-lg hover:bg-theme-border transition-colors">
                     <div className="flex items-center space-x-3">
                       <CalendarIcon className="w-5 h-5 text-purple-600" />
                       <span className="text-gray-700">Calendar Events</span>
@@ -199,7 +199,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
                     />
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-theme-bg rounded-lg hover:bg-theme-border transition-colors">
                     <div className="flex items-center space-x-3">
                       <CheckSquare className="w-5 h-5 text-blue-600" />
                       <span className="text-gray-700">Tasks</span>
@@ -212,7 +212,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
                     />
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-theme-bg rounded-lg hover:bg-theme-border transition-colors">
                     <div className="flex items-center space-x-3">
                       <Users className="w-5 h-5 text-pink-600" />
                       <span className="text-gray-700">Family Members</span>
@@ -225,7 +225,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
                     />
                   </label>
 
-                  <label className="flex items-center justify-between cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <label className="flex items-center justify-between cursor-pointer p-3 bg-theme-bg rounded-lg hover:bg-theme-border transition-colors">
                     <div className="flex items-center space-x-3">
                       <ShoppingBag className="w-5 h-5 text-green-600" />
                       <span className="text-gray-700">Shopping List</span>
@@ -247,11 +247,11 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
           </div>
         )}
 
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
+        <div className="p-6 border-t border-theme-border bg-gray-50">
           <div className="flex space-x-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+              className="flex-1 px-4 py-3 bg-gray-200 text-theme-fg opacity-90 rounded-xl font-medium hover:bg-gray-300 transition-colors"
             >
               Cancel
             </button>

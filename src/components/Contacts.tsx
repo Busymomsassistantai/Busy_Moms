@@ -77,7 +77,7 @@ export function Contacts() {
   return (
     <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
       {/* Header */}
-      <div className="bg-white p-4 sm:p-6 border-b border-gray-200">
+      <div className="bg-theme-surface p-4 sm:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Contacts</h1>
@@ -100,7 +100,7 @@ export function Contacts() {
               className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                 selectedCategory === category.id
                   ? 'bg-purple-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-theme-secondary text-theme-fg opacity-70 hover:bg-gray-200'
               }`}
             >
               <span>{category.label}</span>
@@ -120,14 +120,14 @@ export function Contacts() {
         {/* Background Check Promotion */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-start space-x-3">
-            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mt-0.5" />
+            <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-theme-primary mt-0.5" />
             <div className="flex-1">
               <h3 className="font-semibold text-blue-900 mb-1 text-sm sm:text-base">Background Check Available</h3>
               <p className="text-xs sm:text-sm text-blue-700 mb-3">
                 Verify babysitter credentials with our trusted background check partner. 
                 Starting at $19.99 per check.
               </p>
-              <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors">
+              <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-theme-primary text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-theme-primary transition-colors">
                 Learn More
               </button>
             </div>
@@ -137,7 +137,7 @@ export function Contacts() {
         {/* Contacts List */}
         <div className="space-y-4">
           {filteredContacts.map((contact) => (
-            <div key={contact.id} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-md transition-all">
+            <div key={contact.id} className="bg-theme-surface border border-theme-border rounded-xl p-3 sm:p-4 hover:shadow-md transition-all">
               <div className="flex items-start space-x-4">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-semibold text-sm sm:text-lg">
@@ -147,7 +147,7 @@ export function Contacts() {
                 
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1 flex-wrap">
-                    <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{contact.name}</h3>
+                    <h3 className="font-semibold text-theme-fg text-sm sm:text-base">{contact.name}</h3>
                     {contact.verified && (
                       <div className="flex items-center space-x-1 bg-green-100 text-green-700 px-1.5 py-0.5 sm:px-2 rounded-full">
                         <CheckCircle className="w-2 h-2 sm:w-3 sm:h-3" />
@@ -156,9 +156,9 @@ export function Contacts() {
                     )}
                   </div>
                   
-                  <p className="text-xs sm:text-sm text-gray-600 mb-2">{contact.role}</p>
+                  <p className="text-xs sm:text-sm text-theme-fg opacity-70 mb-2">{contact.role}</p>
                   
-                  <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500 mb-3 flex-wrap">
+                  <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-theme-fg opacity-60 mb-3 flex-wrap">
                     <div className="flex items-center space-x-1">
                       <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-yellow-400 text-yellow-400" />
                       <span>{contact.rating || 0}</span>
@@ -169,7 +169,7 @@ export function Contacts() {
                     </div>
                   </div>
                   
-                  <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2">
+                  <p className="text-xs sm:text-sm text-theme-fg opacity-90 mb-3 line-clamp-2">
                     {contact.notes || 'No notes available'}
                   </p>
                   
@@ -195,7 +195,7 @@ export function Contacts() {
                           alert('No phone number available for this contact');
                         }
                       }}
-                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-blue-500 text-white rounded-lg text-xs sm:text-sm hover:bg-blue-600 transition-colors"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-theme-primary text-white rounded-lg text-xs sm:text-sm hover:bg-theme-primary transition-colors"
                     >
                       <MessageCircle className="w-2 h-2 sm:w-3 sm:h-3" />
                       <span>Text</span>
@@ -251,7 +251,7 @@ export function Contacts() {
               </div>
             ) : (
               <>
-                <p className="text-sm sm:text-base text-gray-500 mb-4">No contacts in this category yet</p>
+                <p className="text-sm sm:text-base text-theme-fg opacity-60 mb-4">No contacts in this category yet</p>
                 <button 
                   onClick={() => setShowContactForm(true)}
                   className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors text-sm sm:text-base"

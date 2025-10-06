@@ -101,7 +101,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-md">
+      <div className="bg-theme-surface rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-md">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">
@@ -109,7 +109,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
             </h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
@@ -117,7 +117,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
 
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
                 <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Item Name *
               </label>
@@ -126,20 +126,20 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                 required
                 value={formData.item}
                 onChange={(e) => setFormData({ ...formData, item: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="e.g., Milk, Bananas, Diapers"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
                   Category
                 </label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="dairy">Dairy</option>
                   <option value="produce">Produce</option>
@@ -151,7 +151,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                 </select>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
                   <Hash className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   Quantity
                 </label>
@@ -160,20 +160,20 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                   min="1"
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
                 <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Assign to Family Member
               </label>
               <select
                 value={formData.assigned_to}
                 onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
               >
                 <option value="">No assignment</option>
                 {familyMembers.map((member) => (
@@ -183,20 +183,20 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                 ))}
               </select>
               {familyMembers.length === 0 && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-theme-fg opacity-60 mt-1">
                   Add family members in Settings to assign tasks
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
                 Notes
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Brand preference, size, etc."
               />
@@ -208,7 +208,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                   type="checkbox"
                   checked={formData.urgent}
                   onChange={(e) => setFormData({ ...formData, urgent: e.target.checked })}
-                  className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 border-theme-border rounded focus:ring-red-500"
                 />
                 <span className="ml-2 text-xs sm:text-sm text-gray-700">Mark as urgent</span>
               </label>
@@ -218,7 +218,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-3 py-2 sm:px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+                className="flex-1 px-3 py-2 sm:px-4 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>

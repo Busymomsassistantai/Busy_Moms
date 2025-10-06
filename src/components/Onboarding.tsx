@@ -31,7 +31,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           <div className="w-32 h-32 mx-auto bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
             <Heart className="w-16 h-16 text-white" />
           </div>
-          <p className="text-gray-600 text-lg leading-relaxed">
+          <p className="text-theme-fg opacity-70 text-lg leading-relaxed">
             Your AI-powered companion for managing family life, events, and daily tasks with ease.
           </p>
         </div>
@@ -49,7 +49,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
                 userType === type
                   ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-200 hover:border-purple-300'
+                  : 'border-theme-border hover:border-purple-300'
               }`}
             >
               <div className="flex items-center space-x-3">
@@ -98,7 +98,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               key: 'smartwatch_connected'
             }
           ].map(({ icon: Icon, title, desc, key }) => (
-            <div key={title} className="p-4 bg-gray-50 rounded-xl">
+            <div key={title} className="p-4 bg-theme-bg rounded-xl">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                   <Icon className="w-5 h-5 text-purple-600" />
@@ -118,7 +118,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                       : 'bg-gray-300'
                   }`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow transition-transform ${
+                  <div className={`w-5 h-5 bg-theme-surface rounded-full absolute top-0.5 shadow transition-transform ${
                     preferences[key as keyof typeof preferences] 
                       ? 'translate-x-6' 
                       : 'translate-x-0.5'
@@ -254,7 +254,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       {/* Content */}
       <div className="flex-1 flex flex-col">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-theme-fg mb-2">
             {steps[step].title}
           </h1>
           <p className="text-gray-600">

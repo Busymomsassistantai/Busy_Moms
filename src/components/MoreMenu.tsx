@@ -58,7 +58,7 @@ export function MoreMenu({ onNavigateToSubScreen, onSignOut, userName, userEmail
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 pb-24">
+    <div className="min-h-screen bg-theme-bg pb-24">
       <NavigationHeader
         title="More"
         subtitle="Additional features and settings"
@@ -66,14 +66,14 @@ export function MoreMenu({ onNavigateToSubScreen, onSignOut, userName, userEmail
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         {userName && (
-          <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-orange-300 text-white rounded-2xl p-6 mb-6">
+          <div className="bg-theme-primary text-theme-primary-fg rounded-2xl p-6 mb-6">
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 bg-theme-primary-fg bg-opacity-20 rounded-full flex items-center justify-center">
                 <span className="text-2xl font-bold">{userName.charAt(0).toUpperCase()}</span>
               </div>
               <div>
                 <h2 className="text-xl font-bold">{userName}</h2>
-                <p className="text-rose-100">{userEmail}</p>
+                <p className="opacity-80">{userEmail}</p>
               </div>
             </div>
           </div>
@@ -82,10 +82,10 @@ export function MoreMenu({ onNavigateToSubScreen, onSignOut, userName, userEmail
         <div className="space-y-6">
           {menuSections.map((section, sectionIndex) => (
             <div key={sectionIndex}>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">
+              <h3 className="text-sm font-semibold text-theme-fg opacity-60 uppercase tracking-wider mb-3 px-2">
                 {section.title}
               </h3>
-              <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
+              <div className="bg-theme-surface rounded-2xl border border-theme-border divide-y divide-theme-border">
                 {section.items.map((item, itemIndex) => (
                   <button
                     key={itemIndex}
@@ -96,14 +96,14 @@ export function MoreMenu({ onNavigateToSubScreen, onSignOut, userName, userEmail
                         onNavigateToSubScreen(item.id);
                       }
                     }}
-                    className="w-full px-4 py-4 hover:bg-gray-50 transition-colors text-left flex items-center space-x-4 group"
+                    className="w-full px-4 py-4 hover:bg-theme-secondary transition-colors text-left flex items-center space-x-4 group"
                   >
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-rose-100 transition-colors">
-                      <item.icon className="w-5 h-5 text-gray-600 group-hover:text-rose-600 transition-colors" />
+                    <div className="w-10 h-10 bg-theme-secondary rounded-lg flex items-center justify-center group-hover:bg-theme-accent transition-colors">
+                      <item.icon className="w-5 h-5 text-theme-fg opacity-70 group-hover:text-theme-accent-fg transition-colors" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{item.title}</h4>
-                      <p className="text-sm text-gray-600">{item.description}</p>
+                      <h4 className="font-medium text-theme-fg">{item.title}</h4>
+                      <p className="text-sm text-theme-fg opacity-70">{item.description}</p>
                     </div>
                   </button>
                 ))}

@@ -185,10 +185,10 @@ function App() {
   // Show loading only when we're checking auth or onboarding for authenticated users
   if (loading || (user && checkingOnboarding)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-theme-bg flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-theme-primary" />
+          <p className="text-theme-fg opacity-70">
             {loading ? 'Loading...' : checkingOnboarding ? 'Checking your profile...' : 'Loading...'}
           </p>
         </div>
@@ -219,7 +219,7 @@ function App() {
   // Show main app if user is authenticated and has completed onboarding
   return (
     <ErrorBoundary componentName="App">
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-theme-bg">
         <ImprovedNavigation
           currentScreen={currentScreen}
           onScreenChange={(screen) => {

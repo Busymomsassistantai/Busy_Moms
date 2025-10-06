@@ -44,7 +44,7 @@ export function SyncStatus() {
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+    <div className="bg-theme-surface rounded-xl p-4 shadow-sm border border-gray-200">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
           <Calendar className="w-5 h-5 text-gray-600" />
@@ -54,7 +54,7 @@ export function SyncStatus() {
         <button
           onClick={performSync}
           disabled={isSyncing || !syncEnabled}
-          className="flex items-center space-x-1 px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="flex items-center space-x-1 px-3 py-1.5 bg-theme-primary text-white rounded-lg hover:bg-theme-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
           <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
@@ -139,7 +139,7 @@ export function SyncStatus() {
 
         {/* Sync Disabled Warning */}
         {!syncEnabled && (
-          <div className="flex items-start space-x-2 text-sm p-2 rounded-lg bg-gray-100 text-gray-700">
+          <div className="flex items-start space-x-2 text-sm p-2 rounded-lg bg-theme-secondary text-gray-700">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>Automatic sync is disabled</p>
           </div>

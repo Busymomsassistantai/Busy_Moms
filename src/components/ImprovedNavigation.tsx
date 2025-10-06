@@ -18,7 +18,7 @@ export function ImprovedNavigation({ currentScreen, onScreenChange, onVoiceChatO
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-pb shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 bg-theme-surface border-t border-theme-border z-50 safe-area-pb shadow-lg">
       <div className="flex items-center justify-around py-2 px-2 relative max-w-md mx-auto">
         {navItems.map((item) => (
           <button
@@ -26,8 +26,8 @@ export function ImprovedNavigation({ currentScreen, onScreenChange, onVoiceChatO
             onClick={() => onScreenChange(item.id)}
             className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-xl transition-all min-w-[64px] ${
               currentScreen === item.id
-                ? 'text-rose-600 bg-rose-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ? 'text-theme-primary bg-theme-secondary'
+                : 'text-theme-fg opacity-60 hover:opacity-100 hover:bg-theme-secondary'
             }`}
             aria-label={item.label}
             aria-current={currentScreen === item.id ? 'page' : undefined}
@@ -40,7 +40,7 @@ export function ImprovedNavigation({ currentScreen, onScreenChange, onVoiceChatO
         {onVoiceChatOpen && (
           <button
             onClick={onVoiceChatOpen}
-            className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 active:scale-95"
+            className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-theme-accent text-theme-accent-fg rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 active:scale-95"
             title="AI Voice Assistant"
             aria-label="Open AI Voice Assistant"
           >
