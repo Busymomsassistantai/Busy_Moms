@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar, CheckSquare, Bell, ShoppingBag, Plus, CreditCard as Edit, Trash2, User, ChevronRight, ChevronDown } from 'lucide-react';
+import { Users, Calendar, CheckSquare, Bell, ShoppingBag, Plus, Edit, Trash2, User, ChevronRight, ChevronDown } from 'lucide-react';
 import { FamilyMember, Event, Task, Reminder, ShoppingItem, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { EventForm } from './forms/EventForm';
@@ -219,7 +219,7 @@ export function FamilyFolders() {
                   {/* Family Member Header */}
                   <button
                     onClick={() => toggleMemberExpansion(data.member.id)}
-                    className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                    className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">

@@ -81,7 +81,7 @@ export function SyncSettings({ isOpen, onClose }: SyncSettingsProps) {
                   type="checkbox"
                   checked={localSyncEnabled}
                   onChange={(e) => setLocalSyncEnabled(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 border-gray-200 rounded focus:ring-blue-500"
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <div>
                   <span className="font-medium text-gray-900">Enable automatic sync</span>
@@ -94,14 +94,14 @@ export function SyncSettings({ isOpen, onClose }: SyncSettingsProps) {
 
             {/* Sync Frequency */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 opacity-90 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Sync frequency
               </label>
               <select
                 value={localSyncFrequency}
                 onChange={(e) => setLocalSyncFrequency(Number(e.target.value))}
                 disabled={!localSyncEnabled}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value={5}>Every 5 minutes</option>
                 <option value={10}>Every 10 minutes</option>
@@ -118,18 +118,18 @@ export function SyncSettings({ isOpen, onClose }: SyncSettingsProps) {
 
             {/* Sync Direction */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 opacity-90 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Sync direction
               </label>
               <div className="space-y-2">
-                <label className="flex items-start space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                <label className="flex items-start space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <input
                     type="radio"
                     name="sync_direction"
                     value="bidirectional"
                     checked={syncDirection === 'bidirectional'}
                     onChange={(e) => setSyncDirection(e.target.value as any)}
-                    className="mt-1 w-4 h-4 text-blue-600 border-gray-200 focus:ring-blue-500"
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <div className="flex-1">
                     <span className="font-medium text-gray-900">Two-way sync</span>
@@ -139,14 +139,14 @@ export function SyncSettings({ isOpen, onClose }: SyncSettingsProps) {
                   </div>
                 </label>
 
-                <label className="flex items-start space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                <label className="flex items-start space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <input
                     type="radio"
                     name="sync_direction"
                     value="google_to_local"
                     checked={syncDirection === 'google_to_local'}
                     onChange={(e) => setSyncDirection(e.target.value as any)}
-                    className="mt-1 w-4 h-4 text-blue-600 border-gray-200 focus:ring-blue-500"
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <div className="flex-1">
                     <span className="font-medium text-gray-900">Google Calendar to Local</span>
@@ -156,14 +156,14 @@ export function SyncSettings({ isOpen, onClose }: SyncSettingsProps) {
                   </div>
                 </label>
 
-                <label className="flex items-start space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                <label className="flex items-start space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <input
                     type="radio"
                     name="sync_direction"
                     value="local_to_google"
                     checked={syncDirection === 'local_to_google'}
                     onChange={(e) => setSyncDirection(e.target.value as any)}
-                    className="mt-1 w-4 h-4 text-blue-600 border-gray-200 focus:ring-blue-500"
+                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <div className="flex-1">
                     <span className="font-medium text-gray-900">Local to Google Calendar</span>
@@ -179,14 +179,14 @@ export function SyncSettings({ isOpen, onClose }: SyncSettingsProps) {
             <div className="flex space-x-3 pt-4">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
               >
                 <Save className="w-4 h-4" />
                 <span>{saving ? 'Saving...' : 'Save Settings'}</span>

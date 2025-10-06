@@ -148,14 +148,14 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
           {/* Input Methods */}
           <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Paste WhatsApp Message
               </label>
               <form onSubmit={handleMessageSubmit}>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                   rows={3}
                   placeholder="Paste your WhatsApp message here..."
                 />
@@ -170,7 +170,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
                   >
                     <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span>Upload File</span>
@@ -189,7 +189,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
 
           {/* Sample Messages */}
           <div className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-2 sm:mb-3">Try these sample messages:</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Try these sample messages:</h3>
             <div className="space-y-1 sm:space-y-2">
               {sampleMessages.map((sample, index) => (
                 <button
@@ -277,7 +277,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                   </button>
                   <button
                     onClick={() => setParsedEvent(null)}
-                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
                   >
                     Cancel
                   </button>

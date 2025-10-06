@@ -93,7 +93,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
             {/* Local Version */}
             <div className="border-2 border-blue-200 rounded-xl p-4 bg-blue-50">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -247,7 +247,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
             <button
               onClick={() => handleResolve('keep_local')}
               disabled={resolving}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 font-medium"
+              className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 font-medium"
             >
               Keep Local Version
             </button>
@@ -264,7 +264,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
               <button
                 onClick={() => setSelectedConflictIndex(selectedConflictIndex + 1)}
                 disabled={resolving}
-                className="px-4 py-3 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center space-x-2"
               >
                 <span>Skip</span>
                 <ChevronRight className="w-4 h-4" />

@@ -323,14 +323,14 @@ export function ConnectionTest({ isOpen, onClose }: ConnectionTestProps) {
             <button
               onClick={runConnectionTest}
               disabled={testing}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
               <span>{testing ? 'Testing...' : 'Run Test'}</span>
             </button>
             <button
               onClick={onClose}
-              className="px-6 py-3 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Close
             </button>

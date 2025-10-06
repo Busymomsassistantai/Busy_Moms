@@ -94,7 +94,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           {isSignUp && (
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Full Name
               </label>
@@ -103,14 +103,14 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
                 required
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Your full name"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
               <Mail className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
               Email
             </label>
@@ -119,13 +119,13 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
               placeholder="your@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
               <Lock className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
               Password
             </label>
@@ -134,7 +134,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
               placeholder="Your password"
               minLength={6}
             />
@@ -163,10 +163,10 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           <button
             onClick={handleGoogleSignIn}
             disabled={googleLoading || loading}
-            className="w-full mt-3 sm:mt-4 flex items-center justify-center space-x-2 sm:space-x-3 px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="w-full mt-3 sm:mt-4 flex items-center justify-center space-x-2 sm:space-x-3 px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <Chrome className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-            <span className="text-gray-900 opacity-90 font-medium text-sm sm:text-base">
+            <span className="text-gray-700 font-medium text-sm sm:text-base">
               {googleLoading ? 'Connecting...' : isSignUp ? 'Sign up with Google' : 'Sign in with Google'}
             </span>
           </button>
@@ -193,7 +193,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             onClick={() => {
               setFormData({ ...formData, email: 'demo@busymoms.app', password: 'demo123456' });
             }}
-            className="px-2 py-1 sm:px-3 bg-blue-600 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+            className="px-2 py-1 sm:px-3 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
           >
             Use Demo Credentials
           </button>
@@ -217,7 +217,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         <div className="mt-3 text-center">
           <a
             href="?diagnostics=true"
-            className="text-xs text-gray-500 hover:text-gray-900 opacity-90 underline"
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
           >
             OAuth Configuration Diagnostics
           </a>

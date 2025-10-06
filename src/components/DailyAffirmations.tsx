@@ -161,7 +161,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                       </span>
                     </div>
 
-                    <p className="text-lg text-gray-900 leading-relaxed mb-4">
+                    <p className="text-lg text-gray-800 leading-relaxed mb-4">
                       {todayAffirmation.affirmation_text}
                     </p>
 
@@ -271,7 +271,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                       )}
                     </div>
 
-                    <p className="text-gray-900 leading-relaxed pr-8">
+                    <p className="text-gray-800 leading-relaxed pr-8">
                       {affirmation.affirmation_text}
                     </p>
                   </div>

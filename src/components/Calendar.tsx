@@ -336,7 +336,7 @@ export function Calendar() {
   // --- UI --------------------------------------------------------------------
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-24">
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -376,7 +376,7 @@ export function Calendar() {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={goToday}
-                    className="px-4 py-2 text-sm font-medium bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
+                    className="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
                   >
                     Today
                   </button>
@@ -401,7 +401,7 @@ export function Calendar() {
               <div className="grid grid-cols-7 gap-2 mb-3">
                 {WEEKDAYS_SHORT.map((day, idx) => (
                   <div key={day} className="text-center py-2">
-                    <span className={`text-sm font-semibold ${idx === 0 || idx === 6 ? 'text-rose-600' : 'text-gray-600'}`}>
+                    <span className={`text-sm font-semibold ${idx === 0 || idx === 6 ? 'text-blue-600' : 'text-gray-600'}`}>
                       {day}
                     </span>
                   </div>
@@ -425,9 +425,9 @@ export function Calendar() {
                         relative aspect-square rounded-xl p-2 transition-all
                         flex flex-col items-center justify-center
                         ${isSelected
-                          ? 'bg-rose-500 text-white shadow-lg scale-105'
+                          ? 'bg-blue-500 text-white shadow-lg scale-105'
                           : isToday
-                          ? 'bg-rose-50 text-rose-600 font-bold border-2 border-rose-500'
+                          ? 'bg-blue-50 text-blue-600 font-bold border-2 border-blue-500'
                           : inCurrentMonth
                           ? 'text-gray-900 hover:bg-gray-100'
                           : 'text-gray-300'
@@ -441,7 +441,7 @@ export function Calendar() {
                             <div
                               key={idx}
                               className={`w-1 h-1 rounded-full ${
-                                isSelected ? 'bg-white' : 'bg-rose-500'
+                                isSelected ? 'bg-white' : 'bg-blue-500'
                               }`}
                             />
                           ))}
@@ -455,7 +455,7 @@ export function Calendar() {
               {/* Add Event Button */}
               <button
                 onClick={() => setShowEventForm(true)}
-                className="w-full mt-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+                className="w-full mt-6 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2"
               >
                 <Plus className="w-5 h-5" />
                 <span>Add Event</span>
@@ -477,7 +477,7 @@ export function Calendar() {
                     <p className="text-gray-500">No events for this day</p>
                     <button
                       onClick={() => setShowEventForm(true)}
-                      className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-xl text-sm font-medium hover:bg-rose-600 transition-colors"
+                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
                     >
                       Add Event
                     </button>
@@ -516,22 +516,22 @@ export function Calendar() {
                     {(itemsForSelectedDate.googleEvents || []).map((ev, i) => (
                       <div
                         key={`google-event-${ev.id}-${i}`}
-                        className="group bg-gradient-to-br from-cyan-50 to-teal-50 border-2 border-cyan-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
+                        className="group bg-gradient-to-br from-blue-50 to-green-50 border-2 border-blue-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center space-x-2 flex-1">
-                            <h3 className="font-semibold text-gray-900 group-hover:text-cyan-600 transition-colors">{ev.summary || 'Untitled Event'}</h3>
-                            <div className="flex items-center space-x-1 px-2 py-0.5 bg-white rounded-full border border-cyan-300">
+                            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{ev.summary || 'Untitled Event'}</h3>
+                            <div className="flex items-center space-x-1 px-2 py-0.5 bg-white rounded-full border border-blue-300">
                               <svg viewBox="0 0 24 24" className="w-3 h-3" fill="currentColor">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                               </svg>
-                              <span className="text-xs font-medium text-cyan-600">Google</span>
+                              <span className="text-xs font-medium text-blue-600">Google</span>
                             </div>
                           </div>
-                          <span className="text-xs bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full font-medium ml-2">
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium ml-2">
                             {ev.start?.dateTime
                               ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
                               : 'All day'
@@ -645,7 +645,7 @@ export function Calendar() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedEvent.title}</h3>
-                    <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-rose-100 text-rose-700">
+                    <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
                       {selectedEvent.event_type}
                     </div>
                   </div>
@@ -690,7 +690,7 @@ export function Calendar() {
                         setShowEventDetails(false);
                         setShowEventForm(true);
                       }}
-                      className="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
+                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
                       Edit Event
                     </button>
@@ -725,7 +725,7 @@ export function Calendar() {
                         setShowEventDetails(false);
                         setSelectedEvent(null);
                       }}
-                      className="px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Close
                     </button>
@@ -824,7 +824,7 @@ export function Calendar() {
                         setShowEventDetails(false);
                         setSelectedReminder(null);
                       }}
-                      className="px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Close
                     </button>

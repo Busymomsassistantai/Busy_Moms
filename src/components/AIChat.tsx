@@ -254,7 +254,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={isListening ? "Listening..." : "Ask me anything..."}
-              className="flex-1 px-3 py-2 sm:px-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+              className="flex-1 px-3 py-2 sm:px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
               disabled={isLoading || isListening}
             />
             <button

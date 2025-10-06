@@ -134,7 +134,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
               )}
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   Full Name
                 </label>
@@ -142,13 +142,13 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                   type="text"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Your full name"
                 />
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   <Mail className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   Email
                 </label>
@@ -156,20 +156,20 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                   type="email"
                   value={user?.email || ''}
                   disabled
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm sm:text-base"
                   placeholder="Email cannot be changed"
                 />
                 <p className="text-xs text-gray-500 mt-1">Email cannot be changed after registration</p>
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   User Type
                 </label>
                 <select
                   value={formData.user_type}
                   onChange={(e) => setFormData({ ...formData, user_type: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="Mom">Mom</option>
                   <option value="Dad">Dad</option>
@@ -179,14 +179,14 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   <Heart className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   AI Assistant Personality
                 </label>
                 <select
                   value={formData.ai_personality}
                   onChange={(e) => setFormData({ ...formData, ai_personality: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="Friendly">Friendly</option>
                   <option value="Professional">Professional</option>
@@ -199,7 +199,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                  className="flex-1 px-3 py-2 sm:px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
                 >
                   Cancel
                 </button>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSessionContext, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useAuth } from './hooks/useAuth'
-import { useTheme } from './hooks/useTheme'
 import { AuthForm } from './components/forms/AuthForm'
 import { Onboarding } from './components/Onboarding'
 import { Dashboard } from './components/Dashboard'
@@ -34,7 +33,6 @@ function App() {
   const session = useSessionContext()
   const supabaseClient = useSupabaseClient()
   const { user, loading, signOut } = useAuth()
-  const { theme, isDark } = useTheme()
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
   const [currentSubScreen, setCurrentSubScreen] = useState<SubScreen | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -187,8 +185,8 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-theme-primary" />
-          <p className="text-gray-900 opacity-70">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">
             {loading ? 'Loading...' : checkingOnboarding ? 'Checking your profile...' : 'Loading...'}
           </p>
         </div>
@@ -219,7 +217,7 @@ function App() {
   // Show main app if user is authenticated and has completed onboarding
   return (
     <ErrorBoundary componentName="App">
-      <div className="min-h-screen bg-theme-bg">
+      <div className="min-h-screen bg-gray-50">
         <ImprovedNavigation
           currentScreen={currentScreen}
           onScreenChange={(screen) => {

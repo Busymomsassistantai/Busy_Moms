@@ -97,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
               {error && (
                 <div className="w-full bg-gray-50 rounded-lg p-4 mb-6 text-left">
-                  <p className="text-sm font-medium text-gray-900 opacity-90 mb-1">Error Details:</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Error Details:</p>
                   <p className="text-sm text-gray-600 font-mono break-all">
                     {error.message}
                   </p>
@@ -115,7 +115,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
                 <button
                   onClick={this.handleGoHome}
-                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Home className="w-4 h-4" />
                   <span>Go Home</span>

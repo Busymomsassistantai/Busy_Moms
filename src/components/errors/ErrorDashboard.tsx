@@ -179,7 +179,7 @@ export function ErrorDashboard() {
                   placeholder="Search errors..."
                   value={filters.searchQuery}
                   onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -187,7 +187,7 @@ export function ErrorDashboard() {
             <select
               value={filters.errorType}
               onChange={(e) => setFilters({ ...filters, errorType: e.target.value as ErrorType | '' })}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Types</option>
               {Object.values(ErrorType).map((type) => (
@@ -200,7 +200,7 @@ export function ErrorDashboard() {
             <select
               value={filters.severity}
               onChange={(e) => setFilters({ ...filters, severity: e.target.value as ErrorSeverity | '' })}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Severities</option>
               {Object.values(ErrorSeverity).map((severity) => (
@@ -213,7 +213,7 @@ export function ErrorDashboard() {
             <select
               value={filters.resolved}
               onChange={(e) => setFilters({ ...filters, resolved: e.target.value })}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Status</option>
               <option value="false">Unresolved</option>
@@ -377,7 +377,7 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
                 {showStackTrace ? 'Hide' : 'Show'} Stack Trace
               </button>
               {showStackTrace && (
-                <pre className="text-xs font-mono text-gray-900 opacity-90 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200">
+                <pre className="text-xs font-mono text-gray-700 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200">
                   {error.stack_trace}
                 </pre>
               )}
@@ -387,7 +387,7 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
           {error.context && (
             <div>
               <p className="text-sm text-gray-600 mb-2">Context</p>
-              <pre className="text-xs font-mono text-gray-900 opacity-90 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200">
+              <pre className="text-xs font-mono text-gray-700 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200">
                 {JSON.stringify(error.context, null, 2)}
               </pre>
             </div>
@@ -395,14 +395,14 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
 
           {!error.resolved && (
             <div>
-              <label className="block text-sm font-medium text-gray-900 opacity-90 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Resolution Notes (Optional)
               </label>
               <textarea
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
                 placeholder="Describe how this error was resolved..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
               />
             </div>
@@ -429,7 +429,7 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
         <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Close
           </button>

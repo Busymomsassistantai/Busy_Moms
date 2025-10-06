@@ -39,7 +39,7 @@ export function ConnectGoogleCalendarButton({ onConnected }: ConnectGoogleCalend
         onClick={startAuth}
         disabled={loading}
         data-google-calendar-connect
-        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
       >
         <Calendar className="w-4 h-4" />
         <span>{loading ? "Connecting..." : "Connect Google Calendar"}</span>

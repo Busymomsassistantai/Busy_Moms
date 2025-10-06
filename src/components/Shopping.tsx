@@ -144,7 +144,7 @@ export function Shopping() {
               <p className="text-xs sm:text-sm text-blue-700 mb-3">
                 Say "Add milk to shopping list" or tap to type manually
               </p>
-              <button className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base">
+              <button className="w-full py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base">
                 🎤 Tap to Speak
               </button>
             </div>
@@ -206,7 +206,7 @@ export function Shopping() {
             {!loading && (
               <button 
                 onClick={() => setShowShoppingForm(true)}
-                className="w-full py-3 sm:py-4 border-2 border-dashed border-gray-200 rounded-xl text-sm sm:text-base text-gray-600 hover:border-green-400 hover:text-green-600 transition-all"
+                className="w-full py-3 sm:py-4 border-2 border-dashed border-gray-300 rounded-xl text-sm sm:text-base text-gray-600 hover:border-green-400 hover:text-green-600 transition-all"
               >
                 + Add Item
               </button>
@@ -303,10 +303,10 @@ export function Shopping() {
                   <p><span className="font-medium">Frequency:</span> {item.frequency}</p>
                 </div>
                 <div className="flex space-x-2 mt-3 flex-wrap gap-1">
-                  <button className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-900 opacity-90 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors">
+                  <button className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors">
                     Order Now
                   </button>
-                  <button className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-900 opacity-90 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors">
+                  <button className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors">
                     Edit Schedule
                   </button>
                 </div>

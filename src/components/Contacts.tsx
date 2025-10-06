@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, CreditCard as Edit, Mail } from 'lucide-react';
+import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, Edit, Mail } from 'lucide-react';
 import { ContactForm } from './forms/ContactForm';
 import { Contact, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -127,7 +127,7 @@ export function Contacts() {
                 Verify babysitter credentials with our trusted background check partner. 
                 Starting at $19.99 per check.
               </p>
-              <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors">
+              <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors">
                 Learn More
               </button>
             </div>
@@ -169,7 +169,7 @@ export function Contacts() {
                     </div>
                   </div>
                   
-                  <p className="text-xs sm:text-sm text-gray-900 opacity-90 mb-3 line-clamp-2">
+                  <p className="text-xs sm:text-sm text-gray-700 mb-3 line-clamp-2">
                     {contact.notes || 'No notes available'}
                   </p>
                   
@@ -195,7 +195,7 @@ export function Contacts() {
                           alert('No phone number available for this contact');
                         }
                       }}
-                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-blue-600 text-white rounded-lg text-xs sm:text-sm hover:bg-blue-600 transition-colors"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-blue-500 text-white rounded-lg text-xs sm:text-sm hover:bg-blue-600 transition-colors"
                     >
                       <MessageCircle className="w-2 h-2 sm:w-3 sm:h-3" />
                       <span>Text</span>

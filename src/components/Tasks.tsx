@@ -154,7 +154,7 @@ export function Tasks() {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-900 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -250,7 +250,7 @@ export function Tasks() {
             <select
               value={selectedMember}
               onChange={(e) => setSelectedMember(e.target.value)}
-              className="px-2 sm:px-3 py-1 border border-gray-200 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Family Members</option>
               <option value="">Unassigned</option>
@@ -292,7 +292,7 @@ export function Tasks() {
                     className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                       task.status === 'completed'
                         ? 'bg-green-500 border-green-500'
-                        : 'border-gray-200 hover:border-purple-500'
+                        : 'border-gray-300 hover:border-purple-500'
                     }`}
                   >
                     {task.status === 'completed' && (
@@ -358,7 +358,7 @@ export function Tasks() {
                       <select
                         value={task.status}
                         onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-gray-200 rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
                         <option value="pending">Pending</option>
                         <option value="in_progress">In Progress</option>

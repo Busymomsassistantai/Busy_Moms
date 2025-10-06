@@ -21,12 +21,12 @@ export function NavigationHeader({ title, subtitle, showBack, onBack, actions }:
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Go back"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-900 opacity-70" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
             )}
             <div>
               <h1 className="text-xl font-bold text-gray-900">{title}</h1>
-              {subtitle && <p className="text-sm text-gray-900 opacity-70">{subtitle}</p>}
+              {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
             </div>
           </div>
           <div className="flex items-center space-x-2">

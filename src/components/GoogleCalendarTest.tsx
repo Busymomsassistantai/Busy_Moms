@@ -369,7 +369,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
                           href={event.htmlLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-700"
+                          className="text-blue-500 hover:text-blue-700"
                           title="Open in Google Calendar"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -423,14 +423,14 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
             <button
               onClick={runGoogleCalendarTest}
               disabled={testing}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
               <Calendar className={`w-4 h-4 ${testing ? 'animate-pulse' : ''}`} />
               <span>{testing ? 'Testing...' : 'Run Google Calendar Test'}</span>
             </button>
             <button
               onClick={onClose}
-              className="px-6 py-3 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Close
             </button>

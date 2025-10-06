@@ -139,10 +139,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   ];
 
   const quickActions = [
-    { icon: Calendar, title: 'View Calendar', desc: 'See all your events', color: 'from-rose-400 to-pink-400', action: () => onNavigate('calendar') },
-    { icon: ShoppingBag, title: 'Shopping List', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-amber-400 to-orange-400', action: () => onNavigateToSubScreen('shopping') },
-    { icon: Users, title: 'Family Hub', desc: 'Organize by family member', color: 'from-violet-400 to-purple-400', action: () => onNavigate('family') },
-    { icon: MessageCircle, title: 'AI Assistant', desc: 'Get help with anything', color: 'from-fuchsia-400 to-pink-400', action: () => setIsChatOpen(true) }
+    { icon: Calendar, title: 'View Calendar', desc: 'See all your events', color: 'from-blue-400 to-cyan-400', action: () => onNavigate('calendar') },
+    { icon: ShoppingBag, title: 'Shopping List', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-green-400 to-emerald-400', action: () => onNavigateToSubScreen('shopping') },
+    { icon: Users, title: 'Family Hub', desc: 'Organize by family member', color: 'from-teal-400 to-cyan-400', action: () => onNavigate('family') },
+    { icon: MessageCircle, title: 'AI Assistant', desc: 'Get help with anything', color: 'from-sky-400 to-blue-400', action: () => setIsChatOpen(true) }
   ];
 
   const sampleReminders = [
@@ -155,7 +155,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-4 pb-6">
+      <div className="bg-gradient-to-r from-blue-500 to-green-500 text-white p-4 pb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Good Morning, {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}!</h1>
@@ -177,21 +177,21 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         {/* Daily Summary */}
         <div className="bg-white bg-opacity-10 rounded-xl p-3">
           <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
-            <button
+            <button 
               onClick={() => setShowEventsPopup(true)}
               className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
             >
               <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>{events.length} events</span>
             </button>
-            <button
+            <button 
               onClick={() => setShowTasksPopup(true)}
               className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
             >
               <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>{tasks.length} shopping list</span>
             </button>
-            <button
+            <button 
               onClick={() => setShowRemindersPopup(true)}
               className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
             >
@@ -207,14 +207,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         {todayAffirmation && (
           <div
             onClick={() => setShowAffirmations(true)}
-            className="bg-orange-400 p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
+            className="bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-400 p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-theme-accent-fg opacity-10 rounded-full -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-theme-accent-fg opacity-10 rounded-full -ml-12 -mb-12"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
 
             <div className="relative z-10">
               <div className="flex items-center space-x-2 mb-3">
-                <Sparkles className="w-5 h-5 text-theme-accent-fg" />
+                <Sparkles className="w-5 h-5 text-white" />
                 <span className="text-white font-semibold text-sm">Today's Affirmation</span>
               </div>
 
@@ -237,14 +237,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         )}
 
         {!todayAffirmation && (
-          <div className="bg-gray-100 border-2 border-gray-200 p-6 rounded-2xl">
+          <div className="bg-gradient-to-br from-blue-100 to-cyan-100 border-2 border-blue-300 p-6 rounded-2xl">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-orange-400 rounded-full flex items-center justify-center animate-pulse">
-                <Sparkles className="w-5 h-5 text-theme-accent-fg" />
+              <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center animate-pulse">
+                <Sparkles className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-theme-fg">Generating Your Daily Affirmation</h3>
-                <p className="text-sm text-gray-900 opacity-70">Creating personalized encouragement based on your schedule...</p>
+                <h3 className="font-semibold text-gray-900">Generating Your Daily Affirmation</h3>
+                <p className="text-sm text-gray-600">Creating personalized encouragement based on your schedule...</p>
               </div>
             </div>
           </div>
@@ -269,7 +269,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{action.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-900 opacity-70">{action.desc}</p>
+                <p className="text-xs sm:text-sm text-gray-600">{action.desc}</p>
               </div>
             ))}
           </div>
@@ -280,17 +280,17 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Today's Schedule</h2>
           <div className="space-y-3">
             {todayEvents.map((event, index) => (
-              <div key={index} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+              <div key={index} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm">
                 <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-theme-primary" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</h3>
                       <span className="text-xs sm:text-sm text-blue-600 font-medium">{event.time}</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-900 opacity-70">{event.location}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{event.location}</p>
                   </div>
                 </div>
               </div>
@@ -303,10 +303,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Smart Reminders</h2>
           <div className="space-y-2">
             {reminders.length > 0 ? reminders.map((reminder) => (
-              <div key={reminder.id} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-100 rounded-lg border border-theme-border">
-                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+              <div key={reminder.id} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
                 <div className="flex-1">
-                  <span className="text-theme-fg">{reminder.title}</span>
+                  <span className="text-gray-800">{reminder.title}</span>
                   <div className="text-xs sm:text-sm text-gray-600 mt-1">
                     {new Date(reminder.reminder_date).toLocaleDateString('en-US', { 
                       weekday: 'short',
@@ -323,9 +323,9 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 )}
               </div>
             )) : sampleReminders.map((reminder, index) => (
-              <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-100 rounded-lg border border-theme-border">
-                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                <span className="text-sm sm:text-base text-theme-fg">{reminder}</span>
+              <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <span className="text-sm sm:text-base text-gray-800">{reminder}</span>
               </div>
             ))}
           </div>
@@ -333,45 +333,45 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         {/* AI Assistant */}
         <div
-          className="bg-gray-100 p-4 sm:p-6 rounded-xl border border-gray-200 cursor-pointer hover:shadow-md transition-all"
+          className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 sm:p-6 rounded-xl border border-blue-100 cursor-pointer hover:shadow-md transition-all"
           onClick={() => setIsChatOpen(true)}
         >
           <div className="flex items-center space-x-3 mb-3 sm:mb-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-400 rounded-full flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-theme-accent-fg" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Your AI Assistant</h3>
-              <p className="text-xs sm:text-sm text-gray-900 opacity-70">Ask me anything!</p>
+              <p className="text-xs sm:text-sm text-gray-600">Ask me anything!</p>
             </div>
           </div>
           <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
-            <p className="text-sm sm:text-base text-gray-900 opacity-90 mb-2 sm:mb-3">"What can I help you with today?"</p>
+            <p className="text-sm sm:text-base text-gray-700 mb-2 sm:mb-3">"What can I help you with today?"</p>
             <div className="flex flex-wrap gap-1 sm:gap-2">
-              <button
+              <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-gray-100 text-blue-600 rounded-full text-xs sm:text-sm hover:bg-orange-400 hover:text-white transition-colors"
+                className="px-2 py-1 sm:px-3 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-200 transition-colors"
               >
                 Add reminder for tomorrow
               </button>
-              <button
+              <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-gray-100 text-blue-600 rounded-full text-xs sm:text-sm hover:bg-orange-400 hover:text-white transition-colors"
+                className="px-2 py-1 sm:px-3 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-200 transition-colors"
               >
                 Schedule dentist appointment
               </button>
-              <button
+              <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-gray-100 text-blue-600 rounded-full text-xs sm:text-sm hover:bg-orange-400 hover:text-white transition-colors"
+                className="px-2 py-1 sm:px-3 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-200 transition-colors"
               >
                 Add milk to shopping list
               </button>
@@ -395,30 +395,30 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-theme-fg">Upcoming Events</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Upcoming Events</h2>
                 <button
                   onClick={() => setShowEventsPopup(false)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
                 >
                   ✕
                 </button>
               </div>
-
+              
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-theme-primary"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-500"></div>
                 </div>
               ) : events.length > 0 ? (
                 <div className="space-y-3">
                   {events.map((event) => (
                     <div key={event.id} className="p-2 sm:p-3 bg-gray-50 rounded-lg">
                       <h3 className="font-medium text-gray-900 text-sm sm:text-base">{event.title}</h3>
-                      <p className="text-xs sm:text-sm text-gray-900 opacity-70">
+                      <p className="text-xs sm:text-sm text-gray-600">
                         {new Date(event.event_date).toLocaleDateString()} 
                         {event.start_time && ` at ${event.start_time}`}
                       </p>
                       {event.location && (
-                        <p className="text-xs sm:text-sm text-gray-900 opacity-60">{event.location}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{event.location}</p>
                       )}
                     </div>
                   ))}
@@ -437,18 +437,18 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-theme-fg">Shopping List</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Shopping List</h2>
                 <button
                   onClick={() => setShowTasksPopup(false)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
                 >
                   ✕
                 </button>
               </div>
-
+              
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-theme-primary"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-green-500"></div>
                 </div>
               ) : tasks.length > 0 ? (
                 <div className="space-y-3">
@@ -462,7 +462,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-900 opacity-70">
+                      <div className="text-xs sm:text-sm text-gray-600">
                         <p className="capitalize">{task.category}</p>
                         {(task as any).assigned_family_member && (
                           <div className="flex items-center space-x-1 mt-1">
@@ -474,7 +474,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                         )}
                       </div>
                       {task.quantity && task.quantity > 1 && (
-                        <p className="text-xs sm:text-sm text-gray-900 opacity-60">Quantity: {task.quantity}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Quantity: {task.quantity}</p>
                       )}
                     </div>
                   ))}
@@ -493,10 +493,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold text-theme-fg">Upcoming Reminders</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Upcoming Reminders</h2>
                 <button
                   onClick={() => setShowRemindersPopup(false)}
-                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
                 >
                   ✕
                 </button>
@@ -504,7 +504,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-theme-primary"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
                 </div>
               ) : reminders.length > 0 ? (
                 <div className="space-y-3">
@@ -518,12 +518,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-900 opacity-70">
+                      <p className="text-xs sm:text-sm text-gray-600">
                         {new Date(reminder.reminder_date).toLocaleDateString()}
                         {reminder.reminder_time && ` at ${reminder.reminder_time}`}
                       </p>
                       {reminder.description && (
-                        <p className="text-xs sm:text-sm text-gray-900 opacity-60">{reminder.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{reminder.description}</p>
                       )}
                     </div>
                   ))}

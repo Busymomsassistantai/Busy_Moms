@@ -233,7 +233,7 @@ export function VoiceChat({ isOpen, onClose, roomId = 'family-chat' }: VoiceChat
                     <p className="text-sm text-gray-300">{error}</p>
                     <button
                       onClick={initializeConnection}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
                       Retry Connection
                     </button>
@@ -259,7 +259,7 @@ export function VoiceChat({ isOpen, onClose, roomId = 'family-chat' }: VoiceChat
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
               isMuted 
                 ? 'bg-red-500 text-white hover:bg-red-600' 
-                : 'bg-gray-200 text-gray-900 opacity-90 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
             title={isMuted ? 'Unmute' : 'Mute'}
           >
@@ -270,8 +270,8 @@ export function VoiceChat({ isOpen, onClose, roomId = 'family-chat' }: VoiceChat
             onClick={toggleVideo}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
               isVideoEnabled 
-                ? 'bg-blue-600 text-white hover:bg-blue-600' 
-                : 'bg-gray-200 text-gray-900 opacity-90 hover:bg-gray-300'
+                ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
             title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}
           >

@@ -149,27 +149,27 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 opacity-90 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Primary Time
                     </label>
                     <input
                       type="time"
                       value={settings.preferred_time?.slice(0, 5) || '08:00'}
                       onChange={(e) => updateSetting('preferred_time', `${e.target.value}:00`)}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>
 
                   {settings.frequency === 'twice_daily' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 opacity-90 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Secondary Time
                       </label>
                       <input
                         type="time"
                         value={settings.secondary_time?.slice(0, 5) || '20:00'}
                         onChange={(e) => updateSetting('secondary_time', `${e.target.value}:00`)}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
                   )}
@@ -251,7 +251,7 @@ export function AffirmationSettings({ isOpen, onClose }: AffirmationSettingsProp
           <div className="flex space-x-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-200 text-gray-900 opacity-90 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+              className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors"
             >
               Cancel
             </button>

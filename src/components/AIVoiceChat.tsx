@@ -298,7 +298,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
               <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Mic className="w-8 h-8 text-white" />
               </div>
-              <p className="text-lg text-gray-900 opacity-90 mb-2">Listening for wake word</p>
+              <p className="text-lg text-gray-700 mb-2">Listening for wake word</p>
               <p className="text-sm text-gray-500 mb-4">Say <strong>"Hey, Sarah"</strong> to start a conversation</p>
               <div className="bg-purple-50 p-3 rounded-lg">
                 <p className="text-sm text-purple-800">
@@ -314,7 +314,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-white" />
               </div>
-              <p className="text-lg text-gray-900 opacity-90 mb-2">Conversation Active</p>
+              <p className="text-lg text-gray-700 mb-2">Conversation Active</p>
               <p className="text-sm text-gray-500">I'm listening and ready to help!</p>
             </div>
           )}
@@ -344,7 +344,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   <input
                     type="text"
                     placeholder="Type your message..."
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const input = e.target as HTMLInputElement;
@@ -383,7 +383,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
               isMuted
                 ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-gray-200 text-gray-900 opacity-90 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             } disabled:opacity-50`}
             title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
           >

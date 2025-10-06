@@ -24,10 +24,10 @@ export function ImprovedNavigation({ currentScreen, onScreenChange, onVoiceChatO
           <button
             key={item.id}
             onClick={() => onScreenChange(item.id)}
-            className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-xl transition-colors min-w-[64px] ${
+            className={`flex flex-col items-center space-y-1 py-2 px-4 rounded-xl transition-all min-w-[64px] ${
               currentScreen === item.id
-                ? 'text-blue-600 bg-gray-100'
-                : 'text-gray-500 hover:opacity-100 hover:bg-gray-100'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
             aria-label={item.label}
             aria-current={currentScreen === item.id ? 'page' : undefined}
@@ -40,7 +40,7 @@ export function ImprovedNavigation({ currentScreen, onScreenChange, onVoiceChatO
         {onVoiceChatOpen && (
           <button
             onClick={onVoiceChatOpen}
-            className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-orange-400 text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-colors hover:scale-105 active:scale-95"
+            className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all hover:scale-105 active:scale-95"
             title="AI Voice Assistant"
             aria-label="Open AI Voice Assistant"
           >

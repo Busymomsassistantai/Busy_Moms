@@ -86,7 +86,7 @@ export function ErrorModal({
 
               {detailsVisible && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-xs font-mono text-gray-900 opacity-90 break-all">
+                  <p className="text-xs font-mono text-gray-700 break-all">
                     {details}
                   </p>
                 </div>
@@ -98,7 +98,7 @@ export function ErrorModal({
             {secondaryAction && (
               <button
                 onClick={secondaryAction.onClick}
-                className="flex-1 px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
                 {secondaryAction.label}
               </button>
