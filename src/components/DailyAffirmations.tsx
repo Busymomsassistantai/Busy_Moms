@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Heart, Calendar, RefreshCw, X, Loader2, Star } from 'lucide-react';
+import { Sparkles, Heart, Calendar, RefreshCw, X, Loader2, Star, Volume2 } from 'lucide-react';
 import { affirmationService } from '../services/affirmationService';
 import { Affirmation } from '../lib/supabase';
 
@@ -13,12 +13,18 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
+  const [speaking, setSpeaking] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadAffirmations();
+    } else {
+      if (speaking && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        setSpeaking(false);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, speaking]);
 
   const loadAffirmations = async () => {
     setLoading(true);
@@ -74,6 +80,43 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
       );
     } catch (error) {
       console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const handleSpeakAffirmation = (text: string) => {
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(
+        (voice) =>
+          voice.name.includes('Female') ||
+          voice.name.includes('Samantha') ||
+          voice.name.includes('Karen') ||
+          voice.name.includes('Victoria') ||
+          voice.name.includes('Google US English') ||
+          voice.name.includes('Microsoft Zira')
+      );
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+
+      utterance.onstart = () => setSpeaking(true);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert('Speech synthesis is not supported in your browser.');
     }
   };
 
@@ -138,16 +181,27 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
               {todayAffirmation ? (
                 <div className="space-y-4">
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6 relative">
-                    <button
-                      onClick={() => handleToggleFavorite(todayAffirmation)}
-                      className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                    >
-                      {todayAffirmation.favorited ? (
-                        <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                      ) : (
-                        <Star className="w-5 h-5 text-gray-400" />
-                      )}
-                    </button>
+                    <div className="absolute top-4 right-4 flex space-x-2">
+                      <button
+                        onClick={() => handleSpeakAffirmation(todayAffirmation.affirmation_text)}
+                        className={`w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform ${
+                          speaking ? 'animate-pulse' : ''
+                        }`}
+                        title={speaking ? 'Stop reading' : 'Read affirmation aloud'}
+                      >
+                        <Volume2 className={`w-5 h-5 ${speaking ? 'text-purple-600' : 'text-gray-600'}`} />
+                      </button>
+                      <button
+                        onClick={() => handleToggleFavorite(todayAffirmation)}
+                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                      >
+                        {todayAffirmation.favorited ? (
+                          <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                        ) : (
+                          <Star className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
 
                     <div className="flex items-center space-x-2 mb-4">
                       <Calendar className="w-5 h-5 text-purple-600" />
@@ -161,7 +215,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                       </span>
                     </div>
 
-                    <p className="text-lg text-gray-800 leading-relaxed mb-4">
+                    <p className="text-lg text-gray-800 leading-relaxed mb-4 pr-24">
                       {todayAffirmation.affirmation_text}
                     </p>
 
@@ -244,16 +298,27 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                     key={affirmation.id}
                     className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all relative"
                   >
-                    <button
-                      onClick={() => handleToggleFavorite(affirmation)}
-                      className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
-                    >
-                      {affirmation.favorited ? (
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                      ) : (
-                        <Star className="w-4 h-4 text-gray-300" />
-                      )}
-                    </button>
+                    <div className="absolute top-4 right-4 flex space-x-2">
+                      <button
+                        onClick={() => handleSpeakAffirmation(affirmation.affirmation_text)}
+                        className={`w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform ${
+                          speaking ? 'animate-pulse' : ''
+                        }`}
+                        title={speaking ? 'Stop reading' : 'Read affirmation aloud'}
+                      >
+                        <Volume2 className={`w-4 h-4 ${speaking ? 'text-purple-600' : 'text-gray-400'}`} />
+                      </button>
+                      <button
+                        onClick={() => handleToggleFavorite(affirmation)}
+                        className="w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
+                      >
+                        {affirmation.favorited ? (
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        ) : (
+                          <Star className="w-4 h-4 text-gray-300" />
+                        )}
+                      </button>
+                    </div>
 
                     <div className="flex items-center space-x-2 mb-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
@@ -271,7 +336,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                       )}
                     </div>
 
-                    <p className="text-gray-800 leading-relaxed pr-8">
+                    <p className="text-gray-800 leading-relaxed pr-16">
                       {affirmation.affirmation_text}
                     </p>
                   </div>
