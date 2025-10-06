@@ -71,6 +71,8 @@ export function EventForm({ defaultDate, event, onCancel, onSaved }: EventFormPr
     try {
       const eventData = {
         ...formData,
+        start_time: formData.start_time || null,
+        end_time: formData.end_time || null,
         user_id: user.id,
         participants: formData.participants.split(',').map(p => p.trim()).filter(p => p),
         source: 'manual' as const
