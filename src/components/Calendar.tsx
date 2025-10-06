@@ -27,10 +27,14 @@ import {
 
 import { EventForm } from './forms/EventForm';
 import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
+import { ConflictResolutionModal } from './ConflictResolutionModal';
+import { SyncStatus } from './SyncStatus';
+import { SyncSettings } from './SyncSettings';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
 import { supabase } from '../lib/supabase';
 import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { useCalendarSync } from '../hooks/useCalendarSync';
 
 // --- Helpers -----------------------------------------------------------------
 const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
@@ -61,6 +65,7 @@ const formatTimeRange = (startTime?: string | null, endTime?: string | null) => 
 // --- Component ---------------------------------------------------------------
 export function Calendar() {
   const { user } = useAuth();
+  const { pendingConflicts, resolveConflict, performSync, loadPendingConflicts } = useCalendarSync();
 
   // Core state
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -70,6 +75,8 @@ export function Calendar() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showWhatsAppForm, setShowWhatsAppForm] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [showConflicts, setShowConflicts] = useState(false);
+  const [showSyncSettings, setShowSyncSettings] = useState(false);
 
   // Data
   const [events, setEvents] = useState<DbEvent[]>([]);
@@ -594,6 +601,30 @@ export function Calendar() {
               )}
             </div>
 
+            {/* Sync Status Widget */}
+            <SyncStatus />
+
+            {/* Sync Settings Button */}
+            {isGoogleConnected && (
+              <button
+                onClick={() => setShowSyncSettings(true)}
+                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+              >
+                Sync Settings
+              </button>
+            )}
+
+            {/* Conflicts Alert */}
+            {pendingConflicts.length > 0 && (
+              <button
+                onClick={() => setShowConflicts(true)}
+                className="w-full px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center space-x-2"
+              >
+                <Bell className="w-4 h-4" />
+                <span>Resolve {pendingConflicts.length} Conflict{pendingConflicts.length !== 1 ? 's' : ''}</span>
+              </button>
+            )}
+
             {/* Google Calendar Integration */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
@@ -628,13 +659,13 @@ export function Calendar() {
                     <RefreshCw className={`w-4 h-4 ${syncingGoogle ? 'animate-spin' : ''}`} />
                     <span>{syncingGoogle ? 'Syncing...' : 'Sync with Google Calendar'}</span>
                   </button>
-                  
+
                   {googleEvents.length > 0 && (
                     <div className="text-sm text-gray-600">
                       <p>Found {googleEvents.length} Google Calendar events this month</p>
                     </div>
                   )}
-                  
+
                   <button
                     onClick={() => setShowGoogleConnect(true)}
                     className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
@@ -931,6 +962,28 @@ export function Calendar() {
           </div>
         </div>
       )}
+
+      {/* Conflict Resolution Modal */}
+      {showConflicts && pendingConflicts.length > 0 && (
+        <ConflictResolutionModal
+          conflicts={pendingConflicts}
+          onResolve={async (conflictId, resolution) => {
+            const success = await resolveConflict(conflictId, resolution);
+            if (success) {
+              await loadEvents();
+              await loadPendingConflicts();
+            }
+            return success;
+          }}
+          onClose={() => setShowConflicts(false)}
+        />
+      )}
+
+      {/* Sync Settings Modal */}
+      <SyncSettings
+        isOpen={showSyncSettings}
+        onClose={() => setShowSyncSettings(false)}
+      />
     </div>
     </>
   );
