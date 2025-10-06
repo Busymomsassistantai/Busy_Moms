@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Palette } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
@@ -8,9 +8,12 @@ import { GoogleCalendarTest } from './GoogleCalendarTest';
 import { ErrorDashboard } from './errors/ErrorDashboard';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { ThemeToggle, ThemeToggleMenu } from './ThemeToggle';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function Settings() {
   const { user, signOut } = useAuth();
+  const { theme, resolvedTheme } = useTheme();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
@@ -128,6 +131,18 @@ export function Settings() {
           title: 'Privacy & Safety',
           description: 'Allergies, medical info, emergency contacts',
           action: 'Manage'
+        }
+      ]
+    },
+    {
+      title: 'Appearance',
+      items: [
+        {
+          icon: Palette,
+          title: 'Theme',
+          description: `Current: ${theme === 'system' ? `System (${resolvedTheme})` : theme.charAt(0).toUpperCase() + theme.slice(1)}`,
+          action: null,
+          customComponent: <ThemeToggleMenu />
         }
       ]
     },
@@ -337,9 +352,13 @@ export function Settings() {
                             item.enabled ? 'right-0.5' : 'left-0.5'
                           }`}></div>
                         </button>
+                      ) : (item as any).customComponent ? (
+                        <div className="flex items-center">
+                          {(item as any).customComponent}
+                        </div>
                       ) : (
-                        <button className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors">
-                          <button 
+                        <button className="px-2 sm:px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-xs sm:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                          <button
                             onClick={() => {
                               if (item.title === 'Family Members') {
                                 setShowFamilyForm(true);
@@ -347,7 +366,7 @@ export function Settings() {
                                 item.onClick();
                               }
                             }}
-                            className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors"
+                            className="px-2 sm:px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-xs sm:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                           >
                             {item.action}
                           </button>
