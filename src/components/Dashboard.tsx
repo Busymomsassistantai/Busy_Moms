@@ -183,7 +183,7 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
   ];
 
   return (
-    <div className="h-screen overflow-y-auto pb-20">
+    <div className="pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-orange-300 text-white p-4 pb-6">
         <div className="flex items-center justify-between mb-4">
