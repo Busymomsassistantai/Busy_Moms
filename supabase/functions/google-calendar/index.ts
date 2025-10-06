@@ -17,7 +17,7 @@
     - insertEvent: Create new calendar event
 */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'npm:@supabase/supabase-js@2.55.0';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,10 +62,10 @@ async function refreshGoogleToken(refreshToken: string, clientId: string, client
   return tokenData;
 }
 
-async function getValidAccessToken(supabase: any, userId: string, googleClientId: string, googleClientSecret: string) {
+async function getValidAccessToken(serviceSupabase: any, userId: string, googleClientId: string, googleClientSecret: string) {
   console.log("🔍 Getting valid access token for user:", userId);
   
-  const { data: tokenData, error } = await supabase
+  const { data: tokenData, error } = await serviceSupabase
     .from('google_tokens')
     .select('*')
     .eq('user_id', userId)
@@ -103,7 +103,7 @@ async function getValidAccessToken(supabase: any, userId: string, googleClientId
 
       const newExpiry = new Date(Date.now() + (refreshResponse.expires_in * 1000));
       
-      const { error: updateError } = await supabase
+      const { error: updateError } = await serviceSupabase
         .from('google_tokens')
         .update({
           access_token: refreshResponse.access_token,
@@ -154,33 +154,18 @@ async function makeGoogleCalendarRequest(accessToken: string, endpoint: string, 
   return data;
 }
 
-function getSafeUserId(req: Request, body: any): string {
-  if (body?.userId) {
-    console.log("📝 Using user ID from body:", body.userId);
-    return body.userId;
+async function getAuthenticatedUser(req: Request, supabase: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('Missing authorization header');
   }
 
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice("Bearer ".length);
-    
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        if (payload.sub) {
-          console.log("📝 Using user ID from JWT:", payload.sub);
-          return payload.sub;
-        }
-      }
-    } catch (error) {
-      console.log("⚠️ Could not parse JWT");
-    }
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    throw new Error('Unauthorized');
   }
 
-  const anonId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  console.log("📝 Using anonymous user ID:", anonId);
-  return anonId;
+  return user;
 }
 
 Deno.serve(async (req: Request) => {
@@ -199,6 +184,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
     const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
@@ -233,15 +219,40 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Missing action parameter" }, 400);
     }
 
-    const userId = getSafeUserId(req, body);
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        headers: {
+          Authorization: req.headers.get('Authorization') || '',
+        },
+      },
+    });
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    let userId: string;
+    try {
+      const user = await getAuthenticatedUser(req, supabase);
+      userId = user.id;
+      console.log('✅ Authenticated user:', userId);
+    } catch (error) {
+      if (action === 'isConnected' || action === 'disconnect') {
+        return jsonResponse({
+          error: 'Unauthorized',
+          message: 'Authentication required'
+        }, 401);
+      }
+      throw error;
+    }
+
+    const serviceSupabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false }
     });
 
     if (action === "isConnected") {
       try {
-        const { data: tokenData, error } = await supabase
+        const { data: tokenData, error } = await serviceSupabase
           .from("google_tokens")
           .select("access_token, expiry_ts")
           .eq("user_id", userId)
@@ -262,7 +273,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "disconnect") {
       try {
-        const { error } = await supabase
+        const { error } = await serviceSupabase
           .from("google_tokens")
           .delete()
           .eq("user_id", userId);
@@ -293,7 +304,7 @@ Deno.serve(async (req: Request) => {
 
     let accessToken: string;
     try {
-      accessToken = await getValidAccessToken(supabase, userId, googleClientId, googleClientSecret);
+      accessToken = await getValidAccessToken(serviceSupabase, userId, googleClientId, googleClientSecret);
     } catch (error) {
       console.error('❌ Failed to get Google access token:', error);
       return jsonResponse({ 
@@ -307,7 +318,7 @@ Deno.serve(async (req: Request) => {
 
     switch (action) {
       case "listUpcoming": {
-        const maxResults = body.maxResults || 10;
+        const maxResults = Math.min(Math.max(1, parseInt(body.maxResults) || 10), 100);
         const timeMin = new Date().toISOString();
         
         const events = await makeGoogleCalendarRequest(
@@ -320,8 +331,20 @@ Deno.serve(async (req: Request) => {
 
       case "getEvents": {
         const { timeMin, timeMax, maxResults = 250, q } = body;
-        
-        let endpoint = `/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=${maxResults}`;
+
+        const validatedMaxResults = Math.min(Math.max(1, parseInt(maxResults) || 250), 250);
+
+        if (timeMin && isNaN(Date.parse(timeMin))) {
+          return jsonResponse({ error: "Invalid timeMin format" }, 400);
+        }
+        if (timeMax && isNaN(Date.parse(timeMax))) {
+          return jsonResponse({ error: "Invalid timeMax format" }, 400);
+        }
+        if (q && typeof q !== 'string') {
+          return jsonResponse({ error: "Invalid search query format" }, 400);
+        }
+
+        let endpoint = `/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=${validatedMaxResults}`;
         
         if (timeMin) {
           endpoint += `&timeMin=${encodeURIComponent(timeMin)}`;
@@ -339,9 +362,13 @@ Deno.serve(async (req: Request) => {
 
       case "insertEvent": {
         const { event } = body;
-        
-        if (!event) {
-          return jsonResponse({ error: "Missing event data" }, 400);
+
+        if (!event || typeof event !== 'object') {
+          return jsonResponse({ error: "Missing or invalid event data" }, 400);
+        }
+
+        if (!event.summary || typeof event.summary !== 'string') {
+          return jsonResponse({ error: "Event must have a valid summary" }, 400);
         }
         
         const createdEvent = await makeGoogleCalendarRequest(
@@ -358,9 +385,12 @@ Deno.serve(async (req: Request) => {
 
       case "updateEvent": {
         const { eventId, event } = body;
-        
-        if (!eventId || !event) {
-          return jsonResponse({ error: "Missing eventId or event data" }, 400);
+
+        if (!eventId || typeof eventId !== 'string') {
+          return jsonResponse({ error: "Missing or invalid eventId" }, 400);
+        }
+        if (!event || typeof event !== 'object') {
+          return jsonResponse({ error: "Missing or invalid event data" }, 400);
         }
         
         const updatedEvent = await makeGoogleCalendarRequest(
@@ -378,8 +408,8 @@ Deno.serve(async (req: Request) => {
       case "deleteEvent": {
         const { eventId } = body;
 
-        if (!eventId) {
-          return jsonResponse({ error: "Missing eventId" }, 400);
+        if (!eventId || typeof eventId !== 'string') {
+          return jsonResponse({ error: "Missing or invalid eventId" }, 400);
         }
 
         await makeGoogleCalendarRequest(
@@ -400,8 +430,7 @@ Deno.serve(async (req: Request) => {
     
     return jsonResponse({
       error: "Internal server error",
-      message: error instanceof Error ? error.message : "Unknown error",
-      details: "Check server logs for more information"
+      message: "An unexpected error occurred"
     }, 500);
   }
 });

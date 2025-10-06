@@ -113,7 +113,21 @@ Deno.serve(async (req: Request) => {
     console.log('✅ Authenticated user:', user.id);
 
     const body: AffirmationRequest = await req.json().catch(() => ({}));
-    const targetDate = body.date || new Date().toISOString().split('T')[0];
+
+    let targetDate = body.date || new Date().toISOString().split('T')[0];
+    if (body.date && isNaN(Date.parse(body.date))) {
+      return new Response(
+        JSON.stringify({ error: "Invalid date format" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
     const forceRegenerate = body.forceRegenerate || false;
 
     if (!forceRegenerate) {
@@ -176,53 +190,70 @@ Deno.serve(async (req: Request) => {
     const today = new Date().toISOString().split('T')[0];
     const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+    const queries = [];
+
     if (includeCalendar) {
-      const { data: events } = await supabase
-        .from('events')
-        .select('title, event_date, start_time, location, description')
-        .eq('user_id', user.id)
-        .gte('event_date', today)
-        .lte('event_date', nextWeek)
-        .order('event_date', { ascending: true })
-        .limit(5);
-      contextData.calendar = events || [];
+      queries.push(
+        supabase
+          .from('events')
+          .select('title, event_date, start_time, location, description')
+          .eq('user_id', user.id)
+          .gte('event_date', today)
+          .lte('event_date', nextWeek)
+          .order('event_date', { ascending: true })
+          .limit(5)
+          .then(({ data }) => ({ key: 'calendar', data: data || [] }))
+      );
     }
 
     if (includeTasks) {
-      const { data: tasks } = await supabase
-        .from('shopping_lists')
-        .select('item, category, urgent')
-        .eq('user_id', user.id)
-        .eq('completed', false)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      contextData.tasks = tasks || [];
+      queries.push(
+        supabase
+          .from('shopping_lists')
+          .select('item, category, urgent')
+          .eq('user_id', user.id)
+          .eq('completed', false)
+          .order('created_at', { ascending: false })
+          .limit(10)
+          .then(({ data }) => ({ key: 'tasks', data: data || [] }))
+      );
     }
 
     if (includeShopping) {
-      const { data: shopping } = await supabase
-        .from('shopping_lists')
-        .select('item, quantity, category')
-        .eq('user_id', user.id)
-        .eq('completed', false)
-        .limit(8);
-      contextData.shopping = shopping || [];
+      queries.push(
+        supabase
+          .from('shopping_lists')
+          .select('item, quantity, category')
+          .eq('user_id', user.id)
+          .eq('completed', false)
+          .limit(8)
+          .then(({ data }) => ({ key: 'shopping', data: data || [] }))
+      );
     }
 
     if (includeFamily) {
-      const { data: family } = await supabase
-        .from('family_members')
-        .select('name, relationship, age')
-        .eq('user_id', user.id);
-      contextData.family = family || [];
+      queries.push(
+        supabase
+          .from('family_members')
+          .select('name, relationship, age')
+          .eq('user_id', user.id)
+          .then(({ data }) => ({ key: 'family', data: data || [] }))
+      );
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, user_type, ai_personality')
-      .eq('id', user.id)
-      .maybeSingle();
-    contextData.profile = profile;
+    queries.push(
+      supabase
+        .from('profiles')
+        .select('full_name, user_type, ai_personality')
+        .eq('id', user.id)
+        .maybeSingle()
+        .then(({ data }) => ({ key: 'profile', data }))
+    );
+
+    const results = await Promise.all(queries);
+    results.forEach(result => {
+      contextData[result.key] = result.data;
+    });
 
     console.log('📊 Context data collected:', {
       calendar: contextData.calendar.length,
@@ -357,9 +388,9 @@ Deno.serve(async (req: Request) => {
     console.error('❌ Affirmation generation error:', error);
     
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: "An unexpected error occurred while generating affirmation"
       }),
       {
         status: 500,

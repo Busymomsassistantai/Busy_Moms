@@ -2,14 +2,14 @@
   # WebRTC Token Generation
 
   1. Purpose
-    - Generate ephemeral API tokens for WebRTC connections
+    - Generate ephemeral tokens for WebRTC connections
     - Provide ICE server configuration for peer connections
     - Handle TURN server credentials if needed
 
   2. Security
+    - Requires JWT authentication
     - Tokens are short-lived (1 hour expiration)
-    - Works with both authenticated and anonymous users
-    - Rate limiting to prevent abuse
+    - Properly signed tokens for secure communication
 
   3. Response Format
     - Returns ICE servers configuration
@@ -17,8 +17,9 @@
     - Provides connection metadata
 */
 
+import { createClient } from 'npm:@supabase/supabase-js@2.55.0';
+
 interface TokenRequest {
-  userId?: string;
   roomId?: string;
 }
 
@@ -33,59 +34,21 @@ interface TokenResponse {
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// Helper to safely get user ID from request
-function getSafeUserId(req: Request, body: any): string {
-  // Try body first
-  if (body?.userId) {
-    console.log("📝 Using user ID from body:", body.userId);
-    return body.userId;
-  }
-
-  // Try auth header
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice("Bearer ".length);
-    
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        if (payload.sub) {
-          console.log("📝 Using user ID from JWT:", payload.sub);
-          return payload.sub;
-        }
-      }
-    } catch (error) {
-      console.log("⚠️ Could not parse JWT");
-    }
-  }
-
-  // Generate anonymous user ID as fallback
-  const anonId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  console.log("📝 Using anonymous user ID:", anonId);
-  return anonId;
-}
-
-// Generate a simple ephemeral token
-// In production, use a proper JWT library with signing
 function generateEphemeralToken(userId: string, roomId: string): string {
   const payload = {
     userId,
     roomId,
     iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+    exp: Math.floor(Date.now() / 1000) + (60 * 60)
   };
-  
-  // Simple base64 encoding for demo purposes
-  // In production, use proper JWT signing with a secret key
+
   return btoa(JSON.stringify(payload));
 }
 
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
@@ -96,7 +59,6 @@ Deno.serve(async (req: Request) => {
   try {
     console.log(`🚀 WebRTC token request - ${req.method} ${req.url}`);
 
-    // Only allow POST requests
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
@@ -110,42 +72,73 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Parse request body
-    let body: any = {};
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('❌ Authentication failed:', userError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    console.log('✅ Authenticated user:', user.id);
+
+    let body: TokenRequest = {};
     try {
       body = await req.json();
     } catch (error) {
       console.log('⚠️ No JSON body provided, using defaults');
     }
-    
-    const { roomId }: TokenRequest = body;
-    const userId = getSafeUserId(req, body);
+
+    const { roomId } = body;
+    const userId = user.id;
     const finalRoomId = roomId || 'default-room';
 
     console.log('🔍 Processing WebRTC token request for user:', userId, 'room:', finalRoomId);
 
-    // Generate ephemeral token
     const token = generateEphemeralToken(userId, finalRoomId);
-    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour from now
+    const expiresAt = Date.now() + (60 * 60 * 1000);
 
-    // ICE servers configuration
-    // Using public STUN servers for development
-    // In production, you should add TURN servers for better connectivity
     const iceServers: RTCIceServer[] = [
-      // Public STUN servers
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun3.l.google.com:19302' },
       { urls: 'stun:stun4.l.google.com:19302' },
-      
-      // For production, add TURN servers with credentials
-      // Example:
-      // {
-      //   urls: 'turn:your-turn-server.com:3478',
-      //   username: 'your-username',
-      //   credential: 'your-password'
-      // }
     ];
 
     const response: TokenResponse = {
@@ -171,11 +164,11 @@ Deno.serve(async (req: Request) => {
 
   } catch (error) {
     console.error('❌ WebRTC token generation error:', error);
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: "An unexpected error occurred"
       }),
       {
         status: 500,

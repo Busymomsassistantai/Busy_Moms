@@ -3,13 +3,14 @@
 
   1. Purpose
     - Generate ephemeral API tokens for OpenAI Realtime API
-    - Secure token generation with flexible authentication
-    - Rate limiting to prevent abuse
+    - Secure token generation with proper authentication
+    - Session-based token management
 
   2. Security
+    - Requires JWT authentication
     - Tokens are short-lived (1 hour expiration)
-    - Works with both authenticated and anonymous users
-    - API key stored securely in environment
+    - API key never exposed to clients
+    - Proper auth validation through Supabase
 
   3. Response Format
     - Returns ephemeral token for OpenAI Realtime API
@@ -17,8 +18,9 @@
     - Provides connection metadata
 */
 
+import { createClient } from 'npm:@supabase/supabase-js@2.55.0';
+
 interface TokenRequest {
-  userId?: string;
   sessionId?: string;
 }
 
@@ -28,51 +30,15 @@ interface TokenResponse {
   };
   expiresAt: number;
   userId: string;
-  demo?: boolean;
-  message?: string;
 }
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// Helper to safely get user ID from request
-function getSafeUserId(req: Request, body: any): string {
-  // Try body first
-  if (body?.userId) {
-    console.log("📝 Using user ID from body:", body.userId);
-    return body.userId;
-  }
-
-  // Try auth header
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice("Bearer ".length);
-    
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        if (payload.sub) {
-          console.log("📝 Using user ID from JWT:", payload.sub);
-          return payload.sub;
-        }
-      }
-    } catch (error) {
-      console.log("⚠️ Could not parse JWT");
-    }
-  }
-
-  // Generate anonymous user ID as fallback
-  const anonId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  console.log("📝 Using anonymous user ID:", anonId);
-  return anonId;
-}
-
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
@@ -83,7 +49,6 @@ Deno.serve(async (req: Request) => {
   try {
     console.log(`🚀 OpenAI token request - ${req.method} ${req.url}`);
 
-    // Only allow POST requests
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
@@ -97,38 +62,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Parse request body
-    let body: any = {};
-    try {
-      body = await req.json();
-    } catch (error) {
-      console.log('⚠️ No JSON body provided, using defaults');
-    }
-    
-    const { sessionId }: TokenRequest = body;
-    const userId = getSafeUserId(req, body);
-
-    console.log('🔍 Processing token request for user:', userId, 'session:', sessionId);
-
-    // Get OpenAI API key from environment
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      console.log('⚠️ OpenAI API key not configured, returning demo token');
-      
-      const demoResponse: TokenResponse = {
-        client_secret: {
-          value: "demo-token-for-development"
-        },
-        expiresAt: Date.now() + (60 * 60 * 1000),
-        userId,
-        demo: true,
-        message: "Demo mode - OpenAI API key not configured"
-      };
-
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify(demoResponse),
+        JSON.stringify({ error: "Missing authorization header" }),
         {
-          status: 200,
+          status: 401,
           headers: {
             "Content-Type": "application/json",
             ...corsHeaders,
@@ -137,9 +76,69 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Generate ephemeral token using OpenAI API
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('❌ Authentication failed:', userError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    console.log('✅ Authenticated user:', user.id);
+
+    let body: TokenRequest = {};
+    try {
+      body = await req.json();
+    } catch (error) {
+      console.log('⚠️ No JSON body provided, using defaults');
+    }
+
+    const { sessionId } = body;
+    const userId = user.id;
+
+    console.log('🔍 Processing token request for user:', userId, 'session:', sessionId);
+
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      console.error('❌ OpenAI API key not configured');
+      return new Response(
+        JSON.stringify({
+          error: "Service unavailable",
+          message: "OpenAI service is not configured"
+        }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
     console.log("🤖 Generating OpenAI Realtime session...");
-    
+
     const tokenResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
       headers: {
@@ -149,39 +148,32 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview',
         voice: 'alloy',
-        instructions: `You are Sara, a helpful AI assistant for busy parents in the "Busy Moms Assistant" app. 
-        
+        instructions: `You are Sara, a helpful AI assistant for busy parents in the "Busy Moms Assistant" app.
+
         You help with:
         - Managing family schedules and events
-        - Shopping lists and gift suggestions  
+        - Shopping lists and gift suggestions
         - Reminders and daily planning
         - Contact management
         - General parenting advice and support
-        
+
         Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.
-        
+
         The user's ID is ${userId} and this is session ${sessionId || 'default'}.`,
       }),
     });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('❌ OpenAI token generation failed:', errorText);
-      
-      // Return a fallback response instead of failing
-      const fallbackResponse: TokenResponse = {
-        client_secret: {
-          value: openaiApiKey // Use the API key directly as fallback
-        },
-        expiresAt: Date.now() + (60 * 60 * 1000),
-        userId,
-        message: "Using API key as fallback - ephemeral token generation failed"
-      };
+      console.error('❌ OpenAI token generation failed:', tokenResponse.status, errorText.substring(0, 200));
 
       return new Response(
-        JSON.stringify(fallbackResponse),
+        JSON.stringify({
+          error: "Failed to generate token",
+          message: "Unable to create OpenAI session at this time"
+        }),
         {
-          status: 200,
+          status: 503,
           headers: {
             "Content-Type": "application/json",
             ...corsHeaders,
@@ -191,11 +183,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const tokenData = await tokenResponse.json();
-    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour from now
+    const expiresAt = Date.now() + (60 * 60 * 1000);
 
     const response: TokenResponse = {
       client_secret: {
-        value: tokenData.client_secret?.value || tokenData.token || openaiApiKey
+        value: tokenData.client_secret?.value || tokenData.token
       },
       expiresAt,
       userId
@@ -216,11 +208,11 @@ Deno.serve(async (req: Request) => {
 
   } catch (error) {
     console.error('❌ OpenAI token generation error:', error);
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: "An unexpected error occurred"
       }),
       {
         status: 500,
