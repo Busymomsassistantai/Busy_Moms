@@ -7,8 +7,11 @@ import { useAuth } from '../hooks/useAuth';
 import { supabase, Profile, Event, ShoppingItem, Reminder, Affirmation } from '../lib/supabase';
 import { affirmationService } from '../services/affirmationService';
 
+import { SubScreen } from '../App';
+
 interface DashboardProps {
-  onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat' | 'family-folders') => void;
+  onNavigate: (screen: 'calendar' | 'family' | 'more') => void;
+  onNavigateToSubScreen: (screen: SubScreen) => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
@@ -136,10 +139,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   ];
 
   const quickActions = [
-    { icon: Gift, title: 'Buy Gift', desc: 'For Jessica\'s party', color: 'from-pink-400 to-rose-400', action: null },
-    { icon: ShoppingBag, title: 'Grocery Run', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-green-400 to-emerald-400', action: () => onNavigate('shopping') },
-    { icon: Smartphone, title: 'Smart Messages', desc: 'Add events from messages', color: 'from-green-400 to-emerald-400', action: () => setIsWhatsAppOpen(true) },
-    { icon: Users, title: 'Family Folders', desc: 'Organize by family member', color: 'from-purple-400 to-indigo-400', action: () => onNavigate('family-folders') }
+    { icon: Calendar, title: 'View Calendar', desc: 'See all your events', color: 'from-blue-400 to-cyan-400', action: () => onNavigate('calendar') },
+    { icon: ShoppingBag, title: 'Shopping List', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-green-400 to-emerald-400', action: () => onNavigateToSubScreen('shopping') },
+    { icon: Users, title: 'Family Hub', desc: 'Organize by family member', color: 'from-teal-400 to-cyan-400', action: () => onNavigate('family') },
+    { icon: MessageCircle, title: 'AI Assistant', desc: 'Get help with anything', color: 'from-sky-400 to-blue-400', action: () => setIsChatOpen(true) }
   ];
 
   const sampleReminders = [
@@ -152,7 +155,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 pb-6">
+      <div className="bg-gradient-to-r from-blue-500 to-green-500 text-white p-4 pb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Good Morning, {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}!</h1>
@@ -204,7 +207,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         {todayAffirmation && (
           <div
             onClick={() => setShowAffirmations(true)}
-            className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
+            className="bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-400 p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
@@ -234,10 +237,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         )}
 
         {!todayAffirmation && (
-          <div className="bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-purple-300 p-6 rounded-2xl">
+          <div className="bg-gradient-to-br from-blue-100 to-cyan-100 border-2 border-blue-300 p-6 rounded-2xl">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-purple-200 rounded-full flex items-center justify-center animate-pulse">
-                <Sparkles className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center animate-pulse">
+                <Sparkles className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Generating Your Daily Affirmation</h3>
@@ -279,13 +282,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             {todayEvents.map((event, index) => (
               <div key={index} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm">
                 <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</h3>
-                      <span className="text-xs sm:text-sm text-purple-600 font-medium">{event.time}</span>
+                      <span className="text-xs sm:text-sm text-blue-600 font-medium">{event.time}</span>
                     </div>
                     <p className="text-xs sm:text-sm text-gray-600">{event.location}</p>
                   </div>
@@ -329,12 +332,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
 
         {/* AI Assistant */}
-        <div 
-          className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6 rounded-xl border border-purple-100 cursor-pointer hover:shadow-md transition-all"
+        <div
+          className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 sm:p-6 rounded-xl border border-blue-100 cursor-pointer hover:shadow-md transition-all"
           onClick={() => setIsChatOpen(true)}
         >
           <div className="flex items-center space-x-3 mb-3 sm:mb-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full flex items-center justify-center">
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
@@ -350,7 +353,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm hover:bg-purple-200 transition-colors"
+                className="px-2 py-1 sm:px-3 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-200 transition-colors"
               >
                 Add reminder for tomorrow
               </button>
@@ -359,7 +362,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm hover:bg-purple-200 transition-colors"
+                className="px-2 py-1 sm:px-3 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-200 transition-colors"
               >
                 Schedule dentist appointment
               </button>
@@ -368,7 +371,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm hover:bg-purple-200 transition-colors"
+                className="px-2 py-1 sm:px-3 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-200 transition-colors"
               >
                 Add milk to shopping list
               </button>

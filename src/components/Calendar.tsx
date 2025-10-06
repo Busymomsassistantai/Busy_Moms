@@ -558,14 +558,14 @@ export function Calendar() {
                           setSelectedReminder(reminder);
                           setShowEventDetails(true);
                         }}
-                        className="group bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
+                        className="group bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center space-x-2">
-                            <Bell className="w-4 h-4 text-purple-600" />
-                            <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">{reminder.title}</h3>
+                            <Bell className="w-4 h-4 text-amber-600" />
+                            <h3 className="font-semibold text-gray-900 group-hover:text-amber-600 transition-colors">{reminder.title}</h3>
                           </div>
-                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium">
                             {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
                           </span>
                         </div>
@@ -645,7 +645,7 @@ export function Calendar() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedEvent.title}</h3>
-                    <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
+                    <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
                       {selectedEvent.event_type}
                     </div>
                   </div>
@@ -690,7 +690,7 @@ export function Calendar() {
                         setShowEventDetails(false);
                         setShowEventForm(true);
                       }}
-                      className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
                       Edit Event
                     </button>

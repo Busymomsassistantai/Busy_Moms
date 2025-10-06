@@ -4,7 +4,9 @@ import { useAuth } from './hooks/useAuth'
 import { AuthForm } from './components/forms/AuthForm'
 import { Onboarding } from './components/Onboarding'
 import { Dashboard } from './components/Dashboard'
-import { Navigation } from './components/Navigation'
+import { ImprovedNavigation } from './components/ImprovedNavigation'
+import { FamilyHub } from './components/FamilyHub'
+import { MoreMenu } from './components/MoreMenu'
 import { Calendar } from './components/Calendar'
 import { Contacts } from './components/Contacts'
 import { Shopping } from './components/Shopping'
@@ -24,13 +26,15 @@ import { useToast } from './hooks/useErrorHandler'
 import { useAffirmationNotifier } from './hooks/useAffirmationNotifier'
 import { captureAndStoreGoogleTokens } from './services/googleTokenStorage'
 
-export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'family-folders'
+export type Screen = 'dashboard' | 'calendar' | 'family' | 'more' | 'ai-chat'
+export type SubScreen = 'shopping' | 'tasks' | 'contacts' | 'family-folders' | 'settings'
 
 function App() {
   const session = useSessionContext()
   const supabaseClient = useSupabaseClient()
   const { user, loading, signOut } = useAuth()
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
+  const [currentSubScreen, setCurrentSubScreen] = useState<SubScreen | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showVoiceChat, setShowVoiceChat] = useState(false)
@@ -214,71 +218,81 @@ function App() {
   return (
     <ErrorBoundary componentName="App">
       <div className="min-h-screen bg-gray-50">
-        <Navigation
+        <ImprovedNavigation
           currentScreen={currentScreen}
-          onScreenChange={setCurrentScreen}
+          onScreenChange={(screen) => {
+            setCurrentScreen(screen);
+            setCurrentSubScreen(null);
+          }}
           onSignOut={signOut}
           onVoiceChatOpen={() => setShowVoiceChat(true)}
         />
         <main className="pb-20">
-          {(() => {
-            switch (currentScreen) {
-              case 'dashboard':
-                return (
-                  <FeatureErrorBoundary featureName="Dashboard">
-                    <Dashboard onNavigate={setCurrentScreen} />
-                  </FeatureErrorBoundary>
-                )
-              case 'calendar':
-                return (
-                  <FeatureErrorBoundary featureName="Calendar">
-                    <Calendar />
-                  </FeatureErrorBoundary>
-                )
-              case 'contacts':
-                return (
-                  <FeatureErrorBoundary featureName="Contacts">
-                    <Contacts />
-                  </FeatureErrorBoundary>
-                )
-              case 'shopping':
-                return (
-                  <FeatureErrorBoundary featureName="Shopping">
-                    <Shopping />
-                  </FeatureErrorBoundary>
-                )
-              case 'tasks':
-                return (
-                  <FeatureErrorBoundary featureName="Tasks">
-                    <Tasks />
-                  </FeatureErrorBoundary>
-                )
-              case 'settings':
-                return (
-                  <FeatureErrorBoundary featureName="Settings">
-                    <Settings />
-                  </FeatureErrorBoundary>
-                )
-              case 'ai-chat':
-                return (
-                  <FeatureErrorBoundary featureName="AI Chat">
-                    <AIChat />
-                  </FeatureErrorBoundary>
-                )
-              case 'family-folders':
-                return (
-                  <FeatureErrorBoundary featureName="Family Folders">
-                    <FamilyFolders />
-                  </FeatureErrorBoundary>
-                )
-              default:
-                return (
-                  <FeatureErrorBoundary featureName="Dashboard">
-                    <Dashboard onNavigate={setCurrentScreen} />
-                  </FeatureErrorBoundary>
-                )
-            }
-          })()}
+          {currentSubScreen ? (
+            <>
+              {currentSubScreen === 'shopping' && (
+                <FeatureErrorBoundary featureName="Shopping">
+                  <Shopping />
+                </FeatureErrorBoundary>
+              )}
+              {currentSubScreen === 'tasks' && (
+                <FeatureErrorBoundary featureName="Tasks">
+                  <Tasks />
+                </FeatureErrorBoundary>
+              )}
+              {currentSubScreen === 'contacts' && (
+                <FeatureErrorBoundary featureName="Contacts">
+                  <Contacts />
+                </FeatureErrorBoundary>
+              )}
+              {currentSubScreen === 'family-folders' && (
+                <FeatureErrorBoundary featureName="Family Folders">
+                  <FamilyFolders />
+                </FeatureErrorBoundary>
+              )}
+              {currentSubScreen === 'settings' && (
+                <FeatureErrorBoundary featureName="Settings">
+                  <Settings />
+                </FeatureErrorBoundary>
+              )}
+            </>
+          ) : (
+            <>
+              {currentScreen === 'dashboard' && (
+                <FeatureErrorBoundary featureName="Dashboard">
+                  <Dashboard
+                    onNavigate={setCurrentScreen}
+                    onNavigateToSubScreen={setCurrentSubScreen}
+                  />
+                </FeatureErrorBoundary>
+              )}
+              {currentScreen === 'calendar' && (
+                <FeatureErrorBoundary featureName="Calendar">
+                  <Calendar />
+                </FeatureErrorBoundary>
+              )}
+              {currentScreen === 'family' && (
+                <FeatureErrorBoundary featureName="Family Hub">
+                  <FamilyHub onNavigateToSubScreen={setCurrentSubScreen} />
+                </FeatureErrorBoundary>
+              )}
+              {currentScreen === 'more' && (
+                <FeatureErrorBoundary featureName="More Menu">
+                  <MoreMenu
+                    onNavigateToSubScreen={setCurrentSubScreen}
+                    onSignOut={signOut}
+                    userName={user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0]}
+                    userEmail={user?.email}
+                  />
+                </FeatureErrorBoundary>
+              )}
+              {currentScreen === 'ai-chat' && (
+                <FeatureErrorBoundary featureName="AI Chat">
+                  <AIChat />
+                </FeatureErrorBoundary>
+              )}
+            </>
+          )}
         </main>
 
         <AIVoiceChat
