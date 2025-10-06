@@ -235,7 +235,7 @@ Deno.serve(async (req: Request) => {
       queries.push(
         supabase
           .from('family_members')
-          .select('name, relationship, age')
+          .select('name, age, gender')
           .eq('user_id', user.id)
           .then(({ data }) => ({ key: 'family', data: data || [] }))
       );
@@ -431,7 +431,9 @@ function buildAffirmationPrompt(contextData: any): string {
   if (contextData.family.length > 0) {
     prompt += `Family members:\n`;
     contextData.family.forEach((member: any) => {
-      prompt += `- ${member.name}${member.relationship ? ' (' + member.relationship + ')' : ''}\n`;
+      const ageInfo = member.age ? `, age ${member.age}` : '';
+      const genderInfo = member.gender ? ` (${member.gender})` : '';
+      prompt += `- ${member.name}${ageInfo}${genderInfo}\n`;
     });
     prompt += `\n`;
   }
