@@ -55,10 +55,17 @@ export class SyncOrchestrator {
         return result;
       }
 
+      // Check Google Calendar connection
+      const isConnected = await googleCalendarService.isConnected(userId);
+      if (!isConnected) {
+        result.errors.push('Google Calendar not connected');
+        return result;
+      }
+
       // Initialize Google Calendar service
       await googleCalendarService.initialize();
-      if (!googleCalendarService.isSignedIn()) {
-        result.errors.push('Google Calendar not connected');
+      if (!googleCalendarService.isAvailable()) {
+        result.errors.push('Google Calendar service not available');
         return result;
       }
 

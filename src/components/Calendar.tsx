@@ -142,10 +142,8 @@ export function Calendar() {
         setIsGoogleConnected(connected);
 
         if (connected && mounted) {
-          await performSync();
-          if (mounted) {
-            await loadGoogleEvents();
-          }
+          // Don't auto-sync here - let the useCalendarSync hook handle periodic sync
+          await loadGoogleEvents();
         }
       } catch (error) {
         console.error('Auto-sync failed:', error);

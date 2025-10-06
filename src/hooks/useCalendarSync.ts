@@ -47,7 +47,19 @@ export function useCalendarSync() {
    * Perform manual sync
    */
   const performSync = useCallback(async () => {
-    if (!user?.id || isSyncing) return;
+    if (!user?.id || isSyncing) {
+      console.log('⏭️ Skipping sync - already in progress or no user');
+      return;
+    }
+
+    // Prevent rapid successive syncs (minimum 30 seconds between syncs)
+    if (lastSyncAttemptRef.current) {
+      const timeSinceLastAttempt = Date.now() - lastSyncAttemptRef.current.getTime();
+      if (timeSinceLastAttempt < 30000) {
+        console.log(`⏭️ Skipping sync - too soon (${Math.round(timeSinceLastAttempt / 1000)}s ago)`);
+        return;
+      }
+    }
 
     console.log('🔄 Starting manual sync...');
     setIsSyncing(true);
@@ -160,10 +172,10 @@ export function useCalendarSync() {
   const checkSyncNeeded = useCallback(() => {
     if (!syncEnabled || !user?.id || isSyncing) return false;
 
-    // Don't sync if we just attempted
+    // Don't sync if we just attempted (minimum 5 minutes between automatic syncs)
     if (lastSyncAttemptRef.current) {
       const timeSinceLastAttempt = Date.now() - lastSyncAttemptRef.current.getTime();
-      if (timeSinceLastAttempt < 60000) { // Wait at least 1 minute between attempts
+      if (timeSinceLastAttempt < 300000) { // Wait at least 5 minutes between attempts
         return false;
       }
     }
