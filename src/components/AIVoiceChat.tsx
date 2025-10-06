@@ -222,43 +222,49 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full h-[600px] flex flex-col">
+    <div className="fixed inset-0 bg-rose-900 bg-opacity-40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <MessageCircle className="w-5 h-5 text-purple-500" />
-            <div>
-              <h3 className="font-semibold text-gray-900">AI Voice Assistant</h3>
-              <p className={`text-sm ${getConnectionStatusColor()}`}>
-                {getConnectionStatusText()}
-              </p>
+        <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-orange-300 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <MessageCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">AI Voice Assistant</h3>
+                <p className={`text-sm font-medium ${connectionState === 'connected' ? 'text-green-100' : connectionState === 'connecting' ? 'text-yellow-100' : 'text-rose-100'}`}>
+                  {getConnectionStatusText()}
+                </p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 bg-white bg-opacity-20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-          >
-            <X className="w-4 h-4 text-gray-600" />
-          </button>
         </div>
 
         {/* Conversation Area */}
-        <div className="flex-1 p-4 overflow-y-auto">
+        <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-rose-50 to-white">
           {!isConnected && (
             <div className="text-center py-8">
               {isConnecting ? (
                 <>
-                  <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-                  <p className="text-lg text-gray-700">Connecting to AI Assistant...</p>
-                  <p className="text-sm text-gray-500">Setting up real-time voice connection</p>
+                  <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                  </div>
+                  <p className="text-lg font-semibold text-gray-800">Connecting to AI Assistant...</p>
+                  <p className="text-sm text-gray-600">Setting up real-time voice connection</p>
                 </>
               ) : error ? (
                 <>
-                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <X className="w-6 h-6 text-white" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <X className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-lg text-red-600 mb-2">Connection Error</p>
+                  <p className="text-lg font-semibold text-rose-600 mb-2">Connection Error</p>
                   <p className="text-sm text-gray-600 mb-4 whitespace-pre-wrap">{error}</p>
                   <button
                     onClick={() => {
@@ -275,18 +281,18 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                         }
                       })();
                     }}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all"
                   >
                     Retry Connection
                   </button>
                 </>
               ) : (
                 <>
-                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageCircle className="w-6 h-6 text-white" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MessageCircle className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-lg text-gray-700">Ready to connect</p>
-                  <p className="text-sm text-gray-500">Click the microphone to start talking</p>
+                  <p className="text-lg font-semibold text-gray-800">Ready to connect</p>
+                  <p className="text-sm text-gray-600">Click the microphone to start talking</p>
                 </>
               )}
             </div>
@@ -295,13 +301,16 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           {/* Wake Word Status */}
           {isConnected && isWaitingForWakeWord && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <Mic className="w-8 h-8 text-white" />
+              <div className="relative">
+                <div className="w-24 h-24 bg-gradient-to-br from-rose-400 via-pink-400 to-orange-300 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-lg">
+                  <Mic className="w-12 h-12 text-white" />
+                </div>
+                <div className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-br from-rose-400 to-pink-400 rounded-full animate-ping opacity-20"></div>
               </div>
-              <p className="text-lg text-gray-700 mb-2">Listening for wake word</p>
-              <p className="text-sm text-gray-500 mb-4">Say <strong>"Hey, Sarah"</strong> to start a conversation</p>
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <p className="text-sm text-purple-800">
+              <p className="text-xl font-bold text-gray-800 mb-2">Listening for wake word</p>
+              <p className="text-base text-gray-600 mb-4">Say <strong className="text-rose-600">"Hey, Sarah"</strong> to start</p>
+              <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl">
+                <p className="text-sm text-rose-800 font-medium">
                   💡 The AI is waiting for you to say the wake word before it starts listening to your requests
                 </p>
               </div>
@@ -311,11 +320,11 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           {/* Active Conversation */}
           {isConnected && inConversation && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-8 h-8 text-white" />
+              <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <MessageCircle className="w-12 h-12 text-white" />
               </div>
-              <p className="text-lg text-gray-700 mb-2">Conversation Active</p>
-              <p className="text-sm text-gray-500">I'm listening and ready to help!</p>
+              <p className="text-xl font-bold text-gray-800 mb-2">Conversation Active</p>
+              <p className="text-base text-gray-600">I'm listening and ready to help!</p>
             </div>
           )}
 
@@ -323,28 +332,28 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           {isConnected && inConversation && (
             <div className="space-y-4">
               {currentResponse && (
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-medium">AI is responding:</span> {currentResponse}
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl">
+                  <p className="text-sm text-rose-900">
+                    <span className="font-semibold">AI is responding:</span> {currentResponse}
                   </p>
                 </div>
               )}
 
               {isListening && (
-                <div className="bg-green-50 p-3 rounded-lg flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-sm text-green-800 font-medium">Listening...</p>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 p-4 rounded-2xl flex items-center space-x-3">
+                  <div className="w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full animate-pulse shadow-lg"></div>
+                  <p className="text-sm text-green-900 font-semibold">Listening...</p>
                 </div>
               )}
 
               {/* Quick Text Input */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-3">Or type a message:</p>
+              <div className="bg-white border-2 border-rose-200 p-4 rounded-2xl">
+                <p className="text-sm font-medium text-gray-700 mb-3">Or type a message:</p>
                 <div className="flex space-x-2">
                   <input
                     type="text"
                     placeholder="Type your message..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition-all"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const input = e.target as HTMLInputElement;
@@ -365,7 +374,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                         if (input) input.value = '';
                       }
                     }}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all"
                   >
                     Send
                   </button>
@@ -376,40 +385,40 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         </div>
 
         {/* Controls */}
-        <div className="p-4 bg-gray-50 flex items-center justify-center space-x-4">
+        <div className="p-6 bg-gradient-to-r from-rose-50 to-pink-50 border-t-2 border-rose-100 flex items-center justify-center space-x-4">
           <button
             onClick={toggleMute}
             disabled={!isConnected}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg ${
               isMuted
-                ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            } disabled:opacity-50`}
+                ? 'bg-gradient-to-br from-red-400 to-red-500 text-white'
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-rose-300'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
             title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
           >
-            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
           </button>
 
           <button
             onClick={startVoiceConversation}
             disabled={!isConnected || inConversation}
-            className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors disabled:opacity-50"
+            className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             title="Start voice conversation"
           >
-            <Phone className="w-5 h-5" />
+            <Phone className="w-7 h-7" />
           </button>
 
           <button
             onClick={endConversation}
             disabled={!isConnected || !inConversation}
-            className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50"
+            className="w-14 h-14 bg-gradient-to-br from-red-400 to-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="End conversation"
           >
-            <PhoneOff className="w-5 h-5" />
+            <PhoneOff className="w-6 h-6" />
           </button>
 
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <MessageCircle className="w-4 h-4" />
+          <div className="flex items-center space-x-2 text-sm font-medium text-rose-700">
+            <MessageCircle className="w-5 h-5" />
             <span>
               {isWaitingForWakeWord ? 'Say "Hey, Sarah"' : inConversation ? 'In conversation' : 'Real-time AI Voice'}
             </span>
@@ -417,27 +426,27 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         </div>
 
         {/* Instructions */}
-        <div className="bg-blue-50 border-t border-blue-200 p-4">
-          <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Say <strong>"Hey, Sarah"</strong> to activate the AI assistant</li>
-            <li>• Once activated, just start talking - the AI will hear you and respond</li>
-            <li>• Click the green phone button to manually start a conversation</li>
-            <li>• Use the red button to end the conversation and return to wake word mode</li>
-            <li>• Mute your microphone with the red button</li>
-            <li>• You can also type messages in the text input above</li>
+        <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-t-2 border-rose-100 p-6">
+          <h4 className="font-bold text-rose-900 mb-3 text-base">How to use:</h4>
+          <ul className="text-sm text-rose-800 space-y-2">
+            <li className="flex items-start space-x-2"><span>•</span><span>Say <strong>"Hey, Sarah"</strong> to activate the AI assistant</span></li>
+            <li className="flex items-start space-x-2"><span>•</span><span>Once activated, just start talking - the AI will hear you and respond</span></li>
+            <li className="flex items-start space-x-2"><span>•</span><span>Click the green phone button to manually start a conversation</span></li>
+            <li className="flex items-start space-x-2"><span>•</span><span>Use the red button to end the conversation and return to wake word mode</span></li>
+            <li className="flex items-start space-x-2"><span>•</span><span>Mute your microphone with the mute button</span></li>
+            <li className="flex items-start space-x-2"><span>•</span><span>You can also type messages in the text input above</span></li>
           </ul>
 
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <h5 className="font-medium text-green-900 mb-1">Wake Word Active:</h5>
+          <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl">
+            <h5 className="font-bold text-green-900 mb-2 text-sm">Wake Word Active:</h5>
             <p className="text-sm text-green-800">
               The AI is now listening for "Hey, Sarah" to start conversations automatically. This prevents always-on listening while still providing hands-free activation.
             </p>
           </div>
 
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h5 className="font-medium text-yellow-900 mb-1">Setup Required:</h5>
-            <p className="text-sm text-yellow-800">
+          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl">
+            <h5 className="font-bold text-amber-900 mb-2 text-sm">Setup Required:</h5>
+            <p className="text-sm text-amber-800">
               To enable voice chat, configure the server route that mints the OpenAI Realtime session and returns an ephemeral client_secret.
             </p>
           </div>
@@ -445,8 +454,8 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
         {/* WebRTC Not Supported Warning */}
         {typeof openaiRealtimeService.isSupported === 'function' && !openaiRealtimeService.isSupported() && (
-          <div className="p-4 bg-yellow-50 border-t border-yellow-200">
-            <p className="text-sm text-yellow-800">
+          <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-t-2 border-amber-300">
+            <p className="text-sm font-medium text-amber-900">
               ⚠️ WebRTC is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.
             </p>
           </div>
