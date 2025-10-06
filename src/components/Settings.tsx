@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
@@ -7,14 +7,20 @@ import { AuthTest } from './AuthTest';
 import { GoogleCalendarTest } from './GoogleCalendarTest';
 import { ErrorDashboard } from './errors/ErrorDashboard';
 import { AffirmationSettings } from './AffirmationSettings';
+import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
+import { SyncSettings } from './SyncSettings';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { googleCalendarService } from '../services/googleCalendar';
+import { useCalendarSync } from '../hooks/useCalendarSync';
 
 export function Settings() {
   const { user, signOut } = useAuth();
+  const { performSync } = useCalendarSync();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [showAffirmationSettings, setShowAffirmationSettings] = useState(false);
+  const [showSyncSettings, setShowSyncSettings] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
@@ -23,6 +29,8 @@ export function Settings() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [syncingGoogle, setSyncingGoogle] = useState(false);
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
@@ -34,13 +42,32 @@ export function Settings() {
   React.useEffect(() => {
     loadFamilyMembers();
     loadCurrentProfile();
+    checkGoogleConnection();
   }, []);
 
   // Refresh data when component becomes visible (when user navigates to settings)
   React.useEffect(() => {
     loadFamilyMembers();
     loadCurrentProfile();
+    checkGoogleConnection();
   }, [user]);
+
+  const checkGoogleConnection = async () => {
+    if (!user) return;
+    const connected = await googleCalendarService.isConnected(user.id);
+    setIsGoogleConnected(connected);
+  };
+
+  const syncWithGoogleCalendar = async () => {
+    setSyncingGoogle(true);
+    try {
+      await performSync();
+    } catch (error) {
+      console.error('Error syncing with Google Calendar:', error);
+    } finally {
+      setSyncingGoogle(false);
+    }
+  };
 
   const loadCurrentProfile = async () => {
     if (!user) return;
@@ -163,6 +190,18 @@ export function Settings() {
           description: 'Verify Google Calendar API integration',
           action: 'Test',
           onClick: () => setShowGoogleCalendarTest(true)
+        }
+      ]
+    },
+    {
+      title: 'Calendar',
+      items: [
+        {
+          icon: Calendar,
+          title: 'Google Calendar',
+          description: isGoogleConnected ? 'Connected and syncing' : 'Connect to sync your events',
+          action: isGoogleConnected ? 'Connected' : 'Connect',
+          isConnected: isGoogleConnected
         }
       ]
     },
@@ -379,6 +418,70 @@ export function Settings() {
           ))}
         </div>
 
+        {/* Google Calendar Detailed Section */}
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Google Calendar Sync</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Google Calendar</h3>
+                  <p className="text-sm text-gray-500">
+                    {isGoogleConnected ? 'Connected and syncing' : 'Connect to sync your events'}
+                  </p>
+                </div>
+              </div>
+              {isGoogleConnected && (
+                <div className="flex items-center space-x-1 text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm">Connected</span>
+                </div>
+              )}
+            </div>
+
+            {isGoogleConnected ? (
+              <div className="space-y-3">
+                <button
+                  onClick={syncWithGoogleCalendar}
+                  disabled={syncingGoogle}
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${syncingGoogle ? 'animate-spin' : ''}`} />
+                  <span>{syncingGoogle ? 'Syncing...' : 'Sync with Google Calendar'}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowSyncSettings(true)}
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                >
+                  Sync Settings
+                </button>
+
+                <button
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to disconnect Google Calendar?')) {
+                      await googleCalendarService.disconnect(user?.id || '');
+                      setIsGoogleConnected(false);
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  Disconnect Google Calendar
+                </button>
+              </div>
+            ) : (
+              <ConnectGoogleCalendarButton
+                onConnected={() => {
+                  setIsGoogleConnected(true);
+                }}
+              />
+            )}
+          </div>
+        </div>
+
         {/* Family Members List */}
         <div className="mt-4 sm:mt-6">
           <div className="flex items-center justify-between mb-4">
@@ -564,6 +667,11 @@ export function Settings() {
       <AffirmationSettings
         isOpen={showAffirmationSettings}
         onClose={() => setShowAffirmationSettings(false)}
+      />
+
+      <SyncSettings
+        isOpen={showSyncSettings}
+        onClose={() => setShowSyncSettings(false)}
       />
     </div>
   );
