@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Heart, Calendar, RefreshCw, X, Loader2, Star, Volume2 } from 'lucide-react';
+import { Sparkles, Heart, Calendar, RefreshCw, X, Loader2, Star } from 'lucide-react';
 import { affirmationService } from '../services/affirmationService';
 import { Affirmation } from '../lib/supabase';
-import { openaiRealtimeService } from '../services/openaiRealtimeService';
-import { useAuth } from '../hooks/useAuth';
 
 interface DailyAffirmationsProps {
   isOpen: boolean;
@@ -12,26 +10,16 @@ interface DailyAffirmationsProps {
 }
 
 export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAffirmationsProps) {
-  const { user } = useAuth();
   const [affirmations, setAffirmations] = useState<Affirmation[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
-  const [speaking, setSpeaking] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadAffirmations();
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (speaking) {
-        setSpeaking(false);
-      }
-    };
-  }, [speaking]);
 
   const loadAffirmations = async () => {
     setLoading(true);
@@ -87,35 +75,6 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
       );
     } catch (error) {
       console.error('Error toggling favorite:', error);
-    }
-  };
-
-  const handleSpeakAffirmation = async (text: string) => {
-    if (!user) {
-      alert('Please log in to use the voice assistant.');
-      return;
-    }
-
-    try {
-      setSpeaking(true);
-
-      if (!openaiRealtimeService.isConnected()) {
-        console.log('Sarah not connected, initializing...');
-        await openaiRealtimeService.initialize(user.id);
-
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
-
-      const message = `Please read this daily affirmation to me in a warm, encouraging, and uplifting voice: "${text}"`;
-      openaiRealtimeService.sendMessage(message);
-
-      setTimeout(() => {
-        setSpeaking(false);
-      }, 15000);
-    } catch (error) {
-      console.error('Error speaking affirmation:', error);
-      setSpeaking(false);
-      alert('Could not connect to Sarah to read the affirmation. Please try again.');
     }
   };
 
@@ -180,16 +139,7 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
               {todayAffirmation ? (
                 <div className="space-y-4">
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6 relative">
-                    <div className="absolute top-4 right-4 flex space-x-2">
-                      <button
-                        onClick={() => handleSpeakAffirmation(todayAffirmation.affirmation_text)}
-                        className={`w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform ${
-                          speaking ? 'animate-pulse' : ''
-                        }`}
-                        title={speaking ? 'Stop reading' : 'Read affirmation aloud'}
-                      >
-                        <Volume2 className={`w-5 h-5 ${speaking ? 'text-purple-600' : 'text-gray-600'}`} />
-                      </button>
+                    <div className="absolute top-4 right-4">
                       <button
                         onClick={() => handleToggleFavorite(todayAffirmation)}
                         className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
@@ -214,7 +164,7 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
                       </span>
                     </div>
 
-                    <p className="text-lg text-gray-800 leading-relaxed mb-4 pr-24">
+                    <p className="text-lg text-gray-800 leading-relaxed mb-4 pr-16">
                       {todayAffirmation.affirmation_text}
                     </p>
 
@@ -297,16 +247,7 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
                     key={affirmation.id}
                     className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all relative"
                   >
-                    <div className="absolute top-4 right-4 flex space-x-2">
-                      <button
-                        onClick={() => handleSpeakAffirmation(affirmation.affirmation_text)}
-                        className={`w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform ${
-                          speaking ? 'animate-pulse' : ''
-                        }`}
-                        title={speaking ? 'Stop reading' : 'Read affirmation aloud'}
-                      >
-                        <Volume2 className={`w-4 h-4 ${speaking ? 'text-purple-600' : 'text-gray-400'}`} />
-                      </button>
+                    <div className="absolute top-4 right-4">
                       <button
                         onClick={() => handleToggleFavorite(affirmation)}
                         className="w-8 h-8 flex items-center justify-center hover:scale-110 transition-transform"
@@ -335,7 +276,7 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
                       )}
                     </div>
 
-                    <p className="text-gray-800 leading-relaxed pr-16">
+                    <p className="text-gray-800 leading-relaxed pr-12">
                       {affirmation.affirmation_text}
                     </p>
                   </div>
