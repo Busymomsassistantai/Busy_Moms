@@ -38,53 +38,13 @@ export function Settings() {
     whatsapp: false
   });
 
-  // Load family members on component mount
-  React.useEffect(() => {
-    loadFamilyMembers();
-    loadCurrentProfile();
-    checkGoogleConnection();
-  }, []);
-
-  // Refresh data when component becomes visible (when user navigates to settings)
-  React.useEffect(() => {
-    loadFamilyMembers();
-    loadCurrentProfile();
-    checkGoogleConnection();
-  }, [user]);
-
-  // Listen for auth state changes to detect when Google Calendar is connected
-  React.useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (session?.provider_token) {
-          await checkGoogleConnection();
-        }
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const checkGoogleConnection = async () => {
+  const checkGoogleConnection = React.useCallback(async () => {
     if (!user) return;
     const connected = await googleCalendarService.isConnected(user.id);
     setIsGoogleConnected(connected);
-  };
+  }, [user]);
 
-  const syncWithGoogleCalendar = async () => {
-    setSyncingGoogle(true);
-    try {
-      await performSync();
-    } catch (error) {
-      console.error('Error syncing with Google Calendar:', error);
-    } finally {
-      setSyncingGoogle(false);
-    }
-  };
-
-  const loadCurrentProfile = async () => {
+  const loadCurrentProfile = React.useCallback(async () => {
     if (!user) return;
 
     try {
@@ -102,13 +62,12 @@ export function Settings() {
     } catch (error) {
       console.error('Error loading profile:', error);
     }
-  };
+  }, [user]);
 
-  const loadFamilyMembers = async () => {
+  const loadFamilyMembers = React.useCallback(async () => {
     setLoadingMembers(true);
     try {
       if (user) {
-        // Load family members from Supabase for authenticated user
         const { data: members, error } = await supabase
           .from('family_members')
           .select('*')
@@ -122,7 +81,6 @@ export function Settings() {
           setFamilyMembers(members || []);
         }
       } else {
-        // No user, show empty list
         setFamilyMembers([]);
       }
     } catch (error) {
@@ -130,6 +88,39 @@ export function Settings() {
       setFamilyMembers([]);
     } finally {
       setLoadingMembers(false);
+    }
+  }, [user]);
+
+  // Load data on component mount and when user changes
+  React.useEffect(() => {
+    loadFamilyMembers();
+    loadCurrentProfile();
+    checkGoogleConnection();
+  }, [loadFamilyMembers, loadCurrentProfile, checkGoogleConnection]);
+
+  // Listen for auth state changes to detect when Google Calendar is connected
+  React.useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.provider_token) {
+          await checkGoogleConnection();
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [checkGoogleConnection]);
+
+  const syncWithGoogleCalendar = async () => {
+    setSyncingGoogle(true);
+    try {
+      await performSync();
+    } catch (error) {
+      console.error('Error syncing with Google Calendar:', error);
+    } finally {
+      setSyncingGoogle(false);
     }
   };
 
