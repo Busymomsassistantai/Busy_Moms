@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { getOAuthConfig } from '../lib/auth-config'
+import { captureAndStoreGoogleTokens } from '../services/googleTokenStorage'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
@@ -53,6 +54,14 @@ export function useAuth() {
             handleUserProfile(session.user).catch((e) =>
               console.error('Profile init error:', e)
             )
+
+            // Capture Google provider tokens if this is a Google OAuth sign-in
+            if (event === 'SIGNED_IN' && session.provider_token) {
+              console.log('🔐 Google OAuth detected, capturing provider tokens...');
+              captureAndStoreGoogleTokens(session).catch((e) =>
+                console.error('❌ Failed to capture Google tokens:', e)
+              );
+            }
           }
         } else {
           console.log('🔐 No user authenticated')

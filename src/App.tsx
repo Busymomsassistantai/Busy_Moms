@@ -18,6 +18,7 @@ import { supabase } from './lib/supabase'
 import { ErrorBoundary, FeatureErrorBoundary } from './components/errors/ErrorBoundary'
 import { ToastContainer } from './components/errors/ErrorToast'
 import { useToast } from './hooks/useErrorHandler'
+import { captureAndStoreGoogleTokens } from './services/googleTokenStorage'
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'family-folders'
 
@@ -109,12 +110,28 @@ function App() {
           }
         }, 2000);
 
-        // Optionally refresh session to ensure it's established
+        // Capture Google provider tokens from the OAuth callback
         supabase.auth.getSession().then(({ data: { session }, error }) => {
           if (error) {
             console.error('Error getting session after OAuth:', error);
           } else if (session) {
             console.log('✅ Session established after OAuth:', session.user.email);
+
+            // If this is a Google OAuth callback with provider tokens, capture them
+            if (session.provider_token && session.provider_refresh_token) {
+              console.log('🔐 Capturing Google provider tokens from OAuth callback...');
+              captureAndStoreGoogleTokens(session).then((success) => {
+                if (success) {
+                  console.log('✅ Google tokens captured and stored successfully');
+                } else {
+                  console.warn('⚠️ Failed to capture Google tokens from OAuth callback');
+                }
+              }).catch((e) => {
+                console.error('❌ Error capturing Google tokens:', e);
+              });
+            } else {
+              console.log('ℹ️ No provider tokens in session (might be email/password auth)');
+            }
           } else {
             console.log('⚠️ No session found after OAuth callback');
           }
