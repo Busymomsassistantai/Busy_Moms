@@ -173,7 +173,8 @@ export class OpenAIRealtimeService extends Emitter {
               type: 'object',
               properties: {
                 date: { type: 'string', description: 'New date' },
-                time: { type: 'string', description: 'New time' },
+                start_time: { type: 'string', description: 'New start time' },
+                end_time: { type: 'string', description: 'New end time' },
                 location: { type: 'string', description: 'New location' },
                 title: { type: 'string', description: 'New title' }
               }
@@ -606,17 +607,25 @@ export class OpenAIRealtimeService extends Emitter {
   }
 
   private async handleUpdateCalendarEvent(args: any) {
-    const updates = args.updates || {};
-    let message = `update ${args.search_term}`;
-    if (updates.date) message += ` to ${updates.date}`;
-    if (updates.time) message += ` at ${updates.time}`;
-    if (updates.location) message += ` location ${updates.location}`;
-    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+    console.log('✏️ Voice AI updating calendar event with args:', args);
+
+    const details: Record<string, unknown> = {
+      search_term: args.search_term,
+      updates: args.updates || {}
+    };
+
+    return await aiAssistantService.updateCalendarEvent(details, this.currentUserId!);
   }
 
   private async handleDeleteCalendarEvent(args: any) {
-    const message = `delete ${args.search_term}${args.date ? ' on ' + args.date : ''}`;
-    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+    console.log('🗑️ Voice AI deleting calendar event with args:', args);
+
+    const details: Record<string, unknown> = {
+      search_term: args.search_term,
+      date: args.date
+    };
+
+    return await aiAssistantService.deleteCalendarEvent(details, this.currentUserId!);
   }
 
   private async handleCreateReminder(args: any) {

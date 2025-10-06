@@ -262,6 +262,16 @@ class AIAssistantService {
     return this.handleCalendarAction(details, userId);
   }
 
+  /** Direct calendar event update with structured data (for voice AI, etc.) */
+  async updateCalendarEvent(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleCalendarUpdate(details, userId);
+  }
+
+  /** Direct calendar event deletion with structured data (for voice AI, etc.) */
+  async deleteCalendarEvent(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleCalendarDelete(details, userId);
+  }
+
   /** Calendar Creation */
   private async handleCalendarAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
     console.log('📅 Creating calendar event with details:', details);
@@ -518,9 +528,14 @@ class AIAssistantService {
         if (newDate) updatePayload.event_date = newDate;
       }
 
-      if (updates.time) {
-        const newTime = toISOTime(updates.time);
+      if (updates.time || updates.start_time) {
+        const newTime = toISOTime(updates.time || updates.start_time);
         if (newTime) updatePayload.start_time = newTime;
+      }
+
+      if (updates.end_time) {
+        const newEndTime = toISOTime(updates.end_time);
+        if (newEndTime) updatePayload.end_time = newEndTime;
       }
 
       if (updates.location) {
@@ -539,14 +554,15 @@ class AIAssistantService {
         };
       }
 
-      if (updatePayload.event_date || updatePayload.start_time) {
+      if (updatePayload.event_date || updatePayload.start_time || updatePayload.end_time) {
         const checkDate = updatePayload.event_date || event.event_date;
         const checkTime = updatePayload.start_time || event.start_time;
+        const checkEndTime = updatePayload.end_time || event.end_time;
         const conflictCheck = await calendarContextService.checkConflicts(
           userId,
           checkDate,
           checkTime,
-          null,
+          checkEndTime,
           event.id
         );
 
