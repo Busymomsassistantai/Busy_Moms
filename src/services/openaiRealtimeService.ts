@@ -552,12 +552,14 @@ export class OpenAIRealtimeService extends Emitter {
 
     console.log('📤 Sending function result for', callId, ':', result);
 
+    const outputMessage = result.message || JSON.stringify(result);
+
     const event = {
       type: 'conversation.item.create',
       item: {
         type: 'function_call_output',
         call_id: callId,
-        output: JSON.stringify(result)
+        output: outputMessage
       }
     };
 
