@@ -24,6 +24,18 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
   const [isWaitingForWakeWord, setIsWaitingForWakeWord] = useState(false);
   const [inConversation, setInConversation] = useState(false);
   const [chatMode, setChatMode] = useState<'voice' | 'text'>('voice');
+
+  // Handle mode switching - stop wake word detection when switching to text
+  useEffect(() => {
+    if (chatMode === 'text') {
+      openaiRealtimeService.stopWakeWordDetection?.();
+      setIsWaitingForWakeWord(false);
+      setInConversation(false);
+    } else if (chatMode === 'voice' && isConnected) {
+      openaiRealtimeService.startWakeWordDetection?.();
+      setIsWaitingForWakeWord(true);
+    }
+  }, [chatMode, isConnected]);
   const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [textInput, setTextInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -63,7 +75,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         openaiRealtimeService.onConnectionStateChange((state) => {
           setConnectionState(state);
           setIsConnected(state === 'connected');
-          if (state === 'connected') {
+          if (state === 'connected' && chatMode === 'voice') {
             setIsWaitingForWakeWord(true);
           }
         });
