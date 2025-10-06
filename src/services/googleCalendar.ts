@@ -37,6 +37,7 @@ export interface CalendarListOptions {
 class GoogleCalendarService {
   private baseUrl: string;
   private initialized = false;
+  private initializePromise: Promise<void> | null = null;
   private available = false;
   private ready = false;
   private signedIn = false;
@@ -52,6 +53,20 @@ class GoogleCalendarService {
   }
 
   async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    if (this.initializePromise) {
+      return this.initializePromise;
+    }
+
+    this.initializePromise = this.doInitialize();
+    await this.initializePromise;
+    this.initializePromise = null;
+  }
+
+  private async doInitialize(): Promise<void> {
     if (!this.baseUrl) {
       console.error('❌ Supabase URL not configured');
       this.available = false;
@@ -220,7 +235,15 @@ class GoogleCalendarService {
     throw new Error('Use ConnectGoogleCalendarButton component for Google OAuth sign-in');
   }
 
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+  }
+
   private async makeApiCall(action: string, params: any = {}): Promise<any> {
+    await this.ensureInitialized();
+
     if (!this.available) {
       throw new Error('Google Calendar service not available');
     }
