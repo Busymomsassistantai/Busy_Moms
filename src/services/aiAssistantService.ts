@@ -257,13 +257,19 @@ class AIAssistantService {
     }
   }
 
+  /** Direct calendar event creation with structured data (for voice AI, etc.) */
+  async createCalendarEvent(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    return this.handleCalendarAction(details, userId);
+  }
+
   /** Calendar Creation */
   private async handleCalendarAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
     console.log('📅 Creating calendar event with details:', details);
 
     const title = String(details.title ?? 'New event');
     const date = toISODate(details.date);
-    const time = toISOTime(details.time);
+    const start_time = toISOTime(details.time || details.start_time);
+    const end_time = toISOTime(details.end_time);
     const participants = Array.isArray(details.participants)
       ? details.participants.map((p: unknown) => String(p))
       : null;
@@ -277,7 +283,7 @@ class AIAssistantService {
       };
     }
 
-    const conflictCheck = await calendarContextService.checkConflicts(userId, date, time, null);
+    const conflictCheck = await calendarContextService.checkConflicts(userId, date, start_time, end_time);
     if (conflictCheck.hasConflict) {
       const conflictNames = conflictCheck.conflictingEvents.map(e => e.title).join(', ');
       let message = `⚠️ Schedule conflict detected! You already have: ${conflictNames} at that time.`;
@@ -295,8 +301,8 @@ class AIAssistantService {
     const input: CalendarEventInput = {
       title,
       date,
-      start_time: time ?? undefined,
-      end_time: undefined,
+      start_time: start_time ?? undefined,
+      end_time: end_time ?? undefined,
       participants: participants ?? undefined,
       location: location ?? undefined,
       source: 'ai',
@@ -310,10 +316,17 @@ class AIAssistantService {
         return { type: 'calendar', success: false, message: 'Failed to create calendar event.' };
       }
 
+      let timeMsg = '';
+      if (start_time && end_time) {
+        timeMsg = ` from ${start_time.slice(0,5)} to ${end_time.slice(0,5)}`;
+      } else if (start_time) {
+        timeMsg = ` at ${start_time.slice(0,5)}`;
+      }
+
       return {
         type: 'calendar',
         success: true,
-        message: `✅ Scheduled: ${title} on ${date}${time ? ' at ' + time.slice(0,5) : ''}`,
+        message: `✅ Scheduled: ${title} on ${date}${timeMsg}`,
         data: result
       };
     } catch (error) {

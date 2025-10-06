@@ -135,7 +135,8 @@ export class OpenAIRealtimeService extends Emitter {
           properties: {
             title: { type: 'string', description: 'The title/name of the event' },
             date: { type: 'string', description: 'The date in YYYY-MM-DD format or natural language like "today", "tomorrow"' },
-            time: { type: 'string', description: 'The time in HH:MM format or natural language like "2pm", "14:30"' },
+            start_time: { type: 'string', description: 'The start time in HH:MM format or natural language like "2pm", "14:30"' },
+            end_time: { type: 'string', description: 'The end time in HH:MM format or natural language like "3pm", "15:30"' },
             location: { type: 'string', description: 'The location of the event' },
             participants: { type: 'array', items: { type: 'string' }, description: 'List of participants' }
           },
@@ -568,8 +569,18 @@ export class OpenAIRealtimeService extends Emitter {
   }
 
   private async handleCreateCalendarEvent(args: any) {
-    const message = `schedule ${args.title} on ${args.date}${args.time ? ' at ' + args.time : ''}${args.location ? ' at ' + args.location : ''}`;
-    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+    console.log('📅 Voice AI creating calendar event with args:', args);
+
+    const details: Record<string, unknown> = {
+      title: args.title,
+      date: args.date,
+      start_time: args.start_time || args.time,
+      end_time: args.end_time,
+      location: args.location,
+      participants: args.participants
+    };
+
+    return await aiAssistantService.createCalendarEvent(details, this.currentUserId!);
   }
 
   private async handleQueryCalendar(args: any) {
