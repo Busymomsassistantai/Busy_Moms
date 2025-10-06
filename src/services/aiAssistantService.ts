@@ -226,7 +226,7 @@ class AIAssistantService {
   }
 
   /** Entry point for a user's message */
-  async processUserMessage(message: string, userId: UUID): Promise<AIAction> {
+  async processUserMessage(message: string, userId: UUID, conversationHistory?: Array<{role: 'user' | 'assistant', content: string}>): Promise<AIAction> {
     console.log('🎯 Processing user message:', message, 'for user:', userId);
 
     try {
@@ -256,7 +256,7 @@ class AIAssistantService {
         case 'task_delete':
           return this.handleTaskDelete(intent.details || {}, userId);
         default:
-          return this.handleChatAction(intent.details || {}, message, calendarContext);
+          return this.handleChatAction(intent.details || {}, message, calendarContext, conversationHistory);
       }
     } catch (err: unknown) {
       console.error('❌ processUserMessage error:', err instanceof Error ? err.message : err);
@@ -1134,13 +1134,14 @@ class AIAssistantService {
   }
 
   /** Chat - Handle general conversation */
-  private async handleChatAction(details: Record<string, unknown>, originalMessage: string, calendarContext?: any): Promise<AIAction> {
+  private async handleChatAction(details: Record<string, unknown>, originalMessage: string, calendarContext?: any, conversationHistory?: Array<{role: 'user' | 'assistant', content: string}>): Promise<AIAction> {
     console.log('💬 Handling chat message:', originalMessage);
+    console.log('💬 Conversation history length:', conversationHistory?.length || 0);
 
     try {
       const contextInfo = calendarContext ? `\n\nCurrent Calendar Context:\n${calendarContext.summary}` : '';
 
-      const response = await openaiService.chat([
+      const messages: Array<{role: 'system' | 'user' | 'assistant', content: string}> = [
         {
           role: 'system',
           content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, task management, shopping lists, reminders, and general parenting advice.${contextInfo}
@@ -1169,13 +1170,26 @@ OTHER:
 - Set reminders ("remind me to call mom tomorrow at 3pm")
 - Answer general questions about parenting and family management
 
-When answering questions, reference the calendar and task context when relevant. If the user mentions planning something, check for conflicts proactively.`
-        },
-        {
-          role: 'user',
-          content: originalMessage
+When answering questions, reference the calendar and task context when relevant. If the user mentions planning something, check for conflicts proactively.
+
+IMPORTANT: Maintain conversation context. If the user refers to previous topics, tasks, or people mentioned earlier in the conversation, remember and reference them appropriately.`
         }
-      ]);
+      ];
+
+      // Add conversation history if provided
+      if (conversationHistory && conversationHistory.length > 0) {
+        // Include the last 10 messages to keep context manageable
+        const recentHistory = conversationHistory.slice(-10);
+        messages.push(...recentHistory);
+      }
+
+      // Add the current message
+      messages.push({
+        role: 'user',
+        content: originalMessage
+      });
+
+      const response = await openaiService.chat(messages);
 
       return {
         type: 'chat',

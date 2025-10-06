@@ -164,12 +164,14 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
       if (!text.trim() || isProcessing) return;
 
       const userMessage = { role: 'user' as const, content: text.trim() };
-      setChatMessages(prev => [...prev, userMessage]);
+      const updatedHistory = [...chatMessages, userMessage];
+      setChatMessages(updatedHistory);
       setTextInput('');
       setIsProcessing(true);
 
       try {
-        const result = await aiAssistantService.processUserMessage(text.trim(), user!.id);
+        // Pass conversation history to maintain context
+        const result = await aiAssistantService.processUserMessage(text.trim(), user!.id, chatMessages);
         const assistantMessage = { role: 'assistant' as const, content: result.message };
         setChatMessages(prev => [...prev, assistantMessage]);
       } catch (error) {
