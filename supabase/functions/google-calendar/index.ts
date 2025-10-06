@@ -22,7 +22,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 function jsonResponse(data: any, status = 200) {
@@ -65,7 +65,6 @@ async function refreshGoogleToken(refreshToken: string, clientId: string, client
 async function getValidAccessToken(supabase: any, userId: string, googleClientId: string, googleClientSecret: string) {
   console.log("🔍 Getting valid access token for user:", userId);
   
-  // Get stored tokens
   const { data: tokenData, error } = await supabase
     .from('google_tokens')
     .select('*')
@@ -84,7 +83,6 @@ async function getValidAccessToken(supabase: any, userId: string, googleClientId
 
   console.log("✅ Found stored tokens, checking expiry...");
 
-  // Check if token is expired
   const now = new Date();
   const expiry = new Date(tokenData.expiry_ts);
   
@@ -103,7 +101,6 @@ async function getValidAccessToken(supabase: any, userId: string, googleClientId
         googleClientSecret
       );
 
-      // Update stored tokens
       const newExpiry = new Date(Date.now() + (refreshResponse.expires_in * 1000));
       
       const { error: updateError } = await supabase
@@ -157,15 +154,12 @@ async function makeGoogleCalendarRequest(accessToken: string, endpoint: string, 
   return data;
 }
 
-// Helper to safely get user ID from request
 function getSafeUserId(req: Request, body: any): string {
-  // Try body first
   if (body?.userId) {
     console.log("📝 Using user ID from body:", body.userId);
     return body.userId;
   }
 
-  // Try auth header
   const authHeader = req.headers.get("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice("Bearer ".length);
@@ -184,14 +178,12 @@ function getSafeUserId(req: Request, body: any): string {
     }
   }
 
-  // Generate anonymous user ID as fallback
   const anonId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   console.log("📝 Using anonymous user ID:", anonId);
   return anonId;
 }
 
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
@@ -202,12 +194,10 @@ Deno.serve(async (req: Request) => {
   try {
     console.log(`🚀 Google Calendar API - ${req.method} ${req.url}`);
 
-    // Only allow POST requests
     if (req.method !== "POST") {
       return jsonResponse({ error: "Method not allowed" }, 405);
     }
 
-    // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
@@ -229,7 +219,6 @@ Deno.serve(async (req: Request) => {
       }, 500);
     }
 
-    // Parse request body
     let body: any = {};
     try {
       body = await req.json();
@@ -244,15 +233,12 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Missing action parameter" }, 400);
     }
 
-    // Get user ID safely
     const userId = getSafeUserId(req, body);
 
-    // Initialize Supabase client with service role (bypasses RLS)
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false }
     });
 
-    // Handle connection check action
     if (action === "isConnected") {
       try {
         const { data: tokenData, error } = await supabase
@@ -274,7 +260,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Get valid access token for Google Calendar
     let accessToken: string;
     try {
       accessToken = await getValidAccessToken(supabase, userId, googleClientId, googleClientSecret);
@@ -289,7 +274,6 @@ Deno.serve(async (req: Request) => {
 
     console.log(`📅 Processing Google Calendar action: ${action} for user: ${userId}`);
 
-    // Handle different actions
     switch (action) {
       case "listUpcoming": {
         const maxResults = body.maxResults || 10;
