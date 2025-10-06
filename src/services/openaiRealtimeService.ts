@@ -352,7 +352,8 @@ export class OpenAIRealtimeService extends Emitter {
         },
         tools: this.getFunctionTools(),
         tool_choice: 'auto',
-        temperature: 0.8
+        temperature: 0.8,
+        max_response_output_tokens: 4096
       }
     };
 
@@ -817,7 +818,7 @@ export const openaiRealtimeService = new OpenAIRealtimeService({
   model: 'gpt-4o-realtime-preview',
   wakeWord: 'hey sara',
   vadThreshold: 0.03,
-  voice: 'alloy',
+  voice: 'nova',
   instructions: `You are Sara, a helpful AI assistant for busy parents embedded in a family organizer app.
 
 You have full access to the user's calendar, tasks, shopping lists, and reminders. You can:
@@ -844,7 +845,7 @@ OTHER FEATURES:
 - Add items to shopping lists with categories
 - Provide parenting advice and support
 
-Keep responses natural, conversational, and concise for voice interaction. Always check for schedule conflicts when creating events and proactively warn users. Use a warm, supportive tone and speak like you're having a friendly conversation.`
+SPEAKING STYLE: Speak at a brisk, natural conversational pace - not too slow or overly deliberate. Keep responses concise and to the point for voice interaction. Always check for schedule conflicts when creating events and proactively warn users. Use a warm, supportive tone while maintaining an efficient, natural speaking rhythm.`
 });
 
 export default openaiRealtimeService;
