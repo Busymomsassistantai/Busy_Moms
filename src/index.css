@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: #FAFAF9;
+    --surface: #FFFFFF;
+    --foreground: #0F172A;
+    --primary: #0F766E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #BE3E2B;
+    --secondary-foreground: #FFFFFF;
+    --accent: #D4A373;
+    --accent-foreground: #0F172A;
+    --border: #E5E7EB;
+    --ring: #0F766E;
+  }
+
+  .dark {
+    --background: #0B1220;
+    --surface: #0F172A;
+    --foreground: #F8FAFC;
+    --primary: #0F766E;
+    --primary-foreground: #FFFFFF;
+    --secondary: #BE3E2B;
+    --secondary-foreground: #FFFFFF;
+    --accent: #D4A373;
+    --accent-foreground: #0F172A;
+    --border: #1F2A37;
+    --ring: #0F766E;
+  }
+}
+
 /* Mobile-specific utilities */
 @layer utilities {
   .safe-area-pb {
