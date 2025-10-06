@@ -78,6 +78,8 @@ export function Calendar() {
   const [selectedReminder, setSelectedReminder] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
 
   const monthStart = useMemo(() => startOfMonth(currentDate), [currentDate]);
   const monthEnd = useMemo(() => endOfMonth(currentDate), [currentDate]);
@@ -126,20 +128,45 @@ export function Calendar() {
     if (user?.id) loadEvents();
   }, [user?.id, loadEvents]);
 
-  // Automatic sync when Calendar page loads
+  // Check Google Calendar connection and load events
   useEffect(() => {
-    const autoSync = async () => {
+    const checkGoogleAndSync = async () => {
       if (user?.id) {
         try {
-          await performSync();
+          const connected = await googleCalendarService.isConnected(user.id);
+          setIsGoogleConnected(connected);
+
+          if (connected) {
+            await performSync();
+            await loadGoogleEvents();
+          }
         } catch (error) {
           console.error('Auto-sync failed:', error);
         }
       }
     };
 
-    autoSync();
+    checkGoogleAndSync();
   }, [user?.id, performSync]);
+
+  const loadGoogleEvents = async () => {
+    if (!user?.id) return;
+
+    try {
+      const timeMin = monthStart.toISOString();
+      const timeMax = monthEnd.toISOString();
+
+      const events = await googleCalendarService.getEvents({
+        timeMin,
+        timeMax,
+        maxResults: 100
+      });
+
+      setGoogleEvents(events);
+    } catch (error) {
+      console.error('Error loading Google events:', error);
+    }
+  };
 
   // --- Derived day agenda ----------------------------------------------------
   const itemsForSelectedDate = useMemo(() => {
@@ -196,7 +223,7 @@ export function Calendar() {
     return start;
   }, [monthStart]);
 
-  const daysInGrid = useMemo(() => {
+  const calendarGrid = useMemo(() => {
     // Always render 6 weeks (6 * 7 = 42) so the grid is stable
     const days: Date[] = [];
     const d = new Date(firstDayOfGrid);
@@ -268,259 +295,264 @@ export function Calendar() {
   // --- UI --------------------------------------------------------------------
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Column - Today's Events */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* Header */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">TODAY</h1>
-                  <p className="text-gray-500">
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long',
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setShowGoogleConnect(true)}
-                    className={`px-3 py-2 rounded-full text-sm font-medium flex items-center space-x-1 ${
-                      isGoogleConnected 
-                        ? 'bg-green-100 text-green-600' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Link className="w-3 h-3" />
-                    <span>{isGoogleConnected ? 'Connected' : 'Connect'}</span>
-                  </button>
-                  <button
-                    onClick={syncWithGoogleCalendar}
-                    disabled={syncingGoogle}
-                    className="px-3 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-blue-200 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${syncingGoogle ? 'animate-spin' : ''}`} />
-                    <span>{syncingGoogle ? 'Syncing...' : 'Sync'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Today's Events */}
-            <div className="space-y-3">
-              {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 && (itemsForSelectedDate.googleEvents?.length || 0) === 0 ? (
-                <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
-                  <p className="text-gray-500">No events today</p>
-                </div>
-              ) : (
-                <>
-                  {/* Events */}
-                  {itemsForSelectedDate.events.map((ev, i) => (
-                    <div
-                      key={`event-${ev.id}-${i}`}
-                      onClick={() => {
-                        setSelectedEvent(ev);
-                        setShowEventDetails(true);
-                      }}
-                      className="bg-gradient-to-r from-orange-400 to-pink-400 rounded-2xl p-4 text-white cursor-pointer hover:shadow-lg transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{ev.title}</h3>
-                        <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                          {formatTimeRange(ev.start_time, ev.end_time) || 'All day'}
-                        </span>
-                      </div>
-                      {ev.location && (
-                        <div className="flex items-center space-x-1 text-sm opacity-90">
-                          <MapPin className="w-3 h-3" />
-                          <span>{ev.location}</span>
-                        </div>
-                      )}
-                      {ev.description && (
-                        <p className="text-sm opacity-90 mt-2">{ev.description}</p>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {/* Google Calendar Events */}
-                  {(itemsForSelectedDate.googleEvents || []).map((ev, i) => (
-                    <div
-                      key={`google-event-${ev.id}-${i}`}
-                      className="bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl p-4 text-white cursor-pointer hover:shadow-lg transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold text-lg">{ev.summary || 'Untitled Event'}</h3>
-                          <div className="w-4 h-4 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-bold">G</span>
-                          </div>
-                        </div>
-                        <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                          {ev.start?.dateTime 
-                            ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-                            : 'All day'
-                          }
-                        </span>
-                      </div>
-                      {ev.location && (
-                        <div className="flex items-center space-x-1 text-sm opacity-90">
-                          <MapPin className="w-3 h-3" />
-                          <span>{ev.location}</span>
-                        </div>
-                      )}
-                      {ev.description && (
-                        <p className="text-sm opacity-90 mt-2">{ev.description}</p>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {/* Reminders */}
-                  {itemsForSelectedDate.reminders.map((reminder, i) => (
-                    <div
-                      key={`reminder-${reminder.id}-${i}`}
-                      onClick={() => {
-                        setSelectedReminder(reminder);
-                        setShowEventDetails(true);
-                      }}
-                      className="bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl p-4 text-white cursor-pointer hover:shadow-lg transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold text-lg">{reminder.title}</h3>
-                        <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                          {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
-                        </span>
-                      </div>
-                      {reminder.description && (
-                        <p className="text-sm opacity-90">{reminder.description}</p>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-24">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+            <p className="text-gray-600 mt-1">
+              {selectedDate?.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </p>
           </div>
+          {isGoogleConnected && (
+            <div className="flex items-center space-x-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <span className="text-sm font-medium text-green-700">Google Connected</span>
+            </div>
+          )}
+        </div>
 
-          {/* Right Column - Calendar and Actions */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Mini Calendar */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Calendar Grid - Left Side */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
+              {/* Month Navigation */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">{monthLabel}</h2>
-                <div className="flex items-center space-x-2">
+                <h2 className="text-2xl font-bold text-gray-900">{monthLabel}</h2>
+                <div className="flex items-center space-x-3">
                   <button
                     onClick={goToday}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-4 py-2 text-sm font-medium bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
                   >
                     Today
                   </button>
-                  <button
-                    onClick={goPrevMonth}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={goNextMonth}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={goPrevMonth}
+                      className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={goNextMonth}
+                      className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Weekday headers */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {WEEKDAYS_SHORT.map((day) => (
-                  <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
-                    {day}
+              {/* Weekday Headers */}
+              <div className="grid grid-cols-7 gap-2 mb-3">
+                {WEEKDAYS_SHORT.map((day, idx) => (
+                  <div key={day} className="text-center py-2">
+                    <span className={`text-sm font-semibold ${idx === 0 || idx === 6 ? 'text-blue-600' : 'text-gray-600'}`}>
+                      {day}
+                    </span>
                   </div>
                 ))}
               </div>
 
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {daysInGrid.map((day, idx) => {
-                  const isToday = isSameDay(day, new Date());
-                  const selected = selectedDate ? isSameDay(day, selectedDate) : false;
+              {/* Calendar Days */}
+              <div className="grid grid-cols-7 gap-2">
+                {calendarGrid.map((day, i) => {
                   const count = dayEventsCount(day);
                   const inCurrentMonth = isCurrentMonth(day);
+                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+                  const isToday = isSameDay(day, new Date());
 
                   return (
                     <button
-                      key={idx}
-                      onClick={() => {
-                        onDayClick(day);
-                        setShowEventForm(true);
-                      }}
+                      key={i}
+                      onClick={() => onDayClick(day)}
                       className={`
-                        relative h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all
-                        ${selected 
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
-                          : isToday 
-                          ? 'bg-orange-100 text-orange-600' 
-                          : inCurrentMonth 
-                          ? 'text-gray-900 hover:bg-gray-100' 
+                        relative aspect-square rounded-xl p-2 transition-all
+                        flex flex-col items-center justify-center
+                        ${isSelected
+                          ? 'bg-blue-500 text-white shadow-lg scale-105'
+                          : isToday
+                          ? 'bg-blue-50 text-blue-600 font-bold border-2 border-blue-500'
+                          : inCurrentMonth
+                          ? 'text-gray-900 hover:bg-gray-100'
                           : 'text-gray-300'
                         }
                       `}
                     >
-                      {day.getDate()}
+                      <span className="text-sm">{day.getDate()}</span>
                       {count > 0 && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full"></div>
+                        <div className="flex gap-0.5 mt-1">
+                          {Array.from({ length: Math.min(count, 3) }).map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`w-1 h-1 rounded-full ${
+                                isSelected ? 'bg-white' : 'bg-blue-500'
+                              }`}
+                            />
+                          ))}
+                        </div>
                       )}
                     </button>
                   );
                 })}
               </div>
-            </div>
 
-            {/* Instructions */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
-              <h3 className="font-semibold text-gray-900 mb-2">Quick Actions</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>• Click any day to create a new event</p>
-                <p>• Click on events or reminders to edit them</p>
-              </div>
-              
-              {/* Error Display */}
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Info className="w-4 h-4 text-red-500" />
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Loading Display */}
-              {loading && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                    <p className="text-sm text-blue-700">Loading calendar data...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Conflicts Alert */}
-            {pendingConflicts.length > 0 && (
+              {/* Add Event Button */}
               <button
-                onClick={() => setShowConflicts(true)}
-                className="w-full px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center space-x-2"
+                onClick={() => setShowEventForm(true)}
+                className="w-full mt-6 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2"
               >
-                <Bell className="w-4 h-4" />
-                <span>Resolve {pendingConflicts.length} Conflict{pendingConflicts.length !== 1 ? 's' : ''}</span>
+                <Plus className="w-5 h-5" />
+                <span>Add Event</span>
               </button>
-            )}
+            </div>
+          </div>
+
+          {/* Events List - Right Side */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {selectedDate && isSameDay(selectedDate, new Date()) ? 'Today' : 'Selected Day'}
+              </h3>
+
+              <div className="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto">
+                {itemsForSelectedDate.events.length === 0 && itemsForSelectedDate.reminders.length === 0 && (itemsForSelectedDate.googleEvents?.length || 0) === 0 ? (
+                  <div className="text-center py-12">
+                    <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">No events for this day</p>
+                    <button
+                      onClick={() => setShowEventForm(true)}
+                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"
+                    >
+                      Add Event
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Events */}
+                    {itemsForSelectedDate.events.map((ev, i) => (
+                      <div
+                        key={`event-${ev.id}-${i}`}
+                        onClick={() => {
+                          setSelectedEvent(ev);
+                          setShowEventDetails(true);
+                        }}
+                        className="group bg-gradient-to-br from-orange-50 to-pink-50 border border-orange-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">{ev.title}</h3>
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                            {formatTimeRange(ev.start_time, ev.end_time) || 'All day'}
+                          </span>
+                        </div>
+                        {ev.location && (
+                          <div className="flex items-center space-x-1 text-sm text-gray-600 mb-2">
+                            <MapPin className="w-3 h-3" />
+                            <span>{ev.location}</span>
+                          </div>
+                        )}
+                        {ev.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{ev.description}</p>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Google Calendar Events */}
+                    {(itemsForSelectedDate.googleEvents || []).map((ev, i) => (
+                      <div
+                        key={`google-event-${ev.id}-${i}`}
+                        className="group bg-gradient-to-br from-blue-50 to-green-50 border-2 border-blue-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center space-x-2 flex-1">
+                            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{ev.summary || 'Untitled Event'}</h3>
+                            <div className="flex items-center space-x-1 px-2 py-0.5 bg-white rounded-full border border-blue-300">
+                              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="currentColor">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                              </svg>
+                              <span className="text-xs font-medium text-blue-600">Google</span>
+                            </div>
+                          </div>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium ml-2">
+                            {ev.start?.dateTime
+                              ? new Date(ev.start.dateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                              : 'All day'
+                            }
+                          </span>
+                        </div>
+                        {ev.location && (
+                          <div className="flex items-center space-x-1 text-sm text-gray-600 mb-2">
+                            <MapPin className="w-3 h-3" />
+                            <span>{ev.location}</span>
+                          </div>
+                        )}
+                        {ev.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{ev.description}</p>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Reminders */}
+                    {itemsForSelectedDate.reminders.map((reminder, i) => (
+                      <div
+                        key={`reminder-${reminder.id}-${i}`}
+                        onClick={() => {
+                          setSelectedReminder(reminder);
+                          setShowEventDetails(true);
+                        }}
+                        className="group bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <Bell className="w-4 h-4 text-purple-600" />
+                            <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">{reminder.title}</h3>
+                          </div>
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                            {reminder.reminder_time ? formatTimeRange(reminder.reminder_time, null) : 'All day'}
+                          </span>
+                        </div>
+                        {reminder.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{reminder.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Conflicts Alert Banner */}
+        {pendingConflicts.length > 0 && (
+          <div className="mt-6">
+            <button
+              onClick={() => setShowConflicts(true)}
+              className="w-full px-6 py-4 bg-orange-50 border-2 border-orange-200 rounded-2xl hover:bg-orange-100 transition-colors flex items-center justify-center space-x-3"
+            >
+              <Bell className="w-5 h-5 text-orange-600" />
+              <span className="text-orange-700 font-semibold">
+                Resolve {pendingConflicts.length} Sync Conflict{pendingConflicts.length !== 1 ? 's' : ''}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Event form modal */}
