@@ -315,6 +315,7 @@ function App() {
         <DailyAffirmations
           isOpen={showAffirmations}
           onClose={() => setShowAffirmations(false)}
+          onOpenVoiceChat={() => setShowVoiceChat(true)}
         />
 
         <ToastContainer toasts={toasts} onRemove={removeToast} />

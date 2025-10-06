@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, Heart, Calendar, RefreshCw, X, Loader2, Star, Volume2 } from 'lucide-react';
 import { affirmationService } from '../services/affirmationService';
 import { Affirmation } from '../lib/supabase';
+import { openaiRealtimeService } from '../services/openaiRealtimeService';
+import { useAuth } from '../hooks/useAuth';
 
 interface DailyAffirmationsProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenVoiceChat?: () => void;
 }
 
-export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
+export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAffirmationsProps) {
+  const { user } = useAuth();
   const [affirmations, setAffirmations] = useState<Affirmation[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -18,13 +22,8 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
   useEffect(() => {
     if (isOpen) {
       loadAffirmations();
-    } else {
-      if (speaking && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        setSpeaking(false);
-      }
     }
-  }, [isOpen, speaking]);
+  }, [isOpen]);
 
   const loadAffirmations = async () => {
     setLoading(true);
@@ -83,40 +82,32 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
     }
   };
 
-  const handleSpeakAffirmation = (text: string) => {
-    if (speaking) {
-      window.speechSynthesis.cancel();
-      setSpeaking(false);
+  const handleSpeakAffirmation = async (text: string) => {
+    if (!user) {
+      alert('Please log in to use the voice assistant.');
       return;
     }
 
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(
-        (voice) =>
-          voice.name.includes('Female') ||
-          voice.name.includes('Samantha') ||
-          voice.name.includes('Karen') ||
-          voice.name.includes('Victoria') ||
-          voice.name.includes('Google US English') ||
-          voice.name.includes('Microsoft Zira')
-      );
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
+    if (!openaiRealtimeService.isConnected()) {
+      alert('Please open the voice chat (Sarah) first by tapping the microphone button in the top menu. Then click the speaker button to have her read your affirmation.');
+      if (onOpenVoiceChat) {
+        onOpenVoiceChat();
       }
+      return;
+    }
 
-      utterance.onstart = () => setSpeaking(true);
-      utterance.onend = () => setSpeaking(false);
-      utterance.onerror = () => setSpeaking(false);
+    try {
+      setSpeaking(true);
+      const message = `Please read this daily affirmation to me in a warm, encouraging, and uplifting voice: "${text}"`;
+      openaiRealtimeService.sendMessage(message);
 
-      window.speechSynthesis.speak(utterance);
-    } else {
-      alert('Speech synthesis is not supported in your browser.');
+      setTimeout(() => {
+        setSpeaking(false);
+      }, 15000);
+    } catch (error) {
+      console.error('Error speaking affirmation:', error);
+      setSpeaking(false);
+      alert('Could not send message to Sarah. Please make sure the voice chat is open and connected.');
     }
   };
 
