@@ -3,7 +3,11 @@ import { AlertTriangle, Calendar } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getOAuthConfig } from "../lib/auth-config";
 
-export function ConnectGoogleCalendarButton() {
+interface ConnectGoogleCalendarButtonProps {
+  onConnected?: () => void;
+}
+
+export function ConnectGoogleCalendarButton({ onConnected }: ConnectGoogleCalendarButtonProps = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +35,10 @@ export function ConnectGoogleCalendarButton() {
 
   return (
     <div className="space-y-3">
-      <button 
-        onClick={startAuth} 
+      <button
+        onClick={startAuth}
         disabled={loading}
+        data-google-calendar-connect
         className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
       >
         <Calendar className="w-4 h-4" />

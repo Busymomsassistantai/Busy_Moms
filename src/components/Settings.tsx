@@ -52,6 +52,21 @@ export function Settings() {
     checkGoogleConnection();
   }, [user]);
 
+  // Listen for auth state changes to detect when Google Calendar is connected
+  React.useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.provider_token) {
+          await checkGoogleConnection();
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const checkGoogleConnection = async () => {
     if (!user) return;
     const connected = await googleCalendarService.isConnected(user.id);
@@ -201,7 +216,8 @@ export function Settings() {
           title: 'Google Calendar',
           description: isGoogleConnected ? 'Connected and syncing' : 'Connect to sync your events',
           action: isGoogleConnected ? 'Connected' : 'Connect',
-          isConnected: isGoogleConnected
+          isConnected: isGoogleConnected,
+          onClick: isGoogleConnected ? undefined : handleGoogleCalendarConnect
         }
       ]
     },
@@ -289,6 +305,19 @@ export function Settings() {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const handleGoogleCalendarConnect = () => {
+    const googleCalendarSection = document.querySelector('[data-google-calendar-section]');
+    if (googleCalendarSection) {
+      googleCalendarSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const connectButton = googleCalendarSection.querySelector('[data-google-calendar-connect]') as HTMLButtonElement;
+      if (connectButton) {
+        setTimeout(() => {
+          connectButton.click();
+        }, 300);
+      }
     }
   };
 
@@ -386,19 +415,17 @@ export function Settings() {
                           }`}></div>
                         </button>
                       ) : (
-                        <button className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors">
-                          <button 
-                            onClick={() => {
-                              if (item.title === 'Family Members') {
-                                setShowFamilyForm(true);
-                              } else if (item.onClick) {
-                                item.onClick();
-                              }
-                            }}
-                            className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors"
-                          >
-                            {item.action}
-                          </button>
+                        <button
+                          onClick={() => {
+                            if (item.title === 'Family Members') {
+                              setShowFamilyForm(true);
+                            } else if (item.onClick) {
+                              item.onClick();
+                            }
+                          }}
+                          className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors"
+                        >
+                          {item.action}
                         </button>
                       )}
                       
@@ -419,7 +446,7 @@ export function Settings() {
         </div>
 
         {/* Google Calendar Detailed Section */}
-        <div className="mt-6">
+        <div className="mt-6" data-google-calendar-section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Google Calendar Sync</h2>
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <div className="flex items-center justify-between mb-4">
