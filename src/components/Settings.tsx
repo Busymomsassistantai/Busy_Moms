@@ -172,6 +172,42 @@ export function Settings() {
     }
   };
 
+  const toggleNotification = (key: keyof typeof notifications) => {
+    setNotifications(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleFamilyMemberCreated = (newMember: FamilyMember) => {
+    setFamilyMembers(prev => [...prev, newMember]);
+  };
+
+  const handleProfileUpdated = (updatedProfile: Profile) => {
+    setCurrentProfile(updatedProfile);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleGoogleCalendarConnect = () => {
+    const googleCalendarSection = document.querySelector('[data-google-calendar-section]');
+    if (googleCalendarSection) {
+      googleCalendarSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const connectButton = googleCalendarSection.querySelector('[data-google-calendar-connect]') as HTMLButtonElement;
+      if (connectButton) {
+        setTimeout(() => {
+          connectButton.click();
+        }, 300);
+      }
+    }
+  };
+
   const settingSections = [
     {
       title: 'Family Profile',
@@ -300,42 +336,6 @@ export function Settings() {
       ]
     }
   ];
-
-  const toggleNotification = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const handleFamilyMemberCreated = (newMember: FamilyMember) => {
-    setFamilyMembers(prev => [...prev, newMember]);
-  };
-
-  const handleProfileUpdated = (updatedProfile: Profile) => {
-    setCurrentProfile(updatedProfile);
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
-  const handleGoogleCalendarConnect = () => {
-    const googleCalendarSection = document.querySelector('[data-google-calendar-section]');
-    if (googleCalendarSection) {
-      googleCalendarSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      const connectButton = googleCalendarSection.querySelector('[data-google-calendar-connect]') as HTMLButtonElement;
-      if (connectButton) {
-        setTimeout(() => {
-          connectButton.click();
-        }, 300);
-      }
-    }
-  };
 
   return (
     <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
