@@ -73,7 +73,8 @@ export async function storeGoogleTokens(tokenInfo: GoogleTokenInfo): Promise<boo
 
     const functionUrl = `${supabaseUrl}/functions/v1/store-google-tokens`;
 
-    console.log('📡 Calling store-google-tokens function...');
+    console.log('📡 Calling store-google-tokens Edge Function...');
+    console.log(`🔗 Function URL: ${functionUrl}`);
 
     const response = await fetch(functionUrl, {
       method: 'POST',
@@ -96,7 +97,15 @@ export async function storeGoogleTokens(tokenInfo: GoogleTokenInfo): Promise<boo
         errorData = { error: `Server error: ${errorText || response.statusText}` };
       }
 
-      console.error('❌ Failed to store tokens:', errorData);
+      console.error(`❌ Failed to store tokens (HTTP ${response.status}):`, errorData);
+
+      if (response.status === 500 && errorData.details?.includes('google_tokens')) {
+        console.error('💡 Database table issue detected. Verify google_tokens table exists and RLS policies are correct.');
+      } else if (response.status === 500) {
+        console.error('💡 Edge Function error. Check Supabase Edge Functions logs for details.');
+        console.error('💡 Ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in Edge Functions secrets.');
+      }
+
       throw new Error(errorData.error || errorData.message || errorData.details || `HTTP ${response.status}`);
     }
 
@@ -105,6 +114,11 @@ export async function storeGoogleTokens(tokenInfo: GoogleTokenInfo): Promise<boo
     return true;
   } catch (error) {
     console.error('❌ Error storing Google tokens:', error);
+    console.error('💡 Troubleshooting steps:');
+    console.error('  1. Check that store-google-tokens Edge Function is deployed');
+    console.error('  2. Verify google_tokens table exists in database');
+    console.error('  3. Ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in Supabase Edge Functions secrets');
+    console.error('  4. Run diagnostics: fetch your Supabase URL + "/functions/v1/google-diagnostics")');
     return false;
   }
 }

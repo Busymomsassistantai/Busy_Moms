@@ -68,7 +68,7 @@ class GoogleCalendarService {
 
   private async doInitialize(): Promise<void> {
     if (!this.baseUrl) {
-      console.error('❌ Supabase URL not configured');
+      console.error('❌ Supabase URL not configured. Set VITE_SUPABASE_URL environment variable.');
       this.available = false;
       this.ready = false;
       this.signedIn = false;
@@ -80,6 +80,7 @@ class GoogleCalendarService {
       const { data: { session, user } } = await supabase.auth.getSession();
 
       if (!session || !user) {
+        console.log('ℹ️ No active session - Google Calendar service unavailable until sign in');
         this.available = false;
         this.ready = false;
         this.signedIn = false;
@@ -106,13 +107,32 @@ class GoogleCalendarService {
         this.signedIn = data.connected || false;
         this.available = true;
         this.ready = true;
+        console.log(`✅ Google Calendar service initialized. Connected: ${this.signedIn}`);
       } else {
+        const errorText = await response.text();
+        let errorMessage = `HTTP ${response.status}`;
+
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.details || errorData.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+
+        console.error(`❌ Google Calendar Edge Function error: ${errorMessage}`);
+
+        if (response.status === 500 && errorMessage.includes('Google Calendar not configured')) {
+          console.error('💡 Setup Required: Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Supabase Edge Functions secrets');
+          console.error('💡 Run the diagnostics endpoint to verify setup: /functions/v1/google-diagnostics');
+        }
+
         this.available = false;
         this.ready = false;
         this.signedIn = false;
       }
     } catch (error) {
       console.error('❌ Failed to initialize Google Calendar service:', error);
+      console.error('💡 Check that Edge Functions are deployed: supabase functions deploy google-calendar');
       this.available = false;
       this.ready = false;
       this.signedIn = false;
@@ -245,7 +265,12 @@ class GoogleCalendarService {
     await this.ensureInitialized();
 
     if (!this.available) {
-      throw new Error('Google Calendar service not available');
+      throw new Error(
+        'Google Calendar service not available. ' +
+        'This usually means: (1) Edge Functions not deployed, or ' +
+        '(2) Google OAuth credentials not configured in Supabase. ' +
+        'Run diagnostics: /functions/v1/google-diagnostics'
+      );
     }
 
     if (!this.baseUrl) {
