@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSessionContext, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useAuth } from './hooks/useAuth'
 import { AuthForm } from './components/forms/AuthForm'
 import { Onboarding } from './components/Onboarding'
@@ -26,6 +27,8 @@ import { captureAndStoreGoogleTokens } from './services/googleTokenStorage'
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'family-folders'
 
 function App() {
+  const session = useSessionContext()
+  const supabaseClient = useSupabaseClient()
   const { user, loading, signOut } = useAuth()
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -111,7 +114,7 @@ function App() {
         const cleanupTimer = setTimeout(cleanUrl, 500);
 
         // Capture Google provider tokens from the OAuth callback (fire-and-forget)
-        supabase.auth.getSession().then(({ data: { session }, error }) => {
+        supabaseClient.auth.getSession().then(({ data: { session }, error }) => {
           if (!error && session?.provider_token && session?.provider_refresh_token) {
             captureAndStoreGoogleTokens(session).catch((e) => {
               console.error('❌ Error capturing Google tokens:', e);
@@ -136,7 +139,7 @@ function App() {
       setCheckingOnboarding(true)
       try {
         // Check the actual profile in the database
-        const { data: profile, error } = await supabase
+        const { data: profile, error } = await supabaseClient
           .from('profiles')
           .select('onboarding_completed')
           .eq('id', user.id)

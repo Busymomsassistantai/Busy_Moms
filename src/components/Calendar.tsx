@@ -25,7 +25,7 @@ import {
 import { EventForm } from './forms/EventForm';
 import { ConflictResolutionModal } from './ConflictResolutionModal';
 import { googleCalendarService, GoogleCalendarEvent } from '../services/googleCalendar';
-import { supabase } from '../lib/supabase';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import type { Event as DbEvent } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useCalendarSync } from '../hooks/useCalendarSync';
@@ -58,6 +58,7 @@ const formatTimeRange = (startTime?: string | null, endTime?: string | null) => 
 
 // --- Component ---------------------------------------------------------------
 export function Calendar() {
+  const supabase = useSupabaseClient();
   const { user } = useAuth();
   const { pendingConflicts, resolveConflict, performSync, loadPendingConflicts } = useCalendarSync();
 

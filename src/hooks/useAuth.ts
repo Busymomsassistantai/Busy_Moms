@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { useSessionContext, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { getOAuthConfig } from '../lib/auth-config'
 import { captureAndStoreGoogleTokens } from '../services/googleTokenStorage'
 
 export function useAuth() {
+  const session = useSessionContext()
+  const supabase = useSupabaseClient()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -35,33 +37,24 @@ export function useAuth() {
       }
     }
 
-    // 1) Get initial session only (don't call handleUserProfile yet)
-    const prime = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) console.error('getSession error:', error.message)
-        if (!mounted) return
-
-        setUser(session?.user ?? null)
-        setLoading(false)
-        // Profile will be handled by INITIAL_SESSION event
-      } catch (e) {
-        console.error('getSession failed:', e)
-        if (mounted) setLoading(false)
-      }
+    // Use session from context to set user
+    if (session?.user) {
+      setUser(session.user)
+      setLoading(false)
+    } else {
+      setUser(null)
+      setLoading(false)
     }
 
-    prime()
-
-    // 2) Subscribe to auth changes (correct destructure)
+    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event, authSession) => {
         if (!mounted) return
 
-        setUser(session?.user ?? null)
+        setUser(authSession?.user ?? null)
         setLoading(false)
 
-        if (session?.user) {
+        if (authSession?.user) {
           // Only handle INITIAL_SESSION once
           if (event === 'INITIAL_SESSION') {
             if (initialSessionHandled) return
@@ -70,11 +63,11 @@ export function useAuth() {
 
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
             // Fire-and-forget with deduplication
-            safeHandleUserProfile(session.user, event)
+            safeHandleUserProfile(authSession.user, event)
 
             // Capture Google provider tokens if this is a Google OAuth sign-in
-            if (event === 'SIGNED_IN' && session.provider_token) {
-              captureAndStoreGoogleTokens(session).catch((e) =>
+            if (event === 'SIGNED_IN' && authSession.provider_token) {
+              captureAndStoreGoogleTokens(authSession).catch((e) =>
                 console.error('❌ Failed to capture Google tokens:', e)
               )
             }
@@ -87,7 +80,7 @@ export function useAuth() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [session, supabase])
 
   const handleUserProfile = async (user: User) => {
     // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id

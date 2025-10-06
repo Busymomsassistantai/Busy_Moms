@@ -1,5 +1,6 @@
 // Google Calendar service for managing calendar integration
 import { supabase } from '../lib/supabase';
+import { getActiveSession } from '../lib/sessionHelper';
 
 export interface GoogleCalendarEvent {
   id?: string;
@@ -77,9 +78,9 @@ class GoogleCalendarService {
     }
 
     try {
-      const { data: { session, user } } = await supabase.auth.getSession();
+      const session = await getActiveSession();
 
-      if (!session || !user) {
+      if (!session || !session.user) {
         console.log('ℹ️ No active session - Google Calendar service unavailable until sign in');
         this.available = false;
         this.ready = false;
@@ -87,6 +88,8 @@ class GoogleCalendarService {
         this.initialized = true;
         return;
       }
+
+      const user = session.user;
 
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -175,7 +178,7 @@ class GoogleCalendarService {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getActiveSession();
 
       if (!session) {
         console.log('⚠️ No active session');
@@ -225,7 +228,7 @@ class GoogleCalendarService {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getActiveSession();
 
       if (!session) {
         console.log('⚠️ No active session');
@@ -294,11 +297,13 @@ class GoogleCalendarService {
     }
 
     try {
-      const { data: { session, user } } = await supabase.auth.getSession();
+      const session = await getActiveSession();
 
-      if (!session || !user) {
+      if (!session || !session.user) {
         throw new Error('User not authenticated. Please sign in first.');
       }
+
+      const user = session.user;
 
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 

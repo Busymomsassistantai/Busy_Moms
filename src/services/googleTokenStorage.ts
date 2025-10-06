@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getActiveSession } from '../lib/sessionHelper';
 import type { Session } from '@supabase/supabase-js';
 
 export interface GoogleTokenInfo {
@@ -51,7 +52,7 @@ export async function storeGoogleTokens(tokenInfo: GoogleTokenInfo): Promise<boo
   console.log('💾 Storing Google tokens via Edge Function...');
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getActiveSession();
 
     if (!session) {
       console.error('❌ No active session found');
@@ -127,7 +128,7 @@ export async function checkGoogleTokensExist(userId: string): Promise<boolean> {
   console.log('🔍 Checking if Google tokens exist for user:', userId);
 
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getActiveSession();
 
     if (!session) {
       console.log('⚠️ No active session');
