@@ -9,6 +9,7 @@ import { ErrorDashboard } from './errors/ErrorDashboard';
 import { AffirmationSettings } from './AffirmationSettings';
 import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
 import { SyncSettings } from './SyncSettings';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService } from '../services/googleCalendar';
@@ -390,6 +391,11 @@ export function Settings() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Theme Switcher */}
+        <div className="mb-4 sm:mb-6 bg-white border border-gray-200 rounded-xl p-3 sm:p-4">
+          <ThemeSwitcher />
         </div>
 
         {/* Settings Sections */}

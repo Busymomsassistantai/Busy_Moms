@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-background: #F0F4F8;
+    --color-surface: #FFFFFF;
+    --color-foreground: #1E293B;
+    --color-primary: #0369A1;
+    --color-primary-fg: #FFFFFF;
+    --color-secondary: #E0E7EF;
+    --color-secondary-fg: #1E293B;
+    --color-accent: #F97316;
+    --color-accent-fg: #FFFFFF;
+    --color-border: #CBD5E1;
+    --color-ring: #0369A1;
+  }
+}
+
 /* Mobile-specific utilities */
 @layer utilities {
   .safe-area-pb {

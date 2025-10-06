@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSessionContext, useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useAuth } from './hooks/useAuth'
+import { useTheme } from './hooks/useTheme'
 import { AuthForm } from './components/forms/AuthForm'
 import { Onboarding } from './components/Onboarding'
 import { Dashboard } from './components/Dashboard'
@@ -33,6 +34,7 @@ function App() {
   const session = useSessionContext()
   const supabaseClient = useSupabaseClient()
   const { user, loading, signOut } = useAuth()
+  const { theme, isDark } = useTheme()
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard')
   const [currentSubScreen, setCurrentSubScreen] = useState<SubScreen | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
