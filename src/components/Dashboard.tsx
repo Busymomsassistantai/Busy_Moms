@@ -108,7 +108,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   const loadTodayAffirmation = async () => {
     try {
-      const affirmation = await affirmationService.getTodaysAffirmation();
+      let affirmation = await affirmationService.getTodaysAffirmation();
+
+      if (!affirmation) {
+        console.log('No affirmation for today, generating automatically...');
+        affirmation = await affirmationService.generateAffirmation(false);
+      }
+
       setTodayAffirmation(affirmation);
     } catch (error) {
       console.error('Error loading today\'s affirmation:', error);
@@ -228,17 +234,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         )}
 
         {!todayAffirmation && (
-          <div
-            onClick={() => setShowAffirmations(true)}
-            className="bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-dashed border-purple-300 p-6 rounded-2xl cursor-pointer hover:shadow-md transition-all"
-          >
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-10 h-10 bg-purple-200 rounded-full flex items-center justify-center">
+          <div className="bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-purple-300 p-6 rounded-2xl">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-purple-200 rounded-full flex items-center justify-center animate-pulse">
                 <Sparkles className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Get Your Daily Affirmation</h3>
-                <p className="text-sm text-gray-600">Start your day with personalized encouragement</p>
+                <h3 className="font-semibold text-gray-900">Generating Your Daily Affirmation</h3>
+                <p className="text-sm text-gray-600">Creating personalized encouragement based on your schedule...</p>
               </div>
             </div>
           </div>

@@ -25,6 +25,22 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
     try {
       const history = await affirmationService.getAffirmationHistory(30);
       setAffirmations(history);
+
+      const today = new Date().toISOString().split('T')[0];
+      const hasTodayAffirmation = history.some(a => a.generated_date === today);
+
+      if (!hasTodayAffirmation) {
+        console.log('No affirmation for today, auto-generating...');
+        setGenerating(true);
+        try {
+          const newAffirmation = await affirmationService.generateAffirmation(false);
+          setAffirmations([newAffirmation, ...history]);
+        } catch (error) {
+          console.error('Error auto-generating affirmation:', error);
+        } finally {
+          setGenerating(false);
+        }
+      }
     } catch (error) {
       console.error('Error loading affirmations:', error);
     } finally {
@@ -183,44 +199,40 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                     {generating ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Generating...</span>
+                        <span>Regenerating...</span>
                       </>
                     ) : (
                       <>
                         <RefreshCw className="w-5 h-5" />
-                        <span>Generate New Affirmation</span>
+                        <span>Regenerate Affirmation</span>
                       </>
                     )}
                   </button>
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                     <Sparkles className="w-10 h-10 text-purple-500" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No affirmation yet today
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Generate your personalized affirmation to start your day with positivity
-                  </p>
-                  <button
-                    onClick={handleGenerate}
-                    disabled={generating}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mx-auto"
-                  >
-                    {generating ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Generating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        <span>Generate Affirmation</span>
-                      </>
-                    )}
-                  </button>
+                  {generating ? (
+                    <>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        Generating Your Affirmation
+                      </h3>
+                      <p className="text-gray-600">
+                        Creating personalized encouragement based on your schedule...
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        Preparing Your Affirmation
+                      </h3>
+                      <p className="text-gray-600">
+                        Your daily affirmation will appear automatically
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
