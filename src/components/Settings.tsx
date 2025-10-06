@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
 import { AuthTest } from './AuthTest';
 import { GoogleCalendarTest } from './GoogleCalendarTest';
 import { ErrorDashboard } from './errors/ErrorDashboard';
+import { AffirmationSettings } from './AffirmationSettings';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 
@@ -13,6 +14,7 @@ export function Settings() {
   const { user, signOut } = useAuth();
   const [showFamilyForm, setShowFamilyForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [showAffirmationSettings, setShowAffirmationSettings] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
@@ -186,6 +188,13 @@ export function Settings() {
     {
       title: 'Notifications',
       items: [
+        {
+          icon: Sparkles,
+          title: 'Daily Affirmations',
+          description: 'Personalized encouragement every day',
+          action: 'Configure',
+          onClick: () => setShowAffirmationSettings(true)
+        },
         {
           icon: Bell,
           title: 'Event Reminders',
@@ -550,6 +559,11 @@ export function Settings() {
         isOpen={showProfileForm}
         onClose={() => setShowProfileForm(false)}
         onProfileUpdated={handleProfileUpdated}
+      />
+
+      <AffirmationSettings
+        isOpen={showAffirmationSettings}
+        onClose={() => setShowAffirmationSettings(false)}
       />
     </div>
   );

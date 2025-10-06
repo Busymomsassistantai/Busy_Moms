@@ -1,9 +1,11 @@
 import React from 'react';
-import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Users, LogOut, Smartphone, User } from 'lucide-react';
+import { Calendar, ShoppingBag, MessageCircle, Clock, Heart, Gift, Users, LogOut, Smartphone, User, Sparkles } from 'lucide-react';
 import { AIChat } from './AIChat';
 import { WhatsAppIntegration } from './WhatsAppIntegration';
+import { DailyAffirmations } from './DailyAffirmations';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, Profile, Event, ShoppingItem, Reminder } from '../lib/supabase';
+import { supabase, Profile, Event, ShoppingItem, Reminder, Affirmation } from '../lib/supabase';
+import { affirmationService } from '../services/affirmationService';
 
 interface DashboardProps {
   onNavigate: (screen: 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'settings' | 'ai-chat' | 'family-folders') => void;
@@ -14,6 +16,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { user } = useAuth();
   const [isChatOpen, setIsChatOpen] = React.useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = React.useState(false);
+  const [showAffirmations, setShowAffirmations] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [showEventsPopup, setShowEventsPopup] = React.useState(false);
   const [showTasksPopup, setShowTasksPopup] = React.useState(false);
@@ -22,6 +25,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [todayAffirmation, setTodayAffirmation] = React.useState<Affirmation | null>(null);
 
   // Load user profile
   React.useEffect(() => {
@@ -98,8 +102,18 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   React.useEffect(() => {
     if (user) {
       loadDashboardData();
+      loadTodayAffirmation();
     }
   }, [user]);
+
+  const loadTodayAffirmation = async () => {
+    try {
+      const affirmation = await affirmationService.getTodaysAffirmation();
+      setTodayAffirmation(affirmation);
+    } catch (error) {
+      console.error('Error loading today\'s affirmation:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -180,6 +194,56 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       </div>
 
       <div className="p-4 space-y-4 sm:p-6 sm:space-y-6">
+        {/* Daily Affirmation */}
+        {todayAffirmation && (
+          <div
+            onClick={() => setShowAffirmations(true)}
+            className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+
+            <div className="relative z-10">
+              <div className="flex items-center space-x-2 mb-3">
+                <Sparkles className="w-5 h-5 text-white" />
+                <span className="text-white font-semibold text-sm">Today's Affirmation</span>
+              </div>
+
+              <p className="text-white text-lg leading-relaxed mb-4">
+                {todayAffirmation.affirmation_text}
+              </p>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAffirmations(true);
+                }}
+                className="text-white text-sm font-medium hover:underline flex items-center space-x-1"
+              >
+                <span>View all affirmations</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!todayAffirmation && (
+          <div
+            onClick={() => setShowAffirmations(true)}
+            className="bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-dashed border-purple-300 p-6 rounded-2xl cursor-pointer hover:shadow-md transition-all"
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 bg-purple-200 rounded-full flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Get Your Daily Affirmation</h3>
+                <p className="text-sm text-gray-600">Start your day with personalized encouragement</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
@@ -431,7 +495,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   ✕
                 </button>
               </div>
-              
+
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
@@ -465,6 +529,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           </div>
         </div>
       )}
+
+      <DailyAffirmations
+        isOpen={showAffirmations}
+        onClose={() => {
+          setShowAffirmations(false);
+          loadTodayAffirmation();
+        }}
+      />
     </div>
   );
 }

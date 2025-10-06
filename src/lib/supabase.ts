@@ -132,3 +132,38 @@ assigned_to?: UUID | null
 created_at?: string
 updated_at?: string
 }
+
+export interface Affirmation {
+id: UUID
+user_id: UUID
+affirmation_text: string
+generated_date: string
+data_sources?: {
+calendar?: boolean
+tasks?: boolean
+family?: boolean
+shopping?: boolean
+ai_generated?: boolean
+fallback?: boolean
+} | null
+viewed?: boolean | null
+favorited?: boolean | null
+created_at?: string
+updated_at?: string
+}
+
+export interface AffirmationSettings {
+id: UUID
+user_id: UUID
+enabled?: boolean | null
+frequency?: 'once_daily' | 'twice_daily' | 'custom' | null
+preferred_time?: string | null
+secondary_time?: string | null
+timezone?: string | null
+include_calendar?: boolean | null
+include_tasks?: boolean | null
+include_family?: boolean | null
+include_shopping?: boolean | null
+created_at?: string
+updated_at?: string
+}

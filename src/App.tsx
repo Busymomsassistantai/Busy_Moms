@@ -13,11 +13,14 @@ import { AIChat } from './components/AIChat'
 import { AIVoiceChat } from './components/AIVoiceChat'
 import { FamilyFolders } from './components/FamilyFolders'
 import { OAuthDiagnostics } from './components/OAuthDiagnostics'
+import { AffirmationNotification } from './components/AffirmationNotification'
+import { DailyAffirmations } from './components/DailyAffirmations'
 import { Loader2 } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import { ErrorBoundary, FeatureErrorBoundary } from './components/errors/ErrorBoundary'
 import { ToastContainer } from './components/errors/ErrorToast'
 import { useToast } from './hooks/useErrorHandler'
+import { useAffirmationNotifier } from './hooks/useAffirmationNotifier'
 import { captureAndStoreGoogleTokens } from './services/googleTokenStorage'
 
 export type Screen = 'dashboard' | 'calendar' | 'contacts' | 'shopping' | 'tasks' | 'settings' | 'ai-chat' | 'family-folders'
@@ -28,7 +31,9 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [checkingOnboarding, setCheckingOnboarding] = useState(false)
   const [showVoiceChat, setShowVoiceChat] = useState(false)
+  const [showAffirmations, setShowAffirmations] = useState(false)
   const { toasts, removeToast } = useToast()
+  const { pendingAffirmation, dismissNotification } = useAffirmationNotifier()
 
   // Check if diagnostics mode is enabled
   const urlParams = new URLSearchParams(window.location.search);
@@ -276,6 +281,20 @@ function App() {
         <AIVoiceChat
           isOpen={showVoiceChat}
           onClose={() => setShowVoiceChat(false)}
+        />
+
+        <AffirmationNotification
+          affirmation={pendingAffirmation}
+          onDismiss={dismissNotification}
+          onView={() => {
+            dismissNotification();
+            setShowAffirmations(true);
+          }}
+        />
+
+        <DailyAffirmations
+          isOpen={showAffirmations}
+          onClose={() => setShowAffirmations(false)}
         />
 
         <ToastContainer toasts={toasts} onRemove={removeToast} />
