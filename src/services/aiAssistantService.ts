@@ -1,17 +1,17 @@
-import { supabase, Reminder, ShoppingItem, UUID, Task, Event as DbEvent } from '../lib/supabase';
+import { supabase, Reminder, ShoppingItem, UUID, Task, Event as DbEvent, FamilyMember } from '../lib/supabase';
 import { openaiService } from './openai';
 import { ICalendarProvider, LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
 import { calendarContextService } from './calendarContext';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
 export interface AIAction {
-  type: 'calendar' | 'reminder' | 'shopping' | 'task' | 'chat';
+  type: 'calendar' | 'reminder' | 'shopping' | 'shopping_query' | 'shopping_update' | 'shopping_delete' | 'task' | 'family' | 'family_query' | 'family_update' | 'family_delete' | 'chat';
   success: boolean;
   message: string;
   data?: unknown;
 }
 
-type IntentType = 'calendar' | 'calendar_query' | 'calendar_update' | 'calendar_delete' | 'reminder' | 'shopping' | 'task' | 'task_query' | 'task_update' | 'task_delete' | 'chat';
+type IntentType = 'calendar' | 'calendar_query' | 'calendar_update' | 'calendar_delete' | 'reminder' | 'shopping' | 'shopping_query' | 'shopping_update' | 'shopping_delete' | 'task' | 'task_query' | 'task_update' | 'task_delete' | 'family' | 'family_query' | 'family_update' | 'family_delete' | 'chat';
 
 interface IntentResult {
   type: IntentType;
@@ -109,12 +109,21 @@ async function classifyMessage(message: string, calendarSummary: string): Promis
   console.log('🤖 Classifying message:', message);
 
   const systemPrompt = `You are a smart assistant that classifies user messages into actions.
-Return ONLY valid JSON with this exact format: {"type": "calendar|calendar_query|calendar_update|calendar_delete|reminder|shopping|task|task_query|task_update|task_delete|chat", "details": {...}}
+Return ONLY valid JSON with this exact format: {"type": "calendar|calendar_query|calendar_update|calendar_delete|reminder|shopping|shopping_query|shopping_update|shopping_delete|task|task_query|task_update|task_delete|family|family_query|family_update|family_delete|chat", "details": {...}}
 
 Current Calendar Context:
 ${calendarSummary}
 
-For shopping: {"type": "shopping", "details": {"title": "item name", "category": "dairy|produce|meat|bakery|baby|household|other"}}
+For shopping creation: {"type": "shopping", "details": {"title": "item name", "category": "dairy|produce|meat|bakery|baby|household|other", "quantity": 1, "urgent": false}}
+For shopping queries: {"type": "shopping_query", "details": {"query_type": "all|pending|completed|search", "search_term": "keyword"}}
+For shopping updates: {"type": "shopping_update", "details": {"search_term": "item to find", "updates": {"completed": true|false, "quantity": number, "urgent": true|false}}}
+For shopping deletion: {"type": "shopping_delete", "details": {"search_term": "item to delete"}}
+
+For family member creation: {"type": "family", "details": {"name": "person name", "age": number, "gender": "Boy|Girl|Other", "relationship": "description"}}
+For family queries: {"type": "family_query", "details": {"query_type": "all|search", "search_term": "name"}}
+For family updates: {"type": "family_update", "details": {"search_term": "name to find", "updates": {"age": number, "school": "school name", "grade": "grade level"}}}
+For family deletion: {"type": "family_delete", "details": {"search_term": "name to delete"}}
+
 For reminders: {"type": "reminder", "details": {"title": "reminder text", "date": "YYYY-MM-DD", "time": "HH:MM:SS"}}
 For calendar creation: {"type": "calendar", "details": {"title": "event name", "date": "YYYY-MM-DD", "time": "HH:MM:SS", "location": "place"}}
 For calendar queries: {"type": "calendar_query", "details": {"query_type": "today|week|availability|search|next", "date": "YYYY-MM-DD", "search_term": "keyword"}}
@@ -127,15 +136,18 @@ For task deletion: {"type": "task_delete", "details": {"search_term": "task to d
 For chat: {"type": "chat", "details": {"query": "user question"}}
 
 Examples:
-"add milk to shopping list" -> {"type": "shopping", "details": {"title": "milk", "category": "dairy"}}
+"add milk to shopping list" -> {"type": "shopping", "details": {"title": "milk", "category": "dairy", "quantity": 1}}
+"what's on my shopping list" -> {"type": "shopping_query", "details": {"query_type": "all"}}
+"mark milk as bought" -> {"type": "shopping_update", "details": {"search_term": "milk", "updates": {"completed": true}}}
+"remove bread from shopping list" -> {"type": "shopping_delete", "details": {"search_term": "bread"}}
+"add my daughter Emma age 8" -> {"type": "family", "details": {"name": "Emma", "age": 8, "gender": "Girl"}}
+"who's in my family" -> {"type": "family_query", "details": {"query_type": "all"}}
+"update Emma's age to 9" -> {"type": "family_update", "details": {"search_term": "Emma", "updates": {"age": 9}}}
 "remind me to call mom tomorrow at 3pm" -> {"type": "reminder", "details": {"title": "call mom", "date": "tomorrow", "time": "15:00:00"}}
 "schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}
 "what's on my calendar today" -> {"type": "calendar_query", "details": {"query_type": "today"}}
 "create task to clean room" -> {"type": "task", "details": {"title": "clean room", "category": "chores"}}
-"what tasks do I have" -> {"type": "task_query", "details": {"query_type": "all"}}
-"show me pending tasks" -> {"type": "task_query", "details": {"query_type": "pending"}}
-"mark homework as complete" -> {"type": "task_update", "details": {"search_term": "homework", "updates": {"status": "completed"}}}
-"delete the shopping task" -> {"type": "task_delete", "details": {"search_term": "shopping"}}`;
+"what tasks do I have" -> {"type": "task_query", "details": {"query_type": "all"}}`;
 
   try {
     const response = await openaiService.chat([
@@ -247,6 +259,12 @@ class AIAssistantService {
           return this.handleReminderAction(intent.details || {}, userId);
         case 'shopping':
           return this.handleShoppingAction(intent.details || {}, userId);
+        case 'shopping_query':
+          return this.handleShoppingQuery(intent.details || {}, userId);
+        case 'shopping_update':
+          return this.handleShoppingUpdate(intent.details || {}, userId);
+        case 'shopping_delete':
+          return this.handleShoppingDelete(intent.details || {}, userId);
         case 'task':
           return this.handleTaskAction(intent.details || {}, userId);
         case 'task_query':
@@ -255,6 +273,14 @@ class AIAssistantService {
           return this.handleTaskUpdate(intent.details || {}, userId);
         case 'task_delete':
           return this.handleTaskDelete(intent.details || {}, userId);
+        case 'family':
+          return this.handleFamilyAction(intent.details || {}, userId);
+        case 'family_query':
+          return this.handleFamilyQuery(intent.details || {}, userId);
+        case 'family_update':
+          return this.handleFamilyUpdate(intent.details || {}, userId);
+        case 'family_delete':
+          return this.handleFamilyDelete(intent.details || {}, userId);
         default:
           return this.handleChatAction(intent.details || {}, message, calendarContext, conversationHistory);
       }
@@ -1133,6 +1159,482 @@ class AIAssistantService {
     }
   }
 
+  /** Shopping Query */
+  private async handleShoppingQuery(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('🛒 Querying shopping list with details:', details);
+
+    const queryType = String(details.query_type || 'all');
+    const searchTerm = details.search_term ? String(details.search_term) : null;
+
+    try {
+      let query = supabase
+        .from('shopping_lists')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (queryType === 'pending') {
+        query = query.eq('completed', false);
+      } else if (queryType === 'completed') {
+        query = query.eq('completed', true);
+      }
+
+      if (searchTerm) {
+        query = query.ilike('item', `%${searchTerm}%`);
+      }
+
+      const { data: items, error } = await query;
+
+      if (error) throw error;
+
+      if (!items || items.length === 0) {
+        return {
+          type: 'shopping_query',
+          success: true,
+          message: queryType === 'pending' ? 'Your shopping list is empty!' : 'No shopping items found.',
+          data: { items: [] }
+        };
+      }
+
+      let message = `You have ${items.length} item${items.length > 1 ? 's' : ''} on your shopping list:\n`;
+      items.forEach((item: any, i: number) => {
+        message += `${i + 1}. ${item.item}`;
+        if (item.quantity > 1) message += ` (x${item.quantity})`;
+        if (item.completed) message += ` ✓`;
+        if (item.urgent) message += ` 🔥`;
+        message += '\n';
+      });
+
+      return {
+        type: 'shopping_query',
+        success: true,
+        message,
+        data: { items }
+      };
+    } catch (error) {
+      console.error('❌ Shopping query error:', error);
+      return {
+        type: 'shopping_query',
+        success: false,
+        message: `Failed to query shopping list: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Shopping Update */
+  private async handleShoppingUpdate(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('✏️ Updating shopping item with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+    const updates = details.updates as Record<string, unknown> || {};
+
+    if (!searchTerm) {
+      return {
+        type: 'shopping_update',
+        success: false,
+        message: 'Please specify which item you want to update.'
+      };
+    }
+
+    try {
+      const { data: items, error: searchError } = await supabase
+        .from('shopping_lists')
+        .select('*')
+        .eq('user_id', userId)
+        .ilike('item', `%${searchTerm}%`);
+
+      if (searchError) throw searchError;
+
+      if (!items || items.length === 0) {
+        return {
+          type: 'shopping_update',
+          success: false,
+          message: `No shopping items found matching "${searchTerm}".`
+        };
+      }
+
+      if (items.length > 1) {
+        const itemList = items.map((item: any) => item.item).join(', ');
+        return {
+          type: 'shopping_update',
+          success: false,
+          message: `Multiple items found matching "${searchTerm}": ${itemList}. Please be more specific.`,
+          data: { items }
+        };
+      }
+
+      const item = items[0];
+      const updatePayload: any = {};
+
+      if (updates.completed !== undefined) updatePayload.completed = Boolean(updates.completed);
+      if (updates.quantity !== undefined) updatePayload.quantity = coerceInt(updates.quantity, 1);
+      if (updates.urgent !== undefined) updatePayload.urgent = Boolean(updates.urgent);
+      if (updates.category) updatePayload.category = String(updates.category);
+      if (updates.notes) updatePayload.notes = String(updates.notes);
+
+      if (Object.keys(updatePayload).length === 0) {
+        return {
+          type: 'shopping_update',
+          success: false,
+          message: 'No valid updates provided.'
+        };
+      }
+
+      const { data: updatedItem, error: updateError } = await supabase
+        .from('shopping_lists')
+        .update(updatePayload)
+        .eq('id', item.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      return {
+        type: 'shopping_update',
+        success: true,
+        message: `✅ Updated "${item.item}" successfully!`,
+        data: { item: updatedItem }
+      };
+    } catch (error) {
+      console.error('❌ Shopping update error:', error);
+      return {
+        type: 'shopping_update',
+        success: false,
+        message: `Failed to update item: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Shopping Delete */
+  private async handleShoppingDelete(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('🗑️ Deleting shopping item with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+
+    if (!searchTerm) {
+      return {
+        type: 'shopping_delete',
+        success: false,
+        message: 'Please specify which item you want to delete.'
+      };
+    }
+
+    try {
+      const { data: items, error: searchError } = await supabase
+        .from('shopping_lists')
+        .select('*')
+        .eq('user_id', userId)
+        .ilike('item', `%${searchTerm}%`);
+
+      if (searchError) throw searchError;
+
+      if (!items || items.length === 0) {
+        return {
+          type: 'shopping_delete',
+          success: false,
+          message: `No shopping items found matching "${searchTerm}".`
+        };
+      }
+
+      if (items.length > 1) {
+        const itemList = items.map((item: any) => item.item).join(', ');
+        return {
+          type: 'shopping_delete',
+          success: false,
+          message: `Multiple items found matching "${searchTerm}": ${itemList}. Please be more specific.`,
+          data: { items }
+        };
+      }
+
+      const item = items[0];
+      const { error: deleteError } = await supabase
+        .from('shopping_lists')
+        .delete()
+        .eq('id', item.id);
+
+      if (deleteError) throw deleteError;
+
+      return {
+        type: 'shopping_delete',
+        success: true,
+        message: `✅ Removed "${item.item}" from your shopping list.`,
+        data: { item }
+      };
+    } catch (error) {
+      console.error('❌ Shopping delete error:', error);
+      return {
+        type: 'shopping_delete',
+        success: false,
+        message: `Failed to delete item: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Family Member Creation */
+  private async handleFamilyAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('👨‍👩‍👧‍👦 Creating family member with details:', details);
+
+    const name = String(details.name ?? 'Family Member');
+    const age = coerceInt(details.age, null);
+    const gender = details.gender ? String(details.gender) : 'Other';
+    const relationship = details.relationship ? String(details.relationship) : null;
+
+    if (!name || name === 'Family Member') {
+      return {
+        type: 'family',
+        success: false,
+        message: 'Please provide a name for the family member.'
+      };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('family_members')
+        .insert([{
+          user_id: userId,
+          name,
+          age,
+          gender,
+          ...(relationship && { medical_notes: `Relationship: ${relationship}` })
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Family member creation error:', error);
+        return { type: 'family', success: false, message: error.message || 'Failed to add family member.' };
+      }
+
+      console.log('👨‍👩‍👧‍👦 Family member created successfully:', data);
+      return {
+        type: 'family',
+        success: true,
+        message: `✅ Added ${name}${age ? ` (age ${age})` : ''} to your family!`,
+        data
+      };
+    } catch (error) {
+      console.error('❌ Family member creation error:', error);
+      return {
+        type: 'family',
+        success: false,
+        message: `Failed to add family member: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Family Query */
+  private async handleFamilyQuery(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('👨‍👩‍👧‍👦 Querying family members with details:', details);
+
+    const queryType = String(details.query_type || 'all');
+    const searchTerm = details.search_term ? String(details.search_term) : null;
+
+    try {
+      let query = supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
+
+      const { data: members, error } = await query;
+
+      if (error) throw error;
+
+      if (!members || members.length === 0) {
+        return {
+          type: 'family_query',
+          success: true,
+          message: 'No family members found. You can add family members by saying "Add my daughter Emma age 8".',
+          data: { members: [] }
+        };
+      }
+
+      let message = `You have ${members.length} family member${members.length > 1 ? 's' : ''}:\n`;
+      members.forEach((member: any, i: number) => {
+        message += `${i + 1}. ${member.name}`;
+        if (member.age) message += ` (age ${member.age})`;
+        if (member.gender && member.gender !== 'Other') message += ` - ${member.gender}`;
+        if (member.school) message += ` - ${member.school}`;
+        if (member.grade) message += ` (${member.grade})`;
+        message += '\n';
+      });
+
+      return {
+        type: 'family_query',
+        success: true,
+        message,
+        data: { members }
+      };
+    } catch (error) {
+      console.error('❌ Family query error:', error);
+      return {
+        type: 'family_query',
+        success: false,
+        message: `Failed to query family members: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Family Update */
+  private async handleFamilyUpdate(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('✏️ Updating family member with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+    const updates = details.updates as Record<string, unknown> || {};
+
+    if (!searchTerm) {
+      return {
+        type: 'family_update',
+        success: false,
+        message: 'Please specify which family member you want to update.'
+      };
+    }
+
+    try {
+      const { data: members, error: searchError } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', userId)
+        .ilike('name', `%${searchTerm}%`);
+
+      if (searchError) throw searchError;
+
+      if (!members || members.length === 0) {
+        return {
+          type: 'family_update',
+          success: false,
+          message: `No family members found matching "${searchTerm}".`
+        };
+      }
+
+      if (members.length > 1) {
+        const memberList = members.map((m: any) => m.name).join(', ');
+        return {
+          type: 'family_update',
+          success: false,
+          message: `Multiple family members found matching "${searchTerm}": ${memberList}. Please be more specific.`,
+          data: { members }
+        };
+      }
+
+      const member = members[0];
+      const updatePayload: any = { updated_at: new Date().toISOString() };
+
+      if (updates.name) updatePayload.name = String(updates.name);
+      if (updates.age !== undefined) updatePayload.age = coerceInt(updates.age, null);
+      if (updates.gender) updatePayload.gender = String(updates.gender);
+      if (updates.school) updatePayload.school = String(updates.school);
+      if (updates.grade) updatePayload.grade = String(updates.grade);
+      if (updates.allergies) {
+        const allergiesList = Array.isArray(updates.allergies)
+          ? updates.allergies.map(a => String(a))
+          : String(updates.allergies).split(',').map(a => a.trim());
+        updatePayload.allergies = allergiesList;
+      }
+      if (updates.medical_notes) updatePayload.medical_notes = String(updates.medical_notes);
+
+      if (Object.keys(updatePayload).length === 1) {
+        return {
+          type: 'family_update',
+          success: false,
+          message: 'No valid updates provided.'
+        };
+      }
+
+      const { data: updatedMember, error: updateError } = await supabase
+        .from('family_members')
+        .update(updatePayload)
+        .eq('id', member.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      return {
+        type: 'family_update',
+        success: true,
+        message: `✅ Updated ${member.name}'s information successfully!`,
+        data: { member: updatedMember }
+      };
+    } catch (error) {
+      console.error('❌ Family update error:', error);
+      return {
+        type: 'family_update',
+        success: false,
+        message: `Failed to update family member: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Family Delete */
+  private async handleFamilyDelete(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('🗑️ Deleting family member with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+
+    if (!searchTerm) {
+      return {
+        type: 'family_delete',
+        success: false,
+        message: 'Please specify which family member you want to remove.'
+      };
+    }
+
+    try {
+      const { data: members, error: searchError } = await supabase
+        .from('family_members')
+        .select('*')
+        .eq('user_id', userId)
+        .ilike('name', `%${searchTerm}%`);
+
+      if (searchError) throw searchError;
+
+      if (!members || members.length === 0) {
+        return {
+          type: 'family_delete',
+          success: false,
+          message: `No family members found matching "${searchTerm}".`
+        };
+      }
+
+      if (members.length > 1) {
+        const memberList = members.map((m: any) => m.name).join(', ');
+        return {
+          type: 'family_delete',
+          success: false,
+          message: `Multiple family members found matching "${searchTerm}": ${memberList}. Please be more specific.`,
+          data: { members }
+        };
+      }
+
+      const member = members[0];
+      const { error: deleteError } = await supabase
+        .from('family_members')
+        .delete()
+        .eq('id', member.id);
+
+      if (deleteError) throw deleteError;
+
+      return {
+        type: 'family_delete',
+        success: true,
+        message: `✅ Removed ${member.name} from your family list.`,
+        data: { member }
+      };
+    } catch (error) {
+      console.error('❌ Family delete error:', error);
+      return {
+        type: 'family_delete',
+        success: false,
+        message: `Failed to remove family member: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
   /** Chat - Handle general conversation */
   private async handleChatAction(details: Record<string, unknown>, originalMessage: string, calendarContext?: any, conversationHistory?: Array<{role: 'user' | 'assistant', content: string}>): Promise<AIAction> {
     console.log('💬 Handling chat message:', originalMessage);
@@ -1144,11 +1646,11 @@ class AIAssistantService {
       const messages: Array<{role: 'system' | 'user' | 'assistant', content: string}> = [
         {
           role: 'system',
-          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, task management, shopping lists, reminders, and general parenting advice.${contextInfo}
+          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, task management, shopping lists, family member management, reminders, and general parenting advice.${contextInfo}
 
 Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.
 
-You have full access to the user's calendar and tasks. You can:
+You have full access to the user's calendar, tasks, shopping list, and family members. You can:
 
 CALENDAR:
 - Answer questions about their schedule ("What's on my calendar today?")
@@ -1165,14 +1667,26 @@ TASKS:
 - Mark tasks as complete ("Mark the homework task as done")
 - Delete tasks ("Delete the grocery shopping task")
 
+SHOPPING LIST:
+- View shopping list ("What's on my shopping list?", "Show me pending items")
+- Add items to shopping list ("Add milk to the shopping list", "Add 2 loaves of bread")
+- Mark items as purchased ("Mark milk as bought")
+- Update item quantities ("Change milk quantity to 2")
+- Remove items ("Remove bread from shopping list", "Delete milk from list")
+
+FAMILY MEMBERS:
+- View family members ("Who's in my family?", "List all family members")
+- Add family members ("Add my daughter Emma age 8", "Add my son Jack")
+- Update family info ("Update Emma's age to 9", "Set Emma's school to Lincoln Elementary")
+- Remove family members ("Remove Jack from family list")
+
 OTHER:
-- Add items to shopping lists ("add milk to shopping list")
 - Set reminders ("remind me to call mom tomorrow at 3pm")
 - Answer general questions about parenting and family management
 
-When answering questions, reference the calendar and task context when relevant. If the user mentions planning something, check for conflicts proactively.
+When answering questions, reference the calendar, task, shopping, and family context when relevant. If the user mentions planning something, check for conflicts proactively.
 
-IMPORTANT: Maintain conversation context. If the user refers to previous topics, tasks, or people mentioned earlier in the conversation, remember and reference them appropriately.`
+IMPORTANT: Maintain conversation context. If the user refers to previous topics, tasks, people, or items mentioned earlier in the conversation, remember and reference them appropriately.`
         }
       ];
 
