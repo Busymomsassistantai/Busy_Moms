@@ -9,6 +9,7 @@ export function useAuth() {
   const supabase = useSupabaseClient()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -37,13 +38,15 @@ export function useAuth() {
       }
     }
 
-    // Use session from context to set user
-    if (session?.user) {
-      setUser(session.user)
+    // Only update user state once session context is ready
+    if (!isInitialized && session !== undefined) {
+      if (session?.user) {
+        setUser(session.user)
+      } else {
+        setUser(null)
+      }
       setLoading(false)
-    } else {
-      setUser(null)
-      setLoading(false)
+      setIsInitialized(true)
     }
 
     // Subscribe to auth changes
@@ -80,7 +83,7 @@ export function useAuth() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [session, supabase])
+  }, [session, supabase, isInitialized])
 
   const handleUserProfile = async (user: User) => {
     // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id

@@ -263,6 +263,11 @@ export function Calendar() {
     setSelectedDate(day);
   }, []);
 
+  const onDayDoubleClick = useCallback((day: Date) => {
+    setSelectedDate(day);
+    setShowEventForm(true);
+  }, []);
+
   const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -391,6 +396,7 @@ export function Calendar() {
                     <button
                       key={i}
                       onClick={() => onDayClick(day)}
+                      onDoubleClick={() => onDayDoubleClick(day)}
                       className={`
                         relative aspect-square rounded-xl p-2 transition-all
                         flex flex-col items-center justify-center

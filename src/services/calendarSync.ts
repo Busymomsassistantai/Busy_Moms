@@ -422,10 +422,12 @@ export class CalendarSyncService {
     try {
       const { error } = await supabase
         .from('calendar_sync_mappings')
-        .upsert([{
+        .upsert({
           ...mapping,
           updated_at: new Date().toISOString(),
-        }]);
+        }, {
+          onConflict: 'user_id,google_event_id'
+        });
 
       if (error) {
         console.error('Error upserting sync mapping:', error);
