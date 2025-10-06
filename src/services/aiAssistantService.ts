@@ -1,6 +1,7 @@
-import { supabase, Reminder, ShoppingItem, UUID, Task } from '../lib/supabase';
+import { supabase, Reminder, ShoppingItem, UUID, Task, Event as DbEvent } from '../lib/supabase';
 import { openaiService } from './openai';
 import { ICalendarProvider, LocalCalendarProvider, CalendarEventInput } from './calendarProvider';
+import { calendarContextService } from './calendarContext';
 
 /** Central brain for "Sara" — routes natural language to concrete app actions. */
 export interface AIAction {
@@ -10,7 +11,7 @@ export interface AIAction {
   data?: unknown;
 }
 
-type IntentType = 'calendar' | 'reminder' | 'shopping' | 'task' | 'chat';
+type IntentType = 'calendar' | 'calendar_query' | 'calendar_update' | 'calendar_delete' | 'reminder' | 'shopping' | 'task' | 'chat';
 
 interface IntentResult {
   type: IntentType;
@@ -102,24 +103,34 @@ function coerceInt(n: unknown, fallback: number | null = null): number | null {
 }
 
 /** ---- AI parsing -------------------------------------------------------- */
-async function classifyMessage(message: string): Promise<IntentResult> {
+async function classifyMessage(message: string, calendarSummary: string): Promise<IntentResult> {
   const today = new Date().toISOString().split('T')[0];
-  
+
   console.log('🤖 Classifying message:', message);
-  
-  const systemPrompt = `You are a smart assistant that classifies user messages into actions. 
-Return ONLY valid JSON with this exact format: {"type": "calendar|reminder|shopping|task|chat", "details": {...}}
+
+  const systemPrompt = `You are a smart calendar-aware assistant that classifies user messages into actions.
+Return ONLY valid JSON with this exact format: {"type": "calendar|calendar_query|calendar_update|calendar_delete|reminder|shopping|task|chat", "details": {...}}
+
+Current Calendar Context:
+${calendarSummary}
 
 For shopping: {"type": "shopping", "details": {"title": "item name", "category": "dairy|produce|meat|bakery|baby|household|other"}}
 For reminders: {"type": "reminder", "details": {"title": "reminder text", "date": "YYYY-MM-DD", "time": "HH:MM:SS"}}
-For calendar: {"type": "calendar", "details": {"title": "event name", "date": "YYYY-MM-DD", "time": "HH:MM:SS", "location": "place"}}
+For calendar creation: {"type": "calendar", "details": {"title": "event name", "date": "YYYY-MM-DD", "time": "HH:MM:SS", "location": "place"}}
+For calendar queries: {"type": "calendar_query", "details": {"query_type": "today|week|availability|search|next", "date": "YYYY-MM-DD", "search_term": "keyword"}}
+For calendar updates: {"type": "calendar_update", "details": {"search_term": "event to find", "updates": {"date": "new date", "time": "new time", "location": "new location"}}}
+For calendar deletion: {"type": "calendar_delete", "details": {"search_term": "event to delete", "date": "YYYY-MM-DD"}}
 For tasks: {"type": "task", "details": {"title": "task name", "category": "chores|homework|sports|music|health|social|other"}}
 For chat: {"type": "chat", "details": {"query": "user question"}}
 
 Examples:
 "add milk to shopping list" -> {"type": "shopping", "details": {"title": "milk", "category": "dairy"}}
 "remind me to call mom tomorrow at 3pm" -> {"type": "reminder", "details": {"title": "call mom", "date": "tomorrow", "time": "15:00:00"}}
-"schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}`;
+"schedule dentist appointment next Friday" -> {"type": "calendar", "details": {"title": "dentist appointment", "date": "next Friday"}}
+"what's on my calendar today" -> {"type": "calendar_query", "details": {"query_type": "today"}}
+"am I free tomorrow afternoon" -> {"type": "calendar_query", "details": {"query_type": "availability", "date": "tomorrow"}}
+"move my dentist appointment to next week" -> {"type": "calendar_update", "details": {"search_term": "dentist", "updates": {"date": "next week"}}}
+"cancel my meeting tomorrow" -> {"type": "calendar_delete", "details": {"search_term": "meeting", "date": "tomorrow"}}`;
 
   try {
     const response = await openaiService.chat([
@@ -212,14 +223,21 @@ class AIAssistantService {
   /** Entry point for a user's message */
   async processUserMessage(message: string, userId: UUID): Promise<AIAction> {
     console.log('🎯 Processing user message:', message, 'for user:', userId);
-    
+
     try {
-      const intent = await classifyMessage(message);
+      const calendarContext = await calendarContextService.getCalendarContext(userId);
+      const intent = await classifyMessage(message, calendarContext.summary);
       console.log('🧠 Classified intent:', intent);
-      
+
       switch (intent.type) {
         case 'calendar':
           return this.handleCalendarAction(intent.details || {}, userId);
+        case 'calendar_query':
+          return this.handleCalendarQuery(intent.details || {}, userId, calendarContext);
+        case 'calendar_update':
+          return this.handleCalendarUpdate(intent.details || {}, userId);
+        case 'calendar_delete':
+          return this.handleCalendarDelete(intent.details || {}, userId);
         case 'reminder':
           return this.handleReminderAction(intent.details || {}, userId);
         case 'shopping':
@@ -227,22 +245,22 @@ class AIAssistantService {
         case 'task':
           return this.handleTaskAction(intent.details || {}, userId);
         default:
-          return this.handleChatAction(intent.details || {}, message);
+          return this.handleChatAction(intent.details || {}, message, calendarContext);
       }
     } catch (err: unknown) {
       console.error('❌ processUserMessage error:', err instanceof Error ? err.message : err);
-      return { 
-        type: 'chat', 
-        success: false, 
-        message: 'I encountered an error processing your request. Please try again.' 
+      return {
+        type: 'chat',
+        success: false,
+        message: 'I encountered an error processing your request. Please try again.'
       };
     }
   }
 
-  /** Calendar */
+  /** Calendar Creation */
   private async handleCalendarAction(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
     console.log('📅 Creating calendar event with details:', details);
-    
+
     const title = String(details.title ?? 'New event');
     const date = toISODate(details.date);
     const time = toISOTime(details.time);
@@ -252,10 +270,25 @@ class AIAssistantService {
     const location = details.location ? String(details.location) : null;
 
     if (!date) {
-      return { 
-        type: 'calendar', 
-        success: false, 
-        message: 'Please provide a date for the event (e.g., "today", "tomorrow", "2024-03-15")' 
+      return {
+        type: 'calendar',
+        success: false,
+        message: 'Please provide a date for the event (e.g., "today", "tomorrow", "2024-03-15")'
+      };
+    }
+
+    const conflictCheck = await calendarContextService.checkConflicts(userId, date, time, null);
+    if (conflictCheck.hasConflict) {
+      const conflictNames = conflictCheck.conflictingEvents.map(e => e.title).join(', ');
+      let message = `⚠️ Schedule conflict detected! You already have: ${conflictNames} at that time.`;
+      if (conflictCheck.suggestions.length > 0) {
+        message += `\n\nSuggested alternative times: ${conflictCheck.suggestions.join(', ')}`;
+      }
+      return {
+        type: 'calendar',
+        success: false,
+        message,
+        data: { conflicts: conflictCheck.conflictingEvents, suggestions: conflictCheck.suggestions }
       };
     }
 
@@ -272,23 +305,337 @@ class AIAssistantService {
     try {
       const result = await this.calendarProvider.createEvent(userId, input);
       console.log('📅 Calendar event created successfully:', result);
-      
+
       if (!result?.id && !result?.externalId) {
         return { type: 'calendar', success: false, message: 'Failed to create calendar event.' };
       }
 
-      return { 
-        type: 'calendar', 
-        success: true, 
-        message: `✅ Scheduled: ${title} on ${date}${time ? ' at ' + time.slice(0,5) : ''}`, 
-        data: result 
+      return {
+        type: 'calendar',
+        success: true,
+        message: `✅ Scheduled: ${title} on ${date}${time ? ' at ' + time.slice(0,5) : ''}`,
+        data: result
       };
     } catch (error) {
       console.error('❌ Calendar creation error:', error);
-      return { 
-        type: 'calendar', 
-        success: false, 
-        message: `Failed to create event: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        type: 'calendar',
+        success: false,
+        message: `Failed to create event: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Calendar Queries */
+  private async handleCalendarQuery(details: Record<string, unknown>, userId: UUID, context: any): Promise<AIAction> {
+    console.log('🔍 Querying calendar with details:', details);
+
+    const queryType = String(details.query_type || 'today');
+
+    try {
+      switch (queryType) {
+        case 'today': {
+          if (context.todayEvents.length === 0) {
+            return {
+              type: 'calendar',
+              success: true,
+              message: 'You have no events scheduled for today. Your day is clear!',
+              data: { events: [] }
+            };
+          }
+          const formatted = calendarContextService.formatEventsAsNaturalLanguage(context.todayEvents);
+          return {
+            type: 'calendar',
+            success: true,
+            message: `Here's your schedule for today:\n${formatted}`,
+            data: { events: context.todayEvents }
+          };
+        }
+
+        case 'week': {
+          if (context.upcomingEvents.length === 0) {
+            return {
+              type: 'calendar',
+              success: true,
+              message: 'You have no upcoming events this week. Enjoy your free time!',
+              data: { events: [] }
+            };
+          }
+          const formatted = calendarContextService.formatEventsAsNaturalLanguage(context.upcomingEvents);
+          return {
+            type: 'calendar',
+            success: true,
+            message: `Here are your upcoming events:\n${formatted}`,
+            data: { events: context.upcomingEvents }
+          };
+        }
+
+        case 'availability': {
+          const date = toISODate(details.date) || new Date().toISOString().split('T')[0];
+          const availability = await calendarContextService.checkAvailability(userId, { date });
+
+          if (availability.available) {
+            let message = `You are available on ${date}.`;
+            if (availability.freeSlots.length > 0) {
+              const slots = availability.freeSlots.map(slot =>
+                `${slot.start.slice(0, 5)} - ${slot.end.slice(0, 5)}`
+              ).join(', ');
+              message += ` Free time slots: ${slots}`;
+            }
+            return {
+              type: 'calendar',
+              success: true,
+              message,
+              data: availability
+            };
+          } else {
+            const formatted = calendarContextService.formatEventsAsNaturalLanguage(availability.events);
+            return {
+              type: 'calendar',
+              success: true,
+              message: `You have events on ${date}:\n${formatted}`,
+              data: availability
+            };
+          }
+        }
+
+        case 'next': {
+          const nextEvent = await calendarContextService.findNextEvent(userId);
+          if (!nextEvent) {
+            return {
+              type: 'calendar',
+              success: true,
+              message: 'You have no upcoming events scheduled.',
+              data: { event: null }
+            };
+          }
+          const formatted = calendarContextService.formatEventsAsNaturalLanguage([nextEvent]);
+          return {
+            type: 'calendar',
+            success: true,
+            message: `Your next event is:\n${formatted}`,
+            data: { event: nextEvent }
+          };
+        }
+
+        case 'search': {
+          const searchTerm = String(details.search_term || '');
+          if (!searchTerm) {
+            return {
+              type: 'calendar',
+              success: false,
+              message: 'Please provide a search term to find events.'
+            };
+          }
+          const events = await calendarContextService.searchEvents(userId, searchTerm);
+          if (events.length === 0) {
+            return {
+              type: 'calendar',
+              success: true,
+              message: `No events found matching "${searchTerm}".`,
+              data: { events: [] }
+            };
+          }
+          const formatted = calendarContextService.formatEventsAsNaturalLanguage(events);
+          return {
+            type: 'calendar',
+            success: true,
+            message: `Found ${events.length} event${events.length > 1 ? 's' : ''} matching "${searchTerm}":\n${formatted}`,
+            data: { events }
+          };
+        }
+
+        default:
+          return {
+            type: 'calendar',
+            success: false,
+            message: 'I don\'t understand that calendar query. Try asking "What\'s on my calendar today?" or "Am I free tomorrow?"'
+          };
+      }
+    } catch (error) {
+      console.error('❌ Calendar query error:', error);
+      return {
+        type: 'calendar',
+        success: false,
+        message: `Failed to query calendar: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Calendar Updates */
+  private async handleCalendarUpdate(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('✏️ Updating calendar event with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+    const updates = details.updates as Record<string, unknown> || {};
+
+    if (!searchTerm) {
+      return {
+        type: 'calendar',
+        success: false,
+        message: 'Please specify which event you want to update.'
+      };
+    }
+
+    try {
+      const events = await calendarContextService.searchEvents(userId, searchTerm);
+      if (events.length === 0) {
+        return {
+          type: 'calendar',
+          success: false,
+          message: `No events found matching "${searchTerm}". Please be more specific.`
+        };
+      }
+
+      if (events.length > 1) {
+        const formatted = calendarContextService.formatEventsAsNaturalLanguage(events);
+        return {
+          type: 'calendar',
+          success: false,
+          message: `Multiple events found matching "${searchTerm}". Please be more specific:\n${formatted}`,
+          data: { events }
+        };
+      }
+
+      const event = events[0];
+      const updatePayload: any = {};
+
+      if (updates.date) {
+        const newDate = toISODate(updates.date);
+        if (newDate) updatePayload.event_date = newDate;
+      }
+
+      if (updates.time) {
+        const newTime = toISOTime(updates.time);
+        if (newTime) updatePayload.start_time = newTime;
+      }
+
+      if (updates.location) {
+        updatePayload.location = String(updates.location);
+      }
+
+      if (updates.title) {
+        updatePayload.title = String(updates.title);
+      }
+
+      if (Object.keys(updatePayload).length === 0) {
+        return {
+          type: 'calendar',
+          success: false,
+          message: 'No valid updates provided. What would you like to change?'
+        };
+      }
+
+      if (updatePayload.event_date || updatePayload.start_time) {
+        const checkDate = updatePayload.event_date || event.event_date;
+        const checkTime = updatePayload.start_time || event.start_time;
+        const conflictCheck = await calendarContextService.checkConflicts(
+          userId,
+          checkDate,
+          checkTime,
+          null,
+          event.id
+        );
+
+        if (conflictCheck.hasConflict) {
+          const conflictNames = conflictCheck.conflictingEvents.map(e => e.title).join(', ');
+          return {
+            type: 'calendar',
+            success: false,
+            message: `⚠️ Cannot update: Schedule conflict with ${conflictNames}. Try a different time.`,
+            data: { conflicts: conflictCheck.conflictingEvents }
+          };
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('events')
+        .update(updatePayload)
+        .eq('id', event.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        type: 'calendar',
+        success: true,
+        message: `✅ Updated "${event.title}" successfully!`,
+        data: { event: data }
+      };
+    } catch (error) {
+      console.error('❌ Calendar update error:', error);
+      return {
+        type: 'calendar',
+        success: false,
+        message: `Failed to update event: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  /** Calendar Deletion */
+  private async handleCalendarDelete(details: Record<string, unknown>, userId: UUID): Promise<AIAction> {
+    console.log('🗑️ Deleting calendar event with details:', details);
+
+    const searchTerm = String(details.search_term || '');
+    const date = details.date ? toISODate(details.date) : null;
+
+    if (!searchTerm) {
+      return {
+        type: 'calendar',
+        success: false,
+        message: 'Please specify which event you want to delete.'
+      };
+    }
+
+    try {
+      let events: DbEvent[];
+
+      if (date) {
+        const allEvents = await calendarContextService.searchEvents(userId, searchTerm);
+        events = allEvents.filter(e => e.event_date === date);
+      } else {
+        events = await calendarContextService.searchEvents(userId, searchTerm);
+      }
+
+      if (events.length === 0) {
+        return {
+          type: 'calendar',
+          success: false,
+          message: `No events found matching "${searchTerm}".`
+        };
+      }
+
+      if (events.length > 1) {
+        const formatted = calendarContextService.formatEventsAsNaturalLanguage(events);
+        return {
+          type: 'calendar',
+          success: false,
+          message: `Multiple events found. Please be more specific about which event to delete:\n${formatted}`,
+          data: { events }
+        };
+      }
+
+      const event = events[0];
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', event.id);
+
+      if (error) throw error;
+
+      return {
+        type: 'calendar',
+        success: true,
+        message: `✅ Deleted "${event.title}" from your calendar.`,
+        data: { event }
+      };
+    } catch (error) {
+      console.error('❌ Calendar delete error:', error);
+      return {
+        type: 'calendar',
+        success: false,
+        message: `Failed to delete event: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   }
@@ -439,24 +786,32 @@ class AIAssistantService {
   }
 
   /** Chat - Handle general conversation */
-  private async handleChatAction(details: Record<string, unknown>, originalMessage: string): Promise<AIAction> {
+  private async handleChatAction(details: Record<string, unknown>, originalMessage: string, calendarContext?: any): Promise<AIAction> {
     console.log('💬 Handling chat message:', originalMessage);
-    
+
     try {
-      // Use AI to provide a helpful response
+      const contextInfo = calendarContext ? `\n\nCurrent Calendar Context:\n${calendarContext.summary}` : '';
+
       const response = await openaiService.chat([
         {
           role: 'system',
-          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice. 
+          content: `You are Sara, a helpful AI assistant for busy parents. You help with family scheduling, shopping lists, reminders, and general parenting advice.${contextInfo}
 
 Keep responses concise, practical, and empathetic. Always consider the busy lifestyle of parents and provide actionable suggestions. Use a warm, supportive tone.
 
-If the user asks about functionality, explain that you can:
+You have full access to the user's calendar and can:
+- Answer questions about their schedule ("What's on my calendar today?")
+- Check availability ("Am I free tomorrow afternoon?")
+- Find specific events ("When is my dentist appointment?")
+- Create new events ("Schedule a meeting tomorrow at 2pm")
+- Update existing events ("Move my dentist appointment to next week")
+- Delete events ("Cancel my meeting tomorrow")
 - Add items to shopping lists ("add milk to shopping list")
-- Set reminders ("remind me to call mom tomorrow at 3pm") 
-- Schedule events ("schedule dentist appointment next Friday")
+- Set reminders ("remind me to call mom tomorrow at 3pm")
 - Create tasks ("create task to clean room")
-- Answer general questions about parenting and family management`
+- Answer general questions about parenting and family management
+
+When answering questions, reference the calendar context when relevant. If the user mentions planning something, check for conflicts proactively.`
         },
         {
           role: 'user',
@@ -475,7 +830,7 @@ If the user asks about functionality, explain that you can:
       return {
         type: 'chat',
         success: true,
-        message: "I'm here to help! You can ask me to add items to your shopping list, set reminders, schedule events, or create tasks. What would you like to do?",
+        message: "I'm here to help! You can ask me about your schedule, add items to your shopping list, set reminders, schedule events, or create tasks. What would you like to do?",
         data: { query: originalMessage }
       };
     }

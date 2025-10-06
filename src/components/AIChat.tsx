@@ -149,11 +149,11 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   };
 
   const quickActions = [
-    'Add reminder for tomorrow at 3pm',
-    'Add milk to shopping list',
-    'Show my upcoming events',
-    'What\'s on my shopping list?',
+    'What\'s on my calendar today?',
+    'Am I free tomorrow afternoon?',
     'Schedule dentist appointment next week',
+    'Add milk to shopping list',
+    'What\'s my next meeting?',
     'Remind me to call mom tonight'
   ];
 
