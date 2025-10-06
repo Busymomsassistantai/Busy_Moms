@@ -24,6 +24,7 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
   const [showTasksPopup, setShowTasksPopup] = React.useState(false);
   const [showRemindersPopup, setShowRemindersPopup] = React.useState(false);
   const [events, setEvents] = React.useState<Event[]>([]);
+  const [todayEvents, setTodayEvents] = React.useState<Event[]>([]);
   const [tasks, setTasks] = React.useState<ShoppingItem[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -60,16 +61,31 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
     }
   }, [user]);
 
+  // Helper function to format time for display
+  const formatEventTime = (timeString: string | null | undefined): string => {
+    if (!timeString) return 'All day';
+    try {
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours, 10);
+      const minute = parseInt(minutes, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      return `${displayHour}:${String(minute).padStart(2, '0')} ${ampm}`;
+    } catch {
+      return timeString;
+    }
+  };
+
   // Load events, tasks, and reminders
   const loadDashboardData = async () => {
     if (!user?.id) return;
-    
+
     setLoading(true);
     try {
-      // Load upcoming events (next 7 days)
       const today = new Date().toISOString().split('T')[0];
       const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
+
+      // Load upcoming events for next 7 days (for event count)
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('*')
@@ -80,6 +96,19 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
 
       if (!eventsError) {
         setEvents(eventsData || []);
+
+        // Filter and sort today's events
+        const todayEventsFiltered = (eventsData || [])
+          .filter(event => event.event_date === today)
+          .sort((a, b) => {
+            // Sort by start_time, putting all-day events (no start_time) first
+            if (!a.start_time && !b.start_time) return 0;
+            if (!a.start_time) return -1;
+            if (!b.start_time) return 1;
+            return a.start_time.localeCompare(b.start_time);
+          });
+
+        setTodayEvents(todayEventsFiltered);
       }
 
       // Load incomplete shopping items (tasks)
@@ -130,12 +159,6 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
       console.error('Error signing out:', error);
     }
   };
-
-  const todayEvents = [
-    { time: '9:00 AM', title: 'Emma\'s Soccer Practice', location: 'Riverside Park' },
-    { time: '2:00 PM', title: 'Pediatrician Appointment', location: 'Dr. Smith\'s Office' },
-    { time: '4:00 PM', title: 'Jessica\'s Birthday Party', location: 'Community Center' }
-  ];
 
   const quickActions = [
     { icon: Calendar, title: 'View Calendar', desc: 'See all your events', color: 'from-rose-400 to-pink-400', action: () => onNavigate('calendar') },
@@ -277,24 +300,46 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
         {/* Today's Schedule */}
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Today's Schedule</h2>
-          <div className="space-y-3">
-            {todayEvents.map((event, index) => (
-              <div key={index} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</h3>
-                      <span className="text-xs sm:text-sm text-rose-600 font-medium">{event.time}</span>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-rose-500"></div>
+            </div>
+          ) : todayEvents.length > 0 ? (
+            <div className="space-y-3">
+              {todayEvents.map((event) => (
+                <div key={event.id} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => onNavigate('calendar')}>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">{event.location}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</h3>
+                        <span className="text-xs sm:text-sm text-rose-600 font-medium">{formatEventTime(event.start_time)}</span>
+                      </div>
+                      {event.location && (
+                        <p className="text-xs sm:text-sm text-gray-600">{event.location}</p>
+                      )}
+                      {event.description && (
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-1">{event.description}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white p-6 rounded-xl border border-gray-100 text-center">
+              <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 mb-3">No events scheduled for today</p>
+              <button
+                onClick={() => onNavigate('calendar')}
+                className="px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 transition-colors"
+              >
+                Add Event
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Smart Reminders */}
@@ -379,11 +424,11 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
         </div>
       </div>
 
-      <WhatsAppIntegration 
-        isOpen={isWhatsAppOpen} 
+      <WhatsAppIntegration
+        isOpen={isWhatsAppOpen}
         onClose={() => setIsWhatsAppOpen(false)}
         onEventCreated={(event) => {
-          setEvents(prev => [...prev, event]);
+          loadDashboardData();
         }}
       />
 
