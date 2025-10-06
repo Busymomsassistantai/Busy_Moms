@@ -65,6 +65,8 @@ export class OpenAIRealtimeService extends Emitter {
   private currentUserId?: string;
   private connected = false;
   private lastTokenFetchError?: string;
+  private sessionConfigured = false;
+  private pendingFunctionCalls = new Map<string, any>();
 
   // Callbacks required by UI
   private onEventCb?: (event: RealtimeEvent) => void;
@@ -100,9 +102,165 @@ export class OpenAIRealtimeService extends Emitter {
   async unmute() { if (this.micStream) this.micStream.getAudioTracks().forEach(t => (t.enabled = true)); }
   async interrupt() { this.buffer = []; }
 
+  sendMessage(text: string) {
+    if (!this.dc || this.dc.readyState !== 'open') {
+      console.error('❌ Data channel not ready');
+      return;
+    }
+    console.log('📤 Sending text message:', text);
+    const event = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [{ type: 'input_text', text }]
+      }
+    };
+    this.dc.send(JSON.stringify(event));
+    this.dc.send(JSON.stringify({ type: 'response.create' }));
+  }
+
   // == Internals ==
   private emitUI(event: RealtimeEvent) { this.onEventCb?.(event); this.emit(event); }
   private emitConn(state: RTCPeerConnectionState) { this.onConnStateCb?.(state); this.emitUI({ type: 'connection.state', state }); }
+
+  private getFunctionTools() {
+    return [
+      {
+        type: 'function',
+        name: 'create_calendar_event',
+        description: 'Create a new calendar event/meeting/appointment',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'The title/name of the event' },
+            date: { type: 'string', description: 'The date in YYYY-MM-DD format or natural language like "today", "tomorrow"' },
+            time: { type: 'string', description: 'The time in HH:MM format or natural language like "2pm", "14:30"' },
+            location: { type: 'string', description: 'The location of the event' },
+            participants: { type: 'array', items: { type: 'string' }, description: 'List of participants' }
+          },
+          required: ['title', 'date']
+        }
+      },
+      {
+        type: 'function',
+        name: 'query_calendar',
+        description: 'Query the calendar for events or check availability',
+        parameters: {
+          type: 'object',
+          properties: {
+            query_type: {
+              type: 'string',
+              enum: ['today', 'week', 'availability', 'search', 'next'],
+              description: 'Type of query: today (today\'s events), week (upcoming events), availability (check if free), search (find specific events), next (next upcoming event)'
+            },
+            date: { type: 'string', description: 'Date to check (for availability queries)' },
+            search_term: { type: 'string', description: 'Search term to find events (for search queries)' }
+          },
+          required: ['query_type']
+        }
+      },
+      {
+        type: 'function',
+        name: 'update_calendar_event',
+        description: 'Update an existing calendar event',
+        parameters: {
+          type: 'object',
+          properties: {
+            search_term: { type: 'string', description: 'Term to find the event to update' },
+            updates: {
+              type: 'object',
+              properties: {
+                date: { type: 'string', description: 'New date' },
+                time: { type: 'string', description: 'New time' },
+                location: { type: 'string', description: 'New location' },
+                title: { type: 'string', description: 'New title' }
+              }
+            }
+          },
+          required: ['search_term', 'updates']
+        }
+      },
+      {
+        type: 'function',
+        name: 'delete_calendar_event',
+        description: 'Delete a calendar event',
+        parameters: {
+          type: 'object',
+          properties: {
+            search_term: { type: 'string', description: 'Term to find the event to delete' },
+            date: { type: 'string', description: 'Date of the event (optional, helps narrow down)' }
+          },
+          required: ['search_term']
+        }
+      },
+      {
+        type: 'function',
+        name: 'create_reminder',
+        description: 'Set a reminder for a specific date and time',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'What to be reminded about' },
+            date: { type: 'string', description: 'Date for the reminder' },
+            time: { type: 'string', description: 'Time for the reminder' }
+          },
+          required: ['title', 'date']
+        }
+      },
+      {
+        type: 'function',
+        name: 'add_shopping_item',
+        description: 'Add an item to the shopping list',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'The item to add' },
+            category: {
+              type: 'string',
+              enum: ['dairy', 'produce', 'meat', 'bakery', 'baby', 'household', 'other'],
+              description: 'Category of the item'
+            },
+            quantity: { type: 'number', description: 'How many to buy' }
+          },
+          required: ['title']
+        }
+      }
+    ];
+  }
+
+  private configureSession() {
+    if (!this.dc || this.dc.readyState !== 'open' || this.sessionConfigured) return;
+
+    console.log('⚙️ Configuring OpenAI Realtime session with function tools');
+
+    const sessionConfig = {
+      type: 'session.update',
+      session: {
+        modalities: ['text', 'audio'],
+        instructions: this.config.instructions,
+        voice: this.config.voice || 'alloy',
+        input_audio_format: 'pcm16',
+        output_audio_format: 'pcm16',
+        input_audio_transcription: {
+          model: 'whisper-1'
+        },
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500
+        },
+        tools: this.getFunctionTools(),
+        tool_choice: 'auto',
+        temperature: 0.8
+      }
+    };
+
+    this.dc.send(JSON.stringify(sessionConfig));
+    this.sessionConfigured = true;
+    console.log('✅ Session configured with function tools');
+  }
 
   /** Build a list of candidate URLs for the ephemeral token endpoint. */
   private buildTokenUrlCandidates(): string[] {
@@ -217,48 +375,13 @@ export class OpenAIRealtimeService extends Emitter {
   }
 
   async startRecording() {
-    if (this.micStream) return;
-    this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const ctx = new AudioContext();
-    const src = ctx.createMediaStreamSource(this.micStream);
-    const proc = ctx.createScriptProcessor(4096, 1, 1);
-    src.connect(proc);
-    proc.connect(ctx.destination);
-
-    proc.onaudioprocess = (ev) => {
-      const ch = ev.inputBuffer.getChannelData(0);
-      const max = Math.max(...ch.map((v) => Math.abs(v)));
-      this.emitUI({ type: 'vad.level', value: max });
-      if (max > this.vadThreshold) {
-        this.buffer.push(new Float32Array(ch));
-      } else if (this.buffer.length > 0) {
-        const concat = this.concatBuffers(this.buffer);
-        this.buffer = [];
-        this.emitUI({ type: 'vad.segment', data: concat });
-        const fakeText = '[voice] user audio segment';
-        this.processUserText(fakeText).catch((e) => {
-          this.emitUI({ type: 'assistant.error', message: e instanceof Error ? e.message : String(e) });
-        });
-      }
-    };
-
+    console.log('🎤 Starting recording (audio is handled by OpenAI Realtime API)');
     this.emitUI({ type: 'recording.started' });
   }
 
   stopRecording() {
-    if (this.micStream) {
-      this.micStream.getTracks().forEach((t) => t.stop());
-      this.micStream = undefined;
-      this.emitUI({ type: 'recording.stopped' });
-    }
-  }
-
-  private concatBuffers(chunks: Float32Array[]): Float32Array {
-    const total = chunks.reduce((a, b) => a + b.length, 0);
-    const out = new Float32Array(total);
-    let offset = 0;
-    for (const c of chunks) { out.set(c, offset); offset += c.length; }
-    return out;
+    console.log('🛑 Stopping recording');
+    this.emitUI({ type: 'recording.stopped' });
   }
 
   async connectRealtime() {
@@ -288,7 +411,20 @@ export class OpenAIRealtimeService extends Emitter {
 
     // Data channel
     this.dc = this.pc.createDataChannel('oai-events');
-    this.dc.onmessage = (ev) => { this.emitUI({ type: 'oai.message', raw: ev.data }); };
+    this.dc.onopen = () => {
+      console.log('✅ Data channel opened');
+      this.configureSession();
+    };
+    this.dc.onmessage = async (ev) => {
+      try {
+        const event = JSON.parse(ev.data);
+        console.log('📨 Received OpenAI event:', event.type, event);
+        this.emitUI({ type: event.type, ...event });
+        await this.handleOpenAIEvent(event);
+      } catch (e) {
+        console.error('❌ Failed to parse data channel message:', e);
+      }
+    };
 
     // SDP exchange
     const offer = await this.pc.createOffer();
@@ -329,6 +465,155 @@ export class OpenAIRealtimeService extends Emitter {
     } catch (e: unknown) {
       this.emitUI({ type: 'assistant.error', message: (e instanceof Error ? e.message : String(e)) || 'Action failed' });
     }
+  }
+
+  private async handleOpenAIEvent(event: any) {
+    switch (event.type) {
+      case 'session.created':
+      case 'session.updated':
+        console.log('✅ Session ready:', event.type);
+        break;
+
+      case 'conversation.item.created':
+        console.log('💬 Conversation item:', event.item);
+        break;
+
+      case 'response.function_call_arguments.delta':
+        if (event.call_id) {
+          const existing = this.pendingFunctionCalls.get(event.call_id) || { name: event.name, arguments: '' };
+          existing.arguments += event.delta || '';
+          this.pendingFunctionCalls.set(event.call_id, existing);
+        }
+        break;
+
+      case 'response.function_call_arguments.done':
+        if (event.call_id) {
+          const call = this.pendingFunctionCalls.get(event.call_id);
+          if (call) {
+            await this.executeFunctionCall(event.call_id, call.name || event.name, call.arguments || event.arguments);
+            this.pendingFunctionCalls.delete(event.call_id);
+          }
+        }
+        break;
+
+      case 'response.done':
+        console.log('✅ Response completed');
+        break;
+
+      case 'error':
+        console.error('❌ OpenAI error:', event.error);
+        this.emitUI({ type: 'error', error: event.error });
+        break;
+    }
+  }
+
+  private async executeFunctionCall(callId: string, functionName: string, argsJson: string) {
+    console.log('🔧 Executing function:', functionName, 'with args:', argsJson);
+
+    try {
+      const args = JSON.parse(argsJson);
+      let result: any;
+
+      switch (functionName) {
+        case 'create_calendar_event':
+          result = await this.handleCreateCalendarEvent(args);
+          break;
+        case 'query_calendar':
+          result = await this.handleQueryCalendar(args);
+          break;
+        case 'update_calendar_event':
+          result = await this.handleUpdateCalendarEvent(args);
+          break;
+        case 'delete_calendar_event':
+          result = await this.handleDeleteCalendarEvent(args);
+          break;
+        case 'create_reminder':
+          result = await this.handleCreateReminder(args);
+          break;
+        case 'add_shopping_item':
+          result = await this.handleAddShoppingItem(args);
+          break;
+        default:
+          result = { success: false, message: `Unknown function: ${functionName}` };
+      }
+
+      this.sendFunctionResult(callId, result);
+    } catch (e) {
+      console.error('❌ Function execution error:', e);
+      this.sendFunctionResult(callId, {
+        success: false,
+        message: `Error: ${e instanceof Error ? e.message : String(e)}`
+      });
+    }
+  }
+
+  private sendFunctionResult(callId: string, result: any) {
+    if (!this.dc || this.dc.readyState !== 'open') return;
+
+    console.log('📤 Sending function result for', callId, ':', result);
+
+    const event = {
+      type: 'conversation.item.create',
+      item: {
+        type: 'function_call_output',
+        call_id: callId,
+        output: JSON.stringify(result)
+      }
+    };
+
+    this.dc.send(JSON.stringify(event));
+    this.dc.send(JSON.stringify({ type: 'response.create' }));
+  }
+
+  private async handleCreateCalendarEvent(args: any) {
+    const message = `schedule ${args.title} on ${args.date}${args.time ? ' at ' + args.time : ''}${args.location ? ' at ' + args.location : ''}`;
+    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+  }
+
+  private async handleQueryCalendar(args: any) {
+    let message = '';
+    switch (args.query_type) {
+      case 'today':
+        message = "what's on my calendar today";
+        break;
+      case 'week':
+        message = "what's on my calendar this week";
+        break;
+      case 'availability':
+        message = `am I free on ${args.date}`;
+        break;
+      case 'search':
+        message = `find ${args.search_term} on my calendar`;
+        break;
+      case 'next':
+        message = "what's my next event";
+        break;
+    }
+    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+  }
+
+  private async handleUpdateCalendarEvent(args: any) {
+    const updates = args.updates || {};
+    let message = `update ${args.search_term}`;
+    if (updates.date) message += ` to ${updates.date}`;
+    if (updates.time) message += ` at ${updates.time}`;
+    if (updates.location) message += ` location ${updates.location}`;
+    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+  }
+
+  private async handleDeleteCalendarEvent(args: any) {
+    const message = `delete ${args.search_term}${args.date ? ' on ' + args.date : ''}`;
+    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+  }
+
+  private async handleCreateReminder(args: any) {
+    const message = `remind me to ${args.title} on ${args.date}${args.time ? ' at ' + args.time : ''}`;
+    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
+  }
+
+  private async handleAddShoppingItem(args: any) {
+    const message = `add ${args.title} to shopping list${args.quantity ? ' quantity ' + args.quantity : ''}`;
+    return await aiAssistantService.processUserMessage(message, this.currentUserId!);
   }
 }
 
