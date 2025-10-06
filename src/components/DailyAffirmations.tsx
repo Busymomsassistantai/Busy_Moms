@@ -25,6 +25,14 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (speaking) {
+        setSpeaking(false);
+      }
+    };
+  }, [speaking]);
+
   const loadAffirmations = async () => {
     setLoading(true);
     try {
@@ -88,16 +96,16 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
       return;
     }
 
-    if (!openaiRealtimeService.isConnected()) {
-      alert('Please open the voice chat (Sarah) first by tapping the microphone button in the top menu. Then click the speaker button to have her read your affirmation.');
-      if (onOpenVoiceChat) {
-        onOpenVoiceChat();
-      }
-      return;
-    }
-
     try {
       setSpeaking(true);
+
+      if (!openaiRealtimeService.isConnected()) {
+        console.log('Sarah not connected, initializing...');
+        await openaiRealtimeService.initialize(user.id);
+
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+
       const message = `Please read this daily affirmation to me in a warm, encouraging, and uplifting voice: "${text}"`;
       openaiRealtimeService.sendMessage(message);
 
@@ -107,7 +115,7 @@ export function DailyAffirmations({ isOpen, onClose, onOpenVoiceChat }: DailyAff
     } catch (error) {
       console.error('Error speaking affirmation:', error);
       setSpeaking(false);
-      alert('Could not send message to Sarah. Please make sure the voice chat is open and connected.');
+      alert('Could not connect to Sarah to read the affirmation. Please try again.');
     }
   };
 
