@@ -300,31 +300,70 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
           {/* Wake Word Status */}
           {isConnected && isWaitingForWakeWord && (
-            <div className="text-center py-8">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-rose-400 via-pink-400 to-orange-300 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-lg">
-                  <Mic className="w-12 h-12 text-white" />
+            <div className="space-y-6">
+              <div className="text-center py-8">
+                <div className="relative">
+                  <div className="w-24 h-24 bg-gradient-to-br from-rose-400 via-pink-400 to-orange-300 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse shadow-lg">
+                    <Mic className="w-12 h-12 text-white" />
+                  </div>
+                  <div className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-br from-rose-400 to-pink-400 rounded-full animate-ping opacity-20"></div>
                 </div>
-                <div className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-br from-rose-400 to-pink-400 rounded-full animate-ping opacity-20"></div>
+                <p className="text-xl font-bold text-gray-800 mb-2">Listening for wake word</p>
+                <p className="text-base text-gray-600 mb-4">Say <strong className="text-rose-600">"Hey, Sarah"</strong> to start</p>
+                <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl">
+                  <p className="text-sm text-rose-800 font-medium">
+                    💡 The AI is waiting for you to say the wake word before it starts listening to your requests
+                  </p>
+                </div>
               </div>
-              <p className="text-xl font-bold text-gray-800 mb-2">Listening for wake word</p>
-              <p className="text-base text-gray-600 mb-4">Say <strong className="text-rose-600">"Hey, Sarah"</strong> to start</p>
-              <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 p-4 rounded-2xl">
-                <p className="text-sm text-rose-800 font-medium">
-                  💡 The AI is waiting for you to say the wake word before it starts listening to your requests
-                </p>
+
+              {/* Text Input - Always Available */}
+              <div className="bg-white border-2 border-rose-200 p-4 rounded-2xl">
+                <p className="text-sm font-medium text-gray-700 mb-3">Or type a message:</p>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Type your message..."
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-rose-400 transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement;
+                        const value = input.value.trim();
+                        if (value) {
+                          sendTextMessage(value);
+                          input.value = '';
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      const input = (e.currentTarget.parentElement?.querySelector('input')) as HTMLInputElement | null;
+                      const value = input?.value.trim();
+                      if (value) {
+                        sendTextMessage(value);
+                        if (input) input.value = '';
+                      }
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all"
+                  >
+                    Send
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {/* Active Conversation */}
           {isConnected && inConversation && (
-            <div className="text-center py-8">
-              <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <MessageCircle className="w-12 h-12 text-white" />
+            <div className="space-y-6">
+              <div className="text-center py-8">
+                <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <MessageCircle className="w-12 h-12 text-white" />
+                </div>
+                <p className="text-xl font-bold text-gray-800 mb-2">Conversation Active</p>
+                <p className="text-base text-gray-600">I'm listening and ready to help!</p>
               </div>
-              <p className="text-xl font-bold text-gray-800 mb-2">Conversation Active</p>
-              <p className="text-base text-gray-600">I'm listening and ready to help!</p>
             </div>
           )}
 
@@ -346,7 +385,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                 </div>
               )}
 
-              {/* Quick Text Input */}
+              {/* Text Input */}
               <div className="bg-white border-2 border-rose-200 p-4 rounded-2xl">
                 <p className="text-sm font-medium text-gray-700 mb-3">Or type a message:</p>
                 <div className="flex space-x-2">
@@ -425,32 +464,6 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           </div>
         </div>
 
-        {/* Instructions */}
-        <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-t-2 border-rose-100 p-6">
-          <h4 className="font-bold text-rose-900 mb-3 text-base">How to use:</h4>
-          <ul className="text-sm text-rose-800 space-y-2">
-            <li className="flex items-start space-x-2"><span>•</span><span>Say <strong>"Hey, Sarah"</strong> to activate the AI assistant</span></li>
-            <li className="flex items-start space-x-2"><span>•</span><span>Once activated, just start talking - the AI will hear you and respond</span></li>
-            <li className="flex items-start space-x-2"><span>•</span><span>Click the green phone button to manually start a conversation</span></li>
-            <li className="flex items-start space-x-2"><span>•</span><span>Use the red button to end the conversation and return to wake word mode</span></li>
-            <li className="flex items-start space-x-2"><span>•</span><span>Mute your microphone with the mute button</span></li>
-            <li className="flex items-start space-x-2"><span>•</span><span>You can also type messages in the text input above</span></li>
-          </ul>
-
-          <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl">
-            <h5 className="font-bold text-green-900 mb-2 text-sm">Wake Word Active:</h5>
-            <p className="text-sm text-green-800">
-              The AI is now listening for "Hey, Sarah" to start conversations automatically. This prevents always-on listening while still providing hands-free activation.
-            </p>
-          </div>
-
-          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl">
-            <h5 className="font-bold text-amber-900 mb-2 text-sm">Setup Required:</h5>
-            <p className="text-sm text-amber-800">
-              To enable voice chat, configure the server route that mints the OpenAI Realtime session and returns an ephemeral client_secret.
-            </p>
-          </div>
-        </div>
 
         {/* WebRTC Not Supported Warning */}
         {typeof openaiRealtimeService.isSupported === 'function' && !openaiRealtimeService.isSupported() && (
