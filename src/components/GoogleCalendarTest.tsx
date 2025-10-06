@@ -11,6 +11,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
   const [testing, setTesting] = useState(false);
   const [results, setResults] = useState<{
     overall: 'idle' | 'testing' | 'success' | 'error';
+    diagnostics?: any;
     tests: {
       name: string;
       status: 'idle' | 'testing' | 'success' | 'error';
@@ -20,6 +21,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
   }>({
     overall: 'idle',
     tests: [
+      { name: 'Check Backend Configuration', status: 'idle' },
       { name: 'Service Initialization', status: 'idle' },
       { name: 'Authentication Check', status: 'idle' },
       { name: 'List Upcoming Events', status: 'idle' },
@@ -37,15 +39,57 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
 
     const testResults = [...results.tests];
     let overallSuccess = true;
+    let diagnosticsData = null;
 
     try {
+      // Test 0: Check Backend Configuration (Diagnostics)
+      console.log('🔍 Running backend diagnostics...');
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const diagResponse = await fetch(`${supabaseUrl}/functions/v1/google-diagnostics`);
+
+        if (diagResponse.ok) {
+          diagnosticsData = await diagResponse.json();
+          const diagStatus = diagnosticsData.overall_status;
+
+          testResults[0] = {
+            name: 'Check Backend Configuration',
+            status: diagStatus === 'pass' ? 'success' : diagStatus === 'warning' ? 'success' : 'error',
+            message: diagStatus === 'pass'
+              ? 'Backend configuration is correct'
+              : diagStatus === 'warning'
+              ? 'Backend has warnings but may work'
+              : 'Backend configuration has errors',
+            details: JSON.stringify(diagnosticsData.checks, null, 2)
+          };
+
+          if (diagStatus === 'fail') {
+            console.log('❌ Backend configuration issues detected:', diagnosticsData);
+            overallSuccess = false;
+          } else {
+            console.log('✅ Backend diagnostics OK');
+          }
+        } else {
+          throw new Error(`Diagnostics endpoint returned ${diagResponse.status}`);
+        }
+      } catch (error: any) {
+        testResults[0] = {
+          name: 'Check Backend Configuration',
+          status: 'error',
+          message: 'Failed to run backend diagnostics',
+          details: error.message
+        };
+        overallSuccess = false;
+        console.log('❌ Backend diagnostics failed:', error.message);
+      }
+
       // Test 1: Service Initialization
       console.log('🔍 Testing Google Calendar service initialization...');
       try {
         await googleCalendarService.initialize();
-        
+
         if (googleCalendarService.isAvailable()) {
-          testResults[0] = {
+          testResults[1] = {
             name: 'Service Initialization',
             status: 'success',
             message: 'Google Calendar service initialized successfully',
@@ -53,10 +97,10 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
           };
           console.log('✅ Service initialization OK');
         } else {
-          throw new Error('Google Calendar service not available');
+          throw new Error('Google Calendar service not available. Check that GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured.');
         }
       } catch (error: any) {
-        testResults[0] = {
+        testResults[1] = {
           name: 'Service Initialization',
           status: 'error',
           message: 'Failed to initialize Google Calendar service',
@@ -70,9 +114,9 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
       console.log('🔍 Testing Google Calendar authentication...');
       try {
         const isSignedIn = googleCalendarService.isSignedIn();
-        
+
         if (isSignedIn) {
-          testResults[1] = {
+          testResults[2] = {
             name: 'Authentication Check',
             status: 'success',
             message: 'User is authenticated with Google Calendar',
@@ -80,17 +124,17 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
           };
           console.log('✅ Authentication OK');
         } else {
-          testResults[1] = {
+          testResults[2] = {
             name: 'Authentication Check',
             status: 'error',
             message: 'User not authenticated with Google Calendar',
-            details: 'Please connect Google Calendar first'
+            details: 'Please connect Google Calendar first using the "Connect Google Calendar" button in Settings'
           };
           overallSuccess = false;
           console.log('❌ Authentication failed');
         }
       } catch (error: any) {
-        testResults[1] = {
+        testResults[2] = {
           name: 'Authentication Check',
           status: 'error',
           message: 'Authentication check failed',
@@ -104,8 +148,8 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
       console.log('🔍 Testing list upcoming events...');
       try {
         const events = await googleCalendarService.listUpcoming(5);
-        
-        testResults[2] = {
+
+        testResults[3] = {
           name: 'List Upcoming Events',
           status: 'success',
           message: `Successfully retrieved ${events.length} upcoming events`,
@@ -114,7 +158,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
         setUpcomingEvents(events);
         console.log('✅ List events OK');
       } catch (error: any) {
-        testResults[2] = {
+        testResults[3] = {
           name: 'List Upcoming Events',
           status: 'error',
           message: 'Failed to retrieve upcoming events',
@@ -139,8 +183,8 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
         };
 
         const createdEvent = await googleCalendarService.insertEvent(testEvent);
-        
-        testResults[3] = {
+
+        testResults[4] = {
           name: 'Create Test Event',
           status: 'success',
           message: 'Successfully created test event',
@@ -148,7 +192,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
         };
         console.log('✅ Create event OK');
       } catch (error: any) {
-        testResults[3] = {
+        testResults[4] = {
           name: 'Create Test Event',
           status: 'error',
           message: 'Failed to create test event',
@@ -166,6 +210,7 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
     // Update final results
     setResults({
       overall: overallSuccess ? 'success' : 'error',
+      diagnostics: diagnosticsData,
       tests: testResults
     });
     setTesting(false);
@@ -264,6 +309,39 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
             ))}
           </div>
 
+          {/* Diagnostics Display */}
+          {results.diagnostics && results.diagnostics.overall_status === 'fail' && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="font-medium text-red-900 mb-3">Backend Configuration Issues Detected</h3>
+              <div className="space-y-2 text-sm">
+                {results.diagnostics.checks.map((check: any, idx: number) => (
+                  check.status === 'fail' && (
+                    <div key={idx} className="bg-white p-2 rounded border border-red-200">
+                      <div className="font-medium text-gray-900">{check.name}</div>
+                      <div className="text-red-700">{check.message}</div>
+                      {check.instructions && (
+                        <ul className="mt-2 ml-4 list-disc text-xs text-gray-600">
+                          {check.instructions.map((instruction: string, i: number) => (
+                            <li key={i}>{instruction}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )
+                ))}
+              </div>
+              <a
+                href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-diagnostics`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+              >
+                View full diagnostics report
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </a>
+            </div>
+          )}
+
           {/* Upcoming Events Display */}
           {upcomingEvents.length > 0 && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -360,14 +438,31 @@ export function GoogleCalendarTest({ isOpen, onClose }: GoogleCalendarTestProps)
 
           {/* Instructions */}
           <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 className="font-medium text-yellow-900 mb-2">Setup Instructions</h3>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Ensure you have connected your Google Calendar in the Calendar section</li>
-              <li>• Make sure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured in Supabase project secrets</li>
-              <li>• Verify Supabase Edge Functions (google-calendar, store-google-tokens) are deployed</li>
-              <li>• The test will create a sample event to verify write permissions</li>
-              <li>• Check the browser console for detailed error messages if tests fail</li>
-            </ul>
+            <h3 className="font-medium text-yellow-900 mb-2">Troubleshooting Guide</h3>
+            <div className="text-sm text-yellow-700 space-y-2">
+              <p className="font-medium">If tests fail, check the following:</p>
+              <ol className="list-decimal ml-5 space-y-1">
+                <li>
+                  <strong>Backend Configuration:</strong> Google OAuth credentials must be set in Supabase Dashboard → Project Settings → Edge Functions → Secrets
+                  <ul className="ml-4 mt-1 list-disc">
+                    <li>GOOGLE_CLIENT_ID</li>
+                    <li>GOOGLE_CLIENT_SECRET</li>
+                  </ul>
+                </li>
+                <li>
+                  <strong>User Authentication:</strong> You must connect your Google Calendar first using the "Connect Google Calendar" button in Settings
+                </li>
+                <li>
+                  <strong>Edge Functions:</strong> All Google Calendar Edge Functions must be deployed (they are already deployed for this project)
+                </li>
+                <li>
+                  <strong>Run Diagnostics:</strong> Click the diagnostics link above to get a detailed configuration report
+                </li>
+              </ol>
+              <p className="mt-2">
+                <strong>Note:</strong> The first test checks your backend configuration. If it fails, fix the configuration issues before proceeding.
+              </p>
+            </div>
           </div>
         </div>
       </div>

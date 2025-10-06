@@ -89,6 +89,16 @@ class GoogleCalendarService {
       }
 
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!anonKey) {
+        console.error('❌ VITE_SUPABASE_ANON_KEY not configured');
+        this.available = false;
+        this.ready = false;
+        this.signedIn = false;
+        this.initialized = true;
+        return;
+      }
+
       const response = await fetch(`${this.baseUrl}/google-calendar`, {
         method: 'POST',
         headers: {
@@ -122,8 +132,9 @@ class GoogleCalendarService {
         console.error(`❌ Google Calendar Edge Function error: ${errorMessage}`);
 
         if (response.status === 500 && errorMessage.includes('Google Calendar not configured')) {
-          console.error('💡 Setup Required: Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Supabase Edge Functions secrets');
-          console.error('💡 Run the diagnostics endpoint to verify setup: /functions/v1/google-diagnostics');
+          console.error('💡 Setup Required: Google OAuth credentials (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET) are not configured');
+          console.error('💡 These must be set in Supabase Dashboard → Project Settings → Edge Functions → Secrets');
+          console.error(`💡 Run diagnostics to check setup: ${this.baseUrl}/google-diagnostics`);
         }
 
         this.available = false;
@@ -132,7 +143,11 @@ class GoogleCalendarService {
       }
     } catch (error) {
       console.error('❌ Failed to initialize Google Calendar service:', error);
-      console.error('💡 Check that Edge Functions are deployed: supabase functions deploy google-calendar');
+      console.error('💡 Possible causes:');
+      console.error('   1. Edge Functions not deployed or not responding');
+      console.error('   2. Network connectivity issues');
+      console.error('   3. Invalid Supabase configuration');
+      console.error(`💡 Run diagnostics: ${this.baseUrl}/google-diagnostics`);
       this.available = false;
       this.ready = false;
       this.signedIn = false;
@@ -267,9 +282,10 @@ class GoogleCalendarService {
     if (!this.available) {
       throw new Error(
         'Google Calendar service not available. ' +
-        'This usually means: (1) Edge Functions not deployed, or ' +
-        '(2) Google OAuth credentials not configured in Supabase. ' +
-        'Run diagnostics: /functions/v1/google-diagnostics'
+        'Possible causes: (1) Google OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) not configured in Supabase Edge Functions Secrets, ' +
+        '(2) Edge Functions not deployed or not responding, ' +
+        '(3) Network connectivity issues. ' +
+        `Run diagnostics: ${this.baseUrl}/google-diagnostics`
       );
     }
 

@@ -214,17 +214,6 @@ Deno.serve(async (req: Request) => {
           },
           {
             step: 4,
-            title: "Redeploy Edge Functions",
-            actions: [
-              "After adding secrets, redeploy the functions:",
-              "  supabase functions deploy store-google-tokens",
-              "  supabase functions deploy google-calendar",
-              "  supabase functions deploy google-diagnostics",
-              "Or redeploy all: supabase functions deploy"
-            ]
-          },
-          {
-            step: 5,
             title: "Test the Integration",
             actions: [
               "Run this diagnostic again to verify setup",
