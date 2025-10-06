@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, CreditCard as Edit, Mail } from 'lucide-react';
+import { Plus, Phone, MessageCircle, Star, Shield, Clock, CheckCircle, Edit, Mail } from 'lucide-react';
 import { ContactForm } from './forms/ContactForm';
 import { Contact, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -83,7 +83,7 @@ export function Contacts() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Contacts</h1>
             <p className="text-sm sm:text-base text-gray-600">Your trusted network</p>
           </div>
-          <button className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 text-white rounded-full flex items-center justify-center hover:bg-slate-600 transition-colors">
+          <button className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors">
             <Plus 
               className="w-4 h-4 sm:w-5 sm:h-5" 
               onClick={() => setShowContactForm(true)}
@@ -99,14 +99,14 @@ export function Contacts() {
               onClick={() => setSelectedCategory(category.id)}
               className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                 selectedCategory === category.id
-                  ? 'bg-slate-500 text-white'
+                  ? 'bg-purple-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <span>{category.label}</span>
               <span className={`px-1.5 py-0.5 sm:px-2 rounded-full text-xs ${
                 selectedCategory === category.id
-                  ? 'bg-slate-400'
+                  ? 'bg-purple-400'
                   : 'bg-gray-200'
               }`}>
                 {category.count}
@@ -118,7 +118,7 @@ export function Contacts() {
 
       <div className="p-4 sm:p-6">
         {/* Background Check Promotion */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="flex items-start space-x-3">
             <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 mt-0.5" />
             <div className="flex-1">
@@ -139,7 +139,7 @@ export function Contacts() {
           {filteredContacts.map((contact) => (
             <div key={contact.id} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-md transition-all">
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-400 to-slate-400 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-semibold text-sm sm:text-lg">
                     {contact.name.split(' ').map(n => n[0]).join('')}
                   </span>
@@ -208,7 +208,7 @@ export function Contacts() {
                           alert('No email address available for this contact');
                         }
                       }}
-                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-slate-500 text-white rounded-lg text-xs sm:text-sm hover:bg-slate-600 transition-colors"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-purple-500 text-white rounded-lg text-xs sm:text-sm hover:bg-purple-600 transition-colors"
                     >
                       <Mail className="w-2 h-2 sm:w-3 sm:h-3" />
                       <span>Email</span>
@@ -221,7 +221,7 @@ export function Contacts() {
                     )}
                     <button
                       onClick={() => handleEditContact(contact)}
-                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-slate-500 text-white rounded-lg text-xs sm:text-sm hover:bg-slate-600 transition-colors"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-purple-500 text-white rounded-lg text-xs sm:text-sm hover:bg-purple-600 transition-colors"
                     >
                       <Edit className="w-2 h-2 sm:w-3 sm:h-3" />
                       <span>Edit</span>
@@ -246,7 +246,7 @@ export function Contacts() {
           <div className="text-center py-12">
             {loading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-slate-500"></div>
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-500"></div>
                 <span className="ml-2 text-sm sm:text-base text-gray-600">Loading contacts...</span>
               </div>
             ) : (
@@ -254,7 +254,7 @@ export function Contacts() {
                 <p className="text-sm sm:text-base text-gray-500 mb-4">No contacts in this category yet</p>
                 <button 
                   onClick={() => setShowContactForm(true)}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-500 text-white rounded-xl font-medium hover:bg-slate-600 transition-colors text-sm sm:text-base"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors text-sm sm:text-base"
                 >
                   Add First Contact
                 </button>

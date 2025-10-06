@@ -196,7 +196,7 @@ export function Tasks() {
           </div>
           <button 
             onClick={() => setShowTaskForm(true)}
-            className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 text-white rounded-full flex items-center justify-center hover:bg-slate-600 transition-colors"
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors"
           >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
@@ -212,9 +212,9 @@ export function Tasks() {
             <div className="text-lg sm:text-2xl font-bold text-blue-600">{tasks.filter(t => t.status === 'pending').length}</div>
             <div className="text-xs sm:text-sm text-blue-700">Pending</div>
           </div>
-          <div className="bg-slate-50 p-2 sm:p-3 rounded-lg text-center">
-            <div className="text-lg sm:text-2xl font-bold text-slate-600">{totalPoints}</div>
-            <div className="text-xs sm:text-sm text-slate-700">Points Earned</div>
+          <div className="bg-purple-50 p-2 sm:p-3 rounded-lg text-center">
+            <div className="text-lg sm:text-2xl font-bold text-purple-600">{totalPoints}</div>
+            <div className="text-xs sm:text-sm text-purple-700">Points Earned</div>
           </div>
         </div>
 
@@ -233,7 +233,7 @@ export function Tasks() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 py-1.5 sm:py-2 px-1 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-white text-slate-600 shadow-sm'
+                    ? 'bg-white text-purple-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -250,7 +250,7 @@ export function Tasks() {
             <select
               value={selectedMember}
               onChange={(e) => setSelectedMember(e.target.value)}
-              className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+              className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Family Members</option>
               <option value="">Unassigned</option>
@@ -267,7 +267,7 @@ export function Tasks() {
       <div className="p-4 sm:p-6">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-slate-500"></div>
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-500"></div>
             <span className="ml-2 text-sm sm:text-base text-gray-600">Loading tasks...</span>
           </div>
         ) : (
@@ -280,7 +280,7 @@ export function Tasks() {
                     ? 'bg-gray-50 border-gray-200 opacity-75'
                     : task.priority === 'high'
                     ? 'bg-red-50 border-red-200'
-                    : 'bg-white border-gray-200 hover:border-slate-300'
+                    : 'bg-white border-gray-200 hover:border-purple-300'
                 }`}
               >
                 <div className="flex items-start space-x-2 sm:space-x-3">
@@ -292,7 +292,7 @@ export function Tasks() {
                     className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                       task.status === 'completed'
                         ? 'bg-green-500 border-green-500'
-                        : 'border-gray-300 hover:border-slate-500'
+                        : 'border-gray-300 hover:border-purple-500'
                     }`}
                   >
                     {task.status === 'completed' && (
@@ -358,7 +358,7 @@ export function Tasks() {
                       <select
                         value={task.status}
                         onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
                         <option value="pending">Pending</option>
                         <option value="in_progress">In Progress</option>
@@ -369,7 +369,7 @@ export function Tasks() {
                     
                     <button
                       onClick={() => handleEditTask(task)}
-                      className="px-2 sm:px-3 py-0.5 sm:py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200 transition-colors"
+                      className="px-2 sm:px-3 py-0.5 sm:py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
                     >
                       Edit
                     </button>
@@ -398,7 +398,7 @@ export function Tasks() {
                 </p>
                 <button
                   onClick={() => setShowTaskForm(true)}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-500 text-white rounded-xl font-medium hover:bg-slate-600 transition-colors text-sm sm:text-base"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors text-sm sm:text-base"
                 >
                   Create First Task
                 </button>

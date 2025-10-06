@@ -122,7 +122,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
 
           {loadingProfile ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-slate-500"></div>
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-purple-500"></div>
               <span className="ml-2 text-sm sm:text-base text-gray-600">Loading profile...</span>
             </div>
           ) : (
@@ -142,7 +142,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                   type="text"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Your full name"
                 />
               </div>
@@ -169,7 +169,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                 <select
                   value={formData.user_type}
                   onChange={(e) => setFormData({ ...formData, user_type: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="Mom">Mom</option>
                   <option value="Dad">Dad</option>
@@ -186,7 +186,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                 <select
                   value={formData.ai_personality}
                   onChange={(e) => setFormData({ ...formData, ai_personality: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="Friendly">Friendly</option>
                   <option value="Professional">Professional</option>
@@ -206,7 +206,7 @@ export function ProfileForm({ isOpen, onClose, onProfileUpdated }: ProfileFormPr
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-3 py-2 sm:px-4 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                  className="flex-1 px-3 py-2 sm:px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
                 >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>

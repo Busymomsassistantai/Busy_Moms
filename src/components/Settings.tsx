@@ -340,14 +340,14 @@ export function Settings() {
   return (
     <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-400 via-slate-400 to-orange-300 text-white p-4 sm:p-6">
+      <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-orange-300 text-white p-4 sm:p-6">
         <div className="flex items-center space-x-4 mb-4">
           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <User className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
             <h1 className="text-lg sm:text-2xl font-bold">{currentProfile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}</h1>
-            <p className="text-sm sm:text-base text-slate-100">{user?.email}</p>
+            <p className="text-sm sm:text-base text-rose-100">{user?.email}</p>
           </div>
           <button
             onClick={() => setShowProfileForm(true)}
@@ -362,7 +362,7 @@ export function Settings() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold mb-1 text-sm sm:text-base">Premium Plan</h3>
-              <p className="text-xs sm:text-sm text-slate-100">All features unlocked</p>
+              <p className="text-xs sm:text-sm text-rose-100">All features unlocked</p>
             </div>
             <div className="px-2 sm:px-3 py-1 bg-white bg-opacity-20 rounded-full">
               <span className="text-xs sm:text-sm font-medium">Active</span>
@@ -373,7 +373,7 @@ export function Settings() {
 
       <div className="p-4 sm:p-6">
         {/* AI Personality Setting */}
-        <div className="mb-4 sm:mb-6 bg-gradient-to-r from-slate-50 to-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4">
+        <div className="mb-4 sm:mb-6 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 sm:p-4">
           <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">AI Assistant Personality</h3>
           <div className="grid grid-cols-3 gap-1 sm:gap-2">
             {['Friendly', 'Professional', 'Humorous'].map((personality) => (
@@ -381,8 +381,8 @@ export function Settings() {
                 key={personality}
                 className={`py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                   personality === (currentProfile?.ai_personality || 'Friendly')
-                    ? 'bg-slate-500 text-white'
-                    : 'bg-white text-gray-600 hover:bg-slate-100'
+                    ? 'bg-rose-500 text-white'
+                    : 'bg-white text-gray-600 hover:bg-rose-100'
                 }`}
                 onClick={() => setShowProfileForm(true)}
               >
@@ -402,8 +402,8 @@ export function Settings() {
                   <div key={itemIndex} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 sm:space-x-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                          <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                          <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
                         </div>
                         <div>
                           <h3 className="font-medium text-gray-900 text-sm sm:text-base">{item.title}</h3>
@@ -423,7 +423,7 @@ export function Settings() {
                             }
                           }}
                           className={`w-10 h-5 sm:w-12 sm:h-6 rounded-full relative transition-all ${
-                            item.enabled ? 'bg-slate-500' : 'bg-gray-300'
+                            item.enabled ? 'bg-rose-500' : 'bg-gray-300'
                           }`}
                         >
                           <div className={`w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full absolute top-0.5 transition-all shadow ${
@@ -448,7 +448,7 @@ export function Settings() {
                       {item.showAddButton && (
                         <button
                           onClick={() => setShowFamilyForm(true)}
-                          className="w-6 h-6 sm:w-8 sm:h-8 bg-slate-500 text-white rounded-full flex items-center justify-center hover:bg-slate-600 transition-colors ml-2"
+                          className="w-6 h-6 sm:w-8 sm:h-8 bg-rose-500 text-white rounded-full flex items-center justify-center hover:bg-rose-600 transition-colors ml-2"
                         >
                           <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
@@ -540,7 +540,7 @@ export function Settings() {
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Family Members</h2>
             <button
               onClick={() => setShowFamilyForm(true)}
-              className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 text-white rounded-full flex items-center justify-center hover:bg-slate-600 transition-colors"
+              className="w-8 h-8 sm:w-10 sm:h-10 bg-rose-500 text-white rounded-full flex items-center justify-center hover:bg-rose-600 transition-colors"
             >
               <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
@@ -548,7 +548,7 @@ export function Settings() {
           
           {loadingMembers ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-slate-500" />
+              <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-rose-500" />
               <span className="ml-2 text-sm sm:text-base text-gray-600">Loading family members...</span>
             </div>
           ) : familyMembers.length > 0 ? (
@@ -557,7 +557,7 @@ export function Settings() {
                 <div key={member.id} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 sm:space-x-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-400 to-slate-400 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-semibold text-sm sm:text-lg">
                           {member.name.split(' ').map(n => n[0]).join('')}
                         </span>
@@ -566,7 +566,7 @@ export function Settings() {
                         <div className="flex items-center space-x-2 sm:space-x-3 mb-1 flex-wrap">
                           <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{member.name}</h3>
                           {member.age && (
-                            <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-slate-100 text-slate-700 rounded-full text-xs sm:text-sm font-medium">
+                            <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-rose-100 text-rose-700 rounded-full text-xs sm:text-sm font-medium">
                               Age {member.age}
                             </span>
                           )}
@@ -627,7 +627,7 @@ export function Settings() {
               <p className="text-sm sm:text-base text-gray-600 mb-4">Add your children and family members to get started</p>
               <button
                 onClick={() => setShowFamilyForm(true)}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-500 text-white rounded-xl font-medium hover:bg-slate-600 transition-colors text-sm sm:text-base"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition-colors text-sm sm:text-base"
               >
                 Add First Family Member
               </button>
@@ -650,7 +650,7 @@ export function Settings() {
                 </div>
               </div>
             </div>
-            <button className="text-slate-600 text-xs sm:text-sm hover:underline">
+            <button className="text-rose-600 text-xs sm:text-sm hover:underline">
               View Full Report
             </button>
           </div>

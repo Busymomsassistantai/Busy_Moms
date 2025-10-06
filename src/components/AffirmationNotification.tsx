@@ -28,7 +28,7 @@ export function AffirmationNotification({ affirmation, onDismiss, onView }: Affi
       }`}
       style={{ maxWidth: '600px', margin: '0 auto' }}
     >
-      <div className="bg-gradient-to-r from-slate-500 via-slate-500 to-orange-400 rounded-2xl shadow-2xl p-6 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 rounded-2xl shadow-2xl p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16 animate-pulse"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12 animate-pulse"></div>
 
@@ -52,7 +52,7 @@ export function AffirmationNotification({ affirmation, onDismiss, onView }: Affi
           <div className="flex space-x-3">
             <button
               onClick={onView}
-              className="px-4 py-2 bg-white bg-opacity-90 text-slate-600 rounded-lg font-medium hover:bg-opacity-100 transition-all"
+              className="px-4 py-2 bg-white bg-opacity-90 text-purple-600 rounded-lg font-medium hover:bg-opacity-100 transition-all"
             >
               View All Affirmations
             </button>

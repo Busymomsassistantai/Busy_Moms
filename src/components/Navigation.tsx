@@ -29,7 +29,7 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
             onClick={() => onScreenChange(item.id)}
             className={`flex flex-col items-center space-y-0.5 sm:space-y-1 py-1 sm:py-2 px-1 sm:px-3 rounded-lg transition-all ${
               currentScreen === item.id
-                ? 'text-slate-600 bg-slate-50'
+                ? 'text-purple-600 bg-purple-50'
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
@@ -41,7 +41,7 @@ export function Navigation({ currentScreen, onScreenChange, onVoiceChatOpen }: N
         {/* Voice Chat Button - Floating */}
         <button
           onClick={onVoiceChatOpen}
-          className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-slate-500 to-slate-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
           title="AI Voice Assistant"
         >
           <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />

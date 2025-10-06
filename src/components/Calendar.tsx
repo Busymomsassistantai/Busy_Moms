@@ -336,7 +336,7 @@ export function Calendar() {
   // --- UI --------------------------------------------------------------------
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 pb-24">
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -376,7 +376,7 @@ export function Calendar() {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={goToday}
-                    className="px-4 py-2 text-sm font-medium bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors"
+                    className="px-4 py-2 text-sm font-medium bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors"
                   >
                     Today
                   </button>
@@ -401,7 +401,7 @@ export function Calendar() {
               <div className="grid grid-cols-7 gap-2 mb-3">
                 {WEEKDAYS_SHORT.map((day, idx) => (
                   <div key={day} className="text-center py-2">
-                    <span className={`text-sm font-semibold ${idx === 0 || idx === 6 ? 'text-slate-600' : 'text-gray-600'}`}>
+                    <span className={`text-sm font-semibold ${idx === 0 || idx === 6 ? 'text-rose-600' : 'text-gray-600'}`}>
                       {day}
                     </span>
                   </div>
@@ -425,9 +425,9 @@ export function Calendar() {
                         relative aspect-square rounded-xl p-2 transition-all
                         flex flex-col items-center justify-center
                         ${isSelected
-                          ? 'bg-slate-500 text-white shadow-lg scale-105'
+                          ? 'bg-rose-500 text-white shadow-lg scale-105'
                           : isToday
-                          ? 'bg-slate-50 text-slate-600 font-bold border-2 border-slate-500'
+                          ? 'bg-rose-50 text-rose-600 font-bold border-2 border-rose-500'
                           : inCurrentMonth
                           ? 'text-gray-900 hover:bg-gray-100'
                           : 'text-gray-300'
@@ -441,7 +441,7 @@ export function Calendar() {
                             <div
                               key={idx}
                               className={`w-1 h-1 rounded-full ${
-                                isSelected ? 'bg-white' : 'bg-slate-500'
+                                isSelected ? 'bg-white' : 'bg-rose-500'
                               }`}
                             />
                           ))}
@@ -455,7 +455,7 @@ export function Calendar() {
               {/* Add Event Button */}
               <button
                 onClick={() => setShowEventForm(true)}
-                className="w-full mt-6 py-3 bg-gradient-to-r from-slate-400 to-slate-400 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+                className="w-full mt-6 py-3 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center space-x-2"
               >
                 <Plus className="w-5 h-5" />
                 <span>Add Event</span>
@@ -477,7 +477,7 @@ export function Calendar() {
                     <p className="text-gray-500">No events for this day</p>
                     <button
                       onClick={() => setShowEventForm(true)}
-                      className="mt-4 px-4 py-2 bg-slate-500 text-white rounded-xl text-sm font-medium hover:bg-slate-600 transition-colors"
+                      className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-xl text-sm font-medium hover:bg-rose-600 transition-colors"
                     >
                       Add Event
                     </button>
@@ -492,7 +492,7 @@ export function Calendar() {
                           setSelectedEvent(ev);
                           setShowEventDetails(true);
                         }}
-                        className="group bg-gradient-to-br from-orange-50 to-slate-50 border border-orange-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
+                        className="group bg-gradient-to-br from-orange-50 to-pink-50 border border-orange-200 rounded-2xl p-4 cursor-pointer hover:shadow-md transition-all"
                       >
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">{ev.title}</h3>
@@ -645,7 +645,7 @@ export function Calendar() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedEvent.title}</h3>
-                    <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-700">
+                    <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-rose-100 text-rose-700">
                       {selectedEvent.event_type}
                     </div>
                   </div>
@@ -690,7 +690,7 @@ export function Calendar() {
                         setShowEventDetails(false);
                         setShowEventForm(true);
                       }}
-                      className="flex-1 px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                      className="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
                     >
                       Edit Event
                     </button>

@@ -266,7 +266,7 @@ export function AuthTest({ isOpen, onClose }: AuthTestProps) {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <User className="w-8 h-8 text-slate-500" />
+              <User className="w-8 h-8 text-purple-500" />
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Authentication Test</h2>
                 <p className="text-gray-600">Test and setup demo user authentication</p>
@@ -341,7 +341,7 @@ export function AuthTest({ isOpen, onClose }: AuthTestProps) {
             <button
               onClick={runAuthTest}
               disabled={testing}
-              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
             >
               <User className={`w-4 h-4 ${testing ? 'animate-pulse' : ''}`} />
               <span>{testing ? 'Testing...' : 'Run Auth Test'}</span>

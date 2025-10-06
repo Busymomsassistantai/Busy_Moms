@@ -245,7 +245,7 @@ export function Shopping() {
                 <div className="space-y-3">
                   {eventGifts.suggestions.map((gift, index) => (
                     <div key={index} className="flex items-center space-x-3 sm:space-x-4 p-2 sm:p-3 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-400 to-slate-400 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-pink-400 to-purple-400 rounded-lg flex items-center justify-center">
                         <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
                       <div className="flex-1">
@@ -258,7 +258,7 @@ export function Shopping() {
                           </div>
                         </div>
                       </div>
-                      <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-500 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-600 transition-colors flex items-center space-x-1">
+                      <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-500 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-purple-600 transition-colors flex items-center space-x-1">
                         <ExternalLink className="w-2 h-2 sm:w-3 sm:h-3" />
                         <span>Buy</span>
                       </button>
@@ -270,7 +270,7 @@ export function Shopping() {
 
             <div className="text-center py-8">
               <p className="text-sm sm:text-base text-gray-600 mb-4">No upcoming events requiring gifts</p>
-              <button className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-slate-400 to-slate-500 text-white rounded-xl font-medium hover:shadow-lg transition-all text-sm sm:text-base">
+              <button className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-xl font-medium hover:shadow-lg transition-all text-sm sm:text-base">
                 Browse Gift Ideas
               </button>
             </div>

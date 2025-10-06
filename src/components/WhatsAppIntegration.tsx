@@ -227,7 +227,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
               <div className="space-y-2 sm:space-y-3">
                 <div>
                   <h4 className="font-semibold text-gray-900 text-sm sm:text-lg">{parsedEvent.title}</h4>
-                  <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
+                  <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
                     {parsedEvent.event_type}
                   </span>
                 </div>
