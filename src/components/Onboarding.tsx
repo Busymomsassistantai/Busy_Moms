@@ -28,7 +28,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       subtitle: 'You take care of the love, we\'ll handle the rest.',
       content: (
         <div className="text-center space-y-8">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-slate-400 to-slate-400 rounded-full flex items-center justify-center">
             <Heart className="w-16 h-16 text-white" />
           </div>
           <p className="text-gray-600 text-lg leading-relaxed">
@@ -48,12 +48,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               onClick={() => setUserType(type)}
               className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
                 userType === type
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-200 hover:border-purple-300'
+                  ? 'border-slate-500 bg-slate-50'
+                  : 'border-gray-200 hover:border-slate-300'
               }`}
             >
               <div className="flex items-center space-x-3">
-                <Users className="w-5 h-5 text-purple-500" />
+                <Users className="w-5 h-5 text-slate-500" />
                 <span className="font-medium">{type}</span>
               </div>
             </button>
@@ -100,8 +100,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           ].map(({ icon: Icon, title, desc, key }) => (
             <div key={title} className="p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-slate-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium text-gray-900">{title}</h4>
@@ -114,7 +114,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                   }))}
                   className={`w-12 h-6 rounded-full relative transition-colors ${
                     preferences[key as keyof typeof preferences] 
-                      ? 'bg-purple-500' 
+                      ? 'bg-slate-500' 
                       : 'bg-gray-300'
                   }`}
                 >
@@ -142,8 +142,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             Your AI assistant is ready to help you manage your family life with smart reminders, 
             event planning, and personalized suggestions.
           </p>
-          <div className="bg-purple-50 p-4 rounded-xl">
-            <p className="text-purple-800 font-medium">
+          <div className="bg-slate-50 p-4 rounded-xl">
+            <p className="text-slate-800 font-medium">
               "What can I help you with today?"
             </p>
           </div>
@@ -245,7 +245,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
-            className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+            className="bg-gradient-to-r from-slate-500 to-slate-500 h-2 rounded-full transition-all duration-300"
             style={{ width: `${((step + 1) / steps.length) * 100}%` }}
           ></div>
         </div>
@@ -275,7 +275,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           className={`px-6 py-3 rounded-xl font-medium transition-all ${
             step === 0
               ? 'text-gray-400 cursor-not-allowed'
-              : 'text-purple-600 hover:bg-purple-50'
+              : 'text-slate-600 hover:bg-slate-50'
           }`}
         >
           Back
@@ -283,7 +283,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <button
           onClick={nextStep}
           disabled={(step === 1 && !userType) || saving}
-          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-gradient-to-r from-slate-500 to-slate-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? 'Saving...' : step === steps.length - 1 ? 'Get Started' : 'Next'}
         </button>

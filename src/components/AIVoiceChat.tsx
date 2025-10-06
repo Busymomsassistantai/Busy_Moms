@@ -227,7 +227,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <MessageCircle className="w-5 h-5 text-purple-500" />
+            <MessageCircle className="w-5 h-5 text-slate-500" />
             <div>
               <h3 className="font-semibold text-gray-900">AI Voice Assistant</h3>
               <p className={`text-sm ${getConnectionStatusColor()}`}>
@@ -249,7 +249,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
             <div className="text-center py-8">
               {isConnecting ? (
                 <>
-                  <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+                  <Loader2 className="w-12 h-12 text-slate-500 animate-spin mx-auto mb-4" />
                   <p className="text-lg text-gray-700">Connecting to AI Assistant...</p>
                   <p className="text-sm text-gray-500">Setting up real-time voice connection</p>
                 </>
@@ -275,14 +275,14 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                         }
                       })();
                     }}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors"
                   >
                     Retry Connection
                   </button>
                 </>
               ) : (
                 <>
-                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-12 h-12 bg-slate-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <MessageCircle className="w-6 h-6 text-white" />
                   </div>
                   <p className="text-lg text-gray-700">Ready to connect</p>
@@ -295,13 +295,13 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           {/* Wake Word Status */}
           {isConnected && isWaitingForWakeWord && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Mic className="w-8 h-8 text-white" />
               </div>
               <p className="text-lg text-gray-700 mb-2">Listening for wake word</p>
               <p className="text-sm text-gray-500 mb-4">Say <strong>"Hey, Sarah"</strong> to start a conversation</p>
-              <div className="bg-purple-50 p-3 rounded-lg">
-                <p className="text-sm text-purple-800">
+              <div className="bg-slate-50 p-3 rounded-lg">
+                <p className="text-sm text-slate-800">
                   💡 The AI is waiting for you to say the wake word before it starts listening to your requests
                 </p>
               </div>
@@ -344,7 +344,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                   <input
                     type="text"
                     placeholder="Type your message..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const input = e.target as HTMLInputElement;
@@ -365,7 +365,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                         if (input) input.value = '';
                       }
                     }}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors"
                   >
                     Send
                   </button>

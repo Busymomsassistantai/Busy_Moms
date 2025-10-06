@@ -77,10 +77,10 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-sm sm:max-w-md p-4 sm:p-8">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
@@ -103,7 +103,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
                 required
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Your full name"
               />
             </div>
@@ -119,7 +119,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
               placeholder="your@email.com"
             />
           </div>
@@ -134,7 +134,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
               placeholder="Your password"
               minLength={6}
             />
@@ -143,7 +143,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 text-sm sm:text-base"
+            className="w-full py-2.5 sm:py-3 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-700 hover:shadow-lg transition-all disabled:opacity-50 text-sm sm:text-base"
           >
             {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
@@ -175,7 +175,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         <div className="mt-4 sm:mt-6 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-purple-600 hover:underline text-sm sm:text-base"
+            className="text-slate-600 hover:underline text-sm sm:text-base"
           >
             {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
           </button>

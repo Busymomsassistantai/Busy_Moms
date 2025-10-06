@@ -151,7 +151,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="e.g., Clean room, Do homework"
               />
             </div>
@@ -163,7 +163,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Additional details about the task"
               />
@@ -177,7 +177,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="chores">Chores</option>
                   <option value="homework">Homework</option>
@@ -195,7 +195,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                 <select
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -212,7 +212,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
               <select
                 value={formData.assigned_to}
                 onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
               >
                 <option value="">No assignment</option>
                 {familyMembers.map((member) => (
@@ -238,7 +238,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
               <div>
@@ -250,7 +250,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                   type="time"
                   value={formData.due_time}
                   onChange={(e) => setFormData({ ...formData, due_time: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -265,7 +265,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                 min="0"
                 value={formData.points}
                 onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Reward points for completing this task"
               />
             </div>
@@ -277,7 +277,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Additional notes or instructions"
               />
@@ -289,7 +289,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                   type="checkbox"
                   checked={formData.recurring}
                   onChange={(e) => setFormData({ ...formData, recurring: e.target.checked })}
-                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600 border-gray-300 rounded focus:ring-slate-500"
                 />
                 <span className="ml-2 text-xs sm:text-sm text-gray-700">Recurring task</span>
               </label>
@@ -298,7 +298,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
                 <select
                   value={formData.recurring_pattern}
                   onChange={(e) => setFormData({ ...formData, recurring_pattern: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="">Select frequency</option>
                   <option value="daily">Daily</option>
@@ -320,7 +320,7 @@ export function TaskForm({ isOpen, onClose, onTaskCreated, editTask }: TaskFormP
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-3 py-2 sm:px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                className="flex-1 px-3 py-2 sm:px-4 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
               >
                 {loading ? 'Saving...' : editTask ? 'Update Task' : 'Create Task'}
               </button>

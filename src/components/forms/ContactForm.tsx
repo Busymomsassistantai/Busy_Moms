@@ -123,7 +123,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Contact name"
               />
             </div>
@@ -138,7 +138,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   required
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="e.g., Babysitter"
                 />
               </div>
@@ -149,7 +149,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="babysitter">Babysitter</option>
                   <option value="coach">Coach</option>
@@ -171,7 +171,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="(555) 123-4567"
                 />
               </div>
@@ -184,7 +184,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="email@example.com"
                 />
               </div>
@@ -202,7 +202,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                 step="0.1"
                 value={formData.rating}
                 onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
 
@@ -213,7 +213,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Additional notes about this contact"
               />
@@ -225,7 +225,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="checkbox"
                   checked={formData.verified}
                   onChange={(e) => setFormData({ ...formData, verified: e.target.checked })}
-                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600 border-gray-300 rounded focus:ring-slate-500"
                 />
                 <span className="ml-2 text-xs sm:text-sm text-gray-700">Verified</span>
               </label>
@@ -235,7 +235,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="checkbox"
                   checked={formData.available}
                   onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-slate-600 border-gray-300 rounded focus:ring-slate-500"
                 />
                 <span className="ml-2 text-xs sm:text-sm text-gray-700">Available</span>
               </label>
@@ -252,7 +252,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-3 py-2 sm:px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                className="flex-1 px-3 py-2 sm:px-4 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
               >
                 {loading ? 'Saving...' : editContact ? 'Update Contact' : 'Add Contact'}
               </button>

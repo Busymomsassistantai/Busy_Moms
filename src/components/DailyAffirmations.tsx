@@ -86,7 +86,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 text-white relative">
+        <div className="bg-gradient-to-r from-slate-500 via-slate-500 to-orange-400 p-6 text-white relative">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
@@ -100,7 +100,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Daily Affirmations</h2>
-              <p className="text-purple-100 text-sm">Your personalized encouragement</p>
+              <p className="text-slate-100 text-sm">Your personalized encouragement</p>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
               onClick={() => setActiveTab('today')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'today'
-                  ? 'bg-white text-purple-600'
+                  ? 'bg-white text-slate-600'
                   : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
               }`}
             >
@@ -119,7 +119,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
               onClick={() => setActiveTab('history')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'history'
-                  ? 'bg-white text-purple-600'
+                  ? 'bg-white text-slate-600'
                   : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
               }`}
             >
@@ -131,13 +131,13 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+              <Loader2 className="w-8 h-8 animate-spin text-slate-500" />
             </div>
           ) : activeTab === 'today' ? (
             <div>
               {todayAffirmation ? (
                 <div className="space-y-4">
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6 relative">
+                  <div className="bg-gradient-to-br from-slate-50 to-slate-50 border-2 border-slate-200 rounded-2xl p-6 relative">
                     <button
                       onClick={() => handleToggleFavorite(todayAffirmation)}
                       className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
@@ -150,8 +150,8 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                     </button>
 
                     <div className="flex items-center space-x-2 mb-4">
-                      <Calendar className="w-5 h-5 text-purple-600" />
-                      <span className="text-sm font-medium text-purple-600">
+                      <Calendar className="w-5 h-5 text-slate-600" />
+                      <span className="text-sm font-medium text-slate-600">
                         {new Date().toLocaleDateString('en-US', {
                           weekday: 'long',
                           year: 'numeric',
@@ -168,7 +168,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                     {todayAffirmation.data_sources && (
                       <div className="flex flex-wrap gap-2">
                         {todayAffirmation.data_sources.calendar && (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                          <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs">
                             Calendar
                           </span>
                         )}
@@ -194,7 +194,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                   <button
                     onClick={handleGenerate}
                     disabled={generating}
-                    className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    className="w-full py-3 bg-gradient-to-r from-slate-500 to-slate-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     {generating ? (
                       <>
@@ -211,8 +211,8 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <Sparkles className="w-10 h-10 text-purple-500" />
+                  <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <Sparkles className="w-10 h-10 text-slate-500" />
                   </div>
                   {generating ? (
                     <>

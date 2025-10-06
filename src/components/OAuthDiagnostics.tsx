@@ -193,9 +193,9 @@ export function OAuthDiagnostics() {
                   </ul>
                 </div>
 
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="font-semibold text-purple-900 mb-2">2. Google Cloud Console Configuration</h3>
-                  <ul className="list-disc list-inside text-sm text-purple-800 space-y-1">
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h3 className="font-semibold text-slate-900 mb-2">2. Google Cloud Console Configuration</h3>
+                  <ul className="list-disc list-inside text-sm text-slate-800 space-y-1">
                     <li>Go to APIs & Services → Credentials</li>
                     <li>Select your OAuth 2.0 Client ID (or create one)</li>
                     <li>Add Authorized JavaScript origins: <code className="bg-white px-1">{redirectUrl}</code></li>

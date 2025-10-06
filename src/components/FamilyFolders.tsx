@@ -179,7 +179,7 @@ export function FamilyFolders() {
     return (
       <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-500"></div>
           <span className="ml-2 text-gray-600">Loading family data...</span>
         </div>
       </div>
@@ -195,7 +195,7 @@ export function FamilyFolders() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Family Folders</h1>
             <p className="text-sm sm:text-base text-gray-600">Organize by family member</p>
           </div>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-slate-400 to-slate-400 rounded-full flex items-center justify-center">
             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
         </div>
@@ -222,7 +222,7 @@ export function FamilyFolders() {
                     className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-slate-400 to-slate-400 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-semibold text-lg sm:text-xl">
                           {data.member.name.split(' ').map(n => n[0]).join('')}
                         </span>
@@ -243,7 +243,7 @@ export function FamilyFolders() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
                         {itemCount} items
                       </span>
                       {isExpanded ? (
@@ -268,7 +268,7 @@ export function FamilyFolders() {
                         </button>
                         <button
                           onClick={() => openModal('task', data.member)}
-                          className="flex items-center space-x-2 p-2 sm:p-3 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                          className="flex items-center space-x-2 p-2 sm:p-3 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
                         >
                           <CheckSquare className="w-4 h-4" />
                           <span className="text-xs sm:text-sm font-medium">Add Task</span>
@@ -338,12 +338,12 @@ export function FamilyFolders() {
                       {data.tasks.length > 0 && (
                         <div>
                           <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
-                            <CheckSquare className="w-4 h-4 text-purple-500" />
+                            <CheckSquare className="w-4 h-4 text-slate-500" />
                             <span>Tasks ({data.tasks.length})</span>
                           </h4>
                           <div className="space-y-2">
                             {data.tasks.slice(0, 3).map((task) => (
-                              <div key={task.id} className="p-3 bg-purple-50 rounded-lg">
+                              <div key={task.id} className="p-3 bg-slate-50 rounded-lg">
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
                                     <h5 className={`font-medium text-sm ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
@@ -366,7 +366,7 @@ export function FamilyFolders() {
                                   <div className="flex space-x-1">
                                     <button
                                       onClick={() => openModal('task', data.member, task)}
-                                      className="p-1 text-purple-600 hover:bg-purple-100 rounded"
+                                      className="p-1 text-slate-600 hover:bg-slate-100 rounded"
                                     >
                                       <Edit className="w-3 h-3" />
                                     </button>

@@ -147,7 +147,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Child's name"
               />
             </div>
@@ -163,7 +163,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                   max="25"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Age"
                 />
               </div>
@@ -174,7 +174,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="Boy">Boy</option>
                   <option value="Girl">Girl</option>
@@ -193,7 +193,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                   type="text"
                   value={formData.school}
                   onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="School name"
                 />
               </div>
@@ -205,7 +205,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                   type="text"
                   value={formData.grade}
                   onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="e.g., 2nd Grade, K"
                 />
               </div>
@@ -220,7 +220,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                 type="text"
                 value={formData.allergies}
                 onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Peanuts, Dairy, etc. (comma separated)"
               />
             </div>
@@ -232,7 +232,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
               <textarea
                 value={formData.medical_notes}
                 onChange={(e) => setFormData({ ...formData, medical_notes: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Important medical information, medications, etc."
               />
@@ -249,7 +249,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-3 py-2 sm:px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                className="flex-1 px-3 py-2 sm:px-4 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
               >
                 {loading ? 'Saving...' : editMember ? 'Update Member' : 'Add Member'}
               </button>

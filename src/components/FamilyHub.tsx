@@ -15,14 +15,14 @@ export function FamilyHub({ onNavigateToSubScreen, onNavigateToScreen }: FamilyH
       icon: FolderOpen,
       title: 'Family Folders',
       description: 'Organize by family member',
-      color: 'from-violet-400 to-purple-400'
+      color: 'from-slate-400 to-slate-400'
     },
     {
       id: 'contacts' as SubScreen,
       icon: Users,
       title: 'Contacts',
       description: 'Manage family contacts',
-      color: 'from-rose-400 to-pink-400'
+      color: 'from-slate-400 to-slate-400'
     },
     {
       id: 'tasks' as SubScreen,
@@ -36,12 +36,12 @@ export function FamilyHub({ onNavigateToSubScreen, onNavigateToScreen }: FamilyH
       icon: ShoppingBag,
       title: 'Shopping',
       description: 'Shopping lists and items',
-      color: 'from-fuchsia-400 to-pink-400'
+      color: 'from-teal-400 to-slate-400'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-50 pb-24">
       <NavigationHeader
         title="Family"
         subtitle="Manage your family's activities and organization"
@@ -66,8 +66,8 @@ export function FamilyHub({ onNavigateToSubScreen, onNavigateToScreen }: FamilyH
 
         <div className="mt-8 bg-white rounded-2xl p-6 border border-gray-200">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-rose-600" />
+            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-slate-600" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Family Calendar</h3>
@@ -76,7 +76,7 @@ export function FamilyHub({ onNavigateToSubScreen, onNavigateToScreen }: FamilyH
           </div>
           <button
             onClick={() => onNavigateToScreen('calendar')}
-            className="w-full px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors font-medium"
+            className="w-full px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors font-medium"
           >
             View Calendar
           </button>
