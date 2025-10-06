@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar, CheckSquare, Bell, ShoppingBag, Plus, Edit, Trash2, User, ChevronRight, ChevronDown } from 'lucide-react';
+import { Users, Calendar, CheckSquare, Bell, ShoppingBag, Plus, CreditCard as Edit, Trash2, User, ChevronRight, ChevronDown } from 'lucide-react';
 import { FamilyMember, Event, Task, Reminder, ShoppingItem, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { EventForm } from './forms/EventForm';
