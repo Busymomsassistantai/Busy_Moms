@@ -123,6 +123,21 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
         setTasks(tasksData || []);
       }
 
+      // Load upcoming reminders (next 7 days)
+      const { data: remindersData, error: remindersError } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('completed', false)
+        .gte('reminder_date', today)
+        .lte('reminder_date', nextWeek)
+        .order('reminder_date', { ascending: true })
+        .order('reminder_time', { ascending: true });
+
+      if (!remindersError) {
+        setReminders(remindersData || []);
+      }
+
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -165,13 +180,6 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
     { icon: ShoppingBag, title: 'Shopping List', desc: `${tasks.length} item${tasks.length === 1 ? '' : 's'} needed`, color: 'from-amber-400 to-orange-400', action: () => onNavigateToSubScreen('shopping') },
     { icon: Users, title: 'Family Hub', desc: 'Organize by family member', color: 'from-violet-400 to-purple-400', action: () => onNavigate('family') },
     { icon: MessageCircle, title: 'AI Assistant', desc: 'Get help with anything', color: 'from-fuchsia-400 to-pink-400', action: () => onVoiceChatOpen?.() }
-  ];
-
-  const sampleReminders = [
-    'Pack Emma\'s water bottle',
-    'Buy birthday gift for Jessica',
-    'Schedule parent-teacher conference',
-    'Refill prescription for Tom'
   ];
 
   return (
@@ -345,34 +353,44 @@ export function Dashboard({ onNavigate, onNavigateToSubScreen, onVoiceChatOpen }
         {/* Smart Reminders */}
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Smart Reminders</h2>
-          <div className="space-y-2">
-            {reminders.length > 0 ? reminders.map((reminder) => (
-              <div key={reminder.id} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <div className="flex-1">
-                  <span className="text-gray-800">{reminder.title}</span>
-                  <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                    {new Date(reminder.reminder_date).toLocaleDateString('en-US', { 
-                      weekday: 'short',
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                    {reminder.reminder_time && ` at ${reminder.reminder_time}`}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-yellow-500"></div>
+            </div>
+          ) : reminders.length > 0 ? (
+            <div className="space-y-2">
+              {reminders.map((reminder) => (
+                <div key={reminder.id} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-yellow-50 rounded-lg border border-yellow-200 hover:bg-yellow-100 transition-colors cursor-pointer">
+                  <div className={`w-2 h-2 rounded-full ${reminder.priority === 'high' ? 'bg-red-400' : 'bg-yellow-400'}`}></div>
+                  <div className="flex-1">
+                    <span className="text-sm sm:text-base text-gray-800 font-medium">{reminder.title}</span>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                      {new Date(reminder.reminder_date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                      {reminder.reminder_time && ` at ${formatEventTime(reminder.reminder_time)}`}
+                    </div>
+                    {reminder.description && (
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">{reminder.description}</p>
+                    )}
                   </div>
+                  {reminder.priority === 'high' && (
+                    <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                      High Priority
+                    </span>
+                  )}
                 </div>
-                {reminder.priority === 'high' && (
-                  <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                    High Priority
-                  </span>
-                )}
-              </div>
-            )) : sampleReminders.map((reminder, index) => (
-              <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <span className="text-sm sm:text-base text-gray-800">{reminder}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white p-6 rounded-xl border border-gray-100 text-center">
+              <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 mb-3">No upcoming reminders</p>
+              <p className="text-xs text-gray-400">Ask Sarah to set reminders for you!</p>
+            </div>
+          )}
         </div>
 
         {/* AI Voice Assistant */}
