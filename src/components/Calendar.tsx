@@ -144,14 +144,9 @@ export function Calendar() {
     const googleStatus = urlParams.get('google');
     
     if (googleStatus === 'connected') {
-      console.log('✅ Google Calendar connected successfully');
       setIsGoogleConnected(true);
       // Clean up URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
-      // Auto-sync after connection
-      setTimeout(() => {
-        syncWithGoogleCalendar();
-      }, 1000);
     } else if (googleStatus === 'error') {
       const reason = urlParams.get('reason');
       console.error('❌ Google Calendar connection failed:', reason);
@@ -171,14 +166,7 @@ export function Calendar() {
     try {
       await googleCalendarService.initialize();
       const isSignedIn = googleCalendarService.isSignedIn();
-      console.log('🔍 Google Calendar connection status:', isSignedIn);
       setIsGoogleConnected(isSignedIn);
-      
-      // If connected, automatically sync events for current month
-      if (isSignedIn) {
-        console.log('🔄 Auto-syncing Google Calendar events...');
-        await syncWithGoogleCalendar();
-      }
     } catch (error) {
       console.error('Error checking Google Calendar connection:', error);
       setIsGoogleConnected(false);
@@ -191,13 +179,20 @@ export function Calendar() {
       return;
     }
 
-    // Always try to initialize and check connection
+    // Initialize service and check if already connected
     try {
       await googleCalendarService.initialize();
-      await googleCalendarService.signIn();
+      const connected = googleCalendarService.isSignedIn();
+
+      if (!connected) {
+        // Not connected, show connection modal instead of auto-signing in
+        setShowGoogleConnect(true);
+        return;
+      }
+
       setIsGoogleConnected(true);
     } catch (error) {
-      console.error('Google Calendar connection failed:', error);
+      console.error('Google Calendar initialization failed:', error);
       setShowGoogleConnect(true);
       return;
     }
@@ -208,22 +203,19 @@ export function Calendar() {
       // Get Google Calendar events for the current month
       const timeMin = monthStart.toISOString();
       const timeMax = monthEnd.toISOString();
-      
-      console.log('🔄 Syncing Google Calendar events from', timeMin, 'to', timeMax);
-      
+
       const events = await googleCalendarService.getEvents({
         timeMin,
         timeMax,
         maxResults: 100
       });
 
-      console.log('📅 Retrieved', events.length, 'Google Calendar events');
       setGoogleEvents(events);
-      
+
       if (events.length === 0) {
         setError('No Google Calendar events found for this month. Make sure you have events in your Google Calendar.');
       }
-      
+
     } catch (error) {
       console.error('Error syncing with Google Calendar:', error);
       setError(`Failed to sync with Google Calendar: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your connection and try again.`);

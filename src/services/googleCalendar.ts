@@ -52,8 +52,6 @@ class GoogleCalendarService {
   }
 
   async initialize(): Promise<void> {
-    console.log('🔧 Initializing Google Calendar service...');
-
     if (!this.baseUrl) {
       console.error('❌ Supabase URL not configured');
       this.available = false;
@@ -67,7 +65,6 @@ class GoogleCalendarService {
       const { data: { user, session } } = await supabase.auth.getUser();
 
       if (!user) {
-        console.warn('⚠️ User not authenticated');
         this.available = false;
         this.ready = false;
         this.signedIn = false;
@@ -94,9 +91,7 @@ class GoogleCalendarService {
         this.signedIn = data.connected || false;
         this.available = true;
         this.ready = true;
-        console.log('✅ Google Calendar service initialized, connected:', this.signedIn);
       } else {
-        console.warn('⚠️ Google Calendar service not available');
         this.available = false;
         this.ready = false;
         this.signedIn = false;
@@ -124,7 +119,6 @@ class GoogleCalendarService {
   }
 
   async signIn(): Promise<void> {
-    console.log('🔐 Google Calendar sign-in should use ConnectGoogleCalendarButton component');
     throw new Error('Use ConnectGoogleCalendarButton component for Google OAuth sign-in');
   }
 
@@ -177,8 +171,6 @@ class GoogleCalendarService {
   }
 
   async listUpcoming(maxResults: number = 10): Promise<GoogleCalendarEvent[]> {
-    console.log('📅 Listing upcoming events...');
-    
     try {
       const data = await this.makeApiCall('listUpcoming', { maxResults });
       return data.items || [];
@@ -189,8 +181,6 @@ class GoogleCalendarService {
   }
 
   async getEvents(options: CalendarListOptions = {}): Promise<GoogleCalendarEvent[]> {
-    console.log('📅 Getting events with options:', options);
-    
     try {
       const data = await this.makeApiCall('getEvents', options);
       return data.items || [];
@@ -201,11 +191,8 @@ class GoogleCalendarService {
   }
 
   async insertEvent(event: Partial<GoogleCalendarEvent>): Promise<GoogleCalendarEvent> {
-    console.log('📅 Creating event:', event.summary);
-    
     try {
       const createdEvent = await this.makeApiCall('insertEvent', { event });
-      console.log('✅ Event created successfully');
       return createdEvent;
     } catch (error) {
       console.error('❌ Failed to create event:', error);
@@ -214,11 +201,8 @@ class GoogleCalendarService {
   }
 
   async updateEvent(eventId: string, event: Partial<GoogleCalendarEvent>): Promise<GoogleCalendarEvent> {
-    console.log('📅 Updating event:', eventId);
-    
     try {
       const updatedEvent = await this.makeApiCall('updateEvent', { eventId, event });
-      console.log('✅ Event updated successfully');
       return updatedEvent;
     } catch (error) {
       console.error('❌ Failed to update event:', error);
@@ -227,11 +211,8 @@ class GoogleCalendarService {
   }
 
   async deleteEvent(eventId: string): Promise<void> {
-    console.log('📅 Deleting event:', eventId);
-    
     try {
       await this.makeApiCall('deleteEvent', { eventId });
-      console.log('✅ Event deleted successfully');
     } catch (error) {
       console.error('❌ Failed to delete event:', error);
       throw error;

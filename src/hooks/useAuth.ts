@@ -10,9 +10,32 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true
+    let processingProfile = false
+    let initialSessionHandled = false
 
-    // 1) Handle initial session via getSession (fine) 
-    //    (Alternative: rely only on INITIAL_SESSION below.)
+    // Track which user IDs we've already processed to prevent duplicates
+    const processedUserIds = new Set<string>()
+
+    // Handle user profile with deduplication
+    const safeHandleUserProfile = async (user: User, event: string) => {
+      // Prevent duplicate processing
+      if (processingProfile || processedUserIds.has(user.id)) {
+        return
+      }
+
+      processingProfile = true
+      processedUserIds.add(user.id)
+
+      try {
+        await handleUserProfile(user)
+      } catch (e) {
+        console.error('Profile init error:', e)
+      } finally {
+        processingProfile = false
+      }
+    }
+
+    // 1) Get initial session only (don't call handleUserProfile yet)
     const prime = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -21,13 +44,7 @@ export function useAuth() {
 
         setUser(session?.user ?? null)
         setLoading(false)
-
-        if (session?.user) {
-          // Don’t block UI on this
-          handleUserProfile(session.user).catch((e) =>
-            console.error('Profile init error:', e)
-          )
-        }
+        // Profile will be handled by INITIAL_SESSION event
       } catch (e) {
         console.error('getSession failed:', e)
         if (mounted) setLoading(false)
@@ -39,32 +56,29 @@ export function useAuth() {
     // 2) Subscribe to auth changes (correct destructure)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Events include: INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, USER_UPDATED, etc.
-        console.log('🔔 Auth event:', event, session ? `User: ${session.user.email}` : 'No session')
         if (!mounted) return
 
         setUser(session?.user ?? null)
         setLoading(false)
 
         if (session?.user) {
-          console.log('✅ User authenticated:', session.user.email, 'Event:', event)
+          // Only handle INITIAL_SESSION once
+          if (event === 'INITIAL_SESSION') {
+            if (initialSessionHandled) return
+            initialSessionHandled = true
+          }
 
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-            // Fire-and-forget; don't block UI
-            handleUserProfile(session.user).catch((e) =>
-              console.error('Profile init error:', e)
-            )
+            // Fire-and-forget with deduplication
+            safeHandleUserProfile(session.user, event)
 
             // Capture Google provider tokens if this is a Google OAuth sign-in
             if (event === 'SIGNED_IN' && session.provider_token) {
-              console.log('🔐 Google OAuth detected, capturing provider tokens...');
               captureAndStoreGoogleTokens(session).catch((e) =>
                 console.error('❌ Failed to capture Google tokens:', e)
-              );
+              )
             }
           }
-        } else {
-          console.log('🔐 No user authenticated')
         }
       }
     )
@@ -76,7 +90,6 @@ export function useAuth() {
   }, [])
 
   const handleUserProfile = async (user: User) => {
-    console.log('Checking profile for user:', user.id)
     // If your RLS requires auth, ensure your policies allow SELECT/INSERT for auth.uid()=id
     const { data: existing, error: checkError } = await supabase
       .from('profiles')
@@ -105,9 +118,6 @@ export function useAuth() {
 
       const { error: createError } = await supabase.from('profiles').insert([profileData])
       if (createError) console.error('Profile create error:', createError)
-      else console.log('Profile created:', profileData.full_name)
-    } else {
-      console.log('Profile exists for user:', user.id)
     }
   }
 

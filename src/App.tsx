@@ -95,45 +95,22 @@ function App() {
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (authCode || accessToken) {
-        // This is an OAuth callback - let Supabase handle it
-        console.log('🔄 OAuth callback detected, processing...');
-        console.log('Auth code present:', !!authCode);
-        console.log('Access token present:', !!accessToken);
-
-        // Give Supabase time to process the OAuth callback and establish session
-        // The session will be picked up by the onAuthStateChange listener
-        const cleanupTimer = setTimeout(() => {
-          // Clean up URL after Supabase has processed the callback
+        // This is an OAuth callback - clean up URL immediately to prevent stale session warnings
+        const cleanUrl = () => {
           if (window.location.search.includes('code=') || window.location.hash.includes('access_token')) {
-            console.log('✅ Cleaning up OAuth parameters from URL');
             window.history.replaceState({}, document.title, window.location.pathname);
           }
-        }, 2000);
+        };
 
-        // Capture Google provider tokens from the OAuth callback
+        // Clean up URL after a brief delay to allow Supabase to process
+        const cleanupTimer = setTimeout(cleanUrl, 500);
+
+        // Capture Google provider tokens from the OAuth callback (fire-and-forget)
         supabase.auth.getSession().then(({ data: { session }, error }) => {
-          if (error) {
-            console.error('Error getting session after OAuth:', error);
-          } else if (session) {
-            console.log('✅ Session established after OAuth:', session.user.email);
-
-            // If this is a Google OAuth callback with provider tokens, capture them
-            if (session.provider_token && session.provider_refresh_token) {
-              console.log('🔐 Capturing Google provider tokens from OAuth callback...');
-              captureAndStoreGoogleTokens(session).then((success) => {
-                if (success) {
-                  console.log('✅ Google tokens captured and stored successfully');
-                } else {
-                  console.warn('⚠️ Failed to capture Google tokens from OAuth callback');
-                }
-              }).catch((e) => {
-                console.error('❌ Error capturing Google tokens:', e);
-              });
-            } else {
-              console.log('ℹ️ No provider tokens in session (might be email/password auth)');
-            }
-          } else {
-            console.log('⚠️ No session found after OAuth callback');
+          if (!error && session?.provider_token && session?.provider_refresh_token) {
+            captureAndStoreGoogleTokens(session).catch((e) => {
+              console.error('❌ Error capturing Google tokens:', e);
+            });
           }
         });
 
@@ -145,11 +122,12 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let mounted = true
+
     const checkOnboarding = async () => {
       // Only check onboarding if we have an authenticated user
       if (!user?.id) return
 
-      console.log('🔍 Checking onboarding status for user:', user.id)
       setCheckingOnboarding(true)
       try {
         // Check the actual profile in the database
@@ -159,20 +137,21 @@ function App() {
           .eq('id', user.id)
           .maybeSingle()
 
+        if (!mounted) return
+
         if (!error && profile) {
-          console.log('📋 Profile found, onboarding completed:', profile.onboarding_completed)
           setShowOnboarding(!profile.onboarding_completed)
         } else {
-          console.log('❌ No profile found or error, showing onboarding')
           // If no profile exists or error, show onboarding
           setShowOnboarding(true)
         }
       } catch (error) {
         console.error('Error checking onboarding:', error)
+        if (!mounted) return
         // If no profile exists or error, show onboarding
         setShowOnboarding(true)
       } finally {
-        setCheckingOnboarding(false)
+        if (mounted) setCheckingOnboarding(false)
       }
     }
 
@@ -182,6 +161,10 @@ function App() {
       // No user, don't show onboarding
       setShowOnboarding(false)
       setCheckingOnboarding(false)
+    }
+
+    return () => {
+      mounted = false
     }
   }, [user])
 
