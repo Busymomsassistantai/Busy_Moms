@@ -50,14 +50,14 @@ export function OAuthDiagnostics() {
     };
 
     return (
-      <div className="p-3 bg-theme-bg rounded-lg">
+      <div className="p-3 bg-gray-50 rounded-lg">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               {statusIcons[status]}
               <span className="font-medium text-sm text-gray-700">{label}</span>
             </div>
-            <code className="text-xs text-theme-fg opacity-70 break-all">{value}</code>
+            <code className="text-xs text-gray-600 break-all">{value}</code>
           </div>
           {copyable && (
             <button
@@ -77,11 +77,11 @@ export function OAuthDiagnostics() {
   };
 
   return (
-    <div className="min-h-screen bg-theme-bg p-4">
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-theme-surface rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h1 className="text-2xl font-bold mb-2">Google OAuth Configuration Diagnostics</h1>
-          <p className="text-theme-fg opacity-70 mb-6">
+          <p className="text-gray-600 mb-6">
             Use this page to verify your OAuth configuration and troubleshoot issues.
           </p>
 
@@ -122,7 +122,7 @@ export function OAuthDiagnostics() {
             <section>
               <h2 className="text-lg font-semibold mb-3">Google OAuth Scopes</h2>
               <div className="space-y-2">
-                <div className="p-3 bg-theme-bg rounded-lg">
+                <div className="p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -138,15 +138,15 @@ export function OAuthDiagnostics() {
                       <Copy className="w-4 h-4 text-gray-500" />
                     </button>
                   </div>
-                  <code className="text-xs text-theme-fg opacity-70 block whitespace-pre-wrap break-all mb-3">{scopes}</code>
+                  <code className="text-xs text-gray-600 block whitespace-pre-wrap break-all mb-3">{scopes}</code>
                   {copied === 'Requested Scopes' && (
                     <span className="text-xs text-green-600 mt-1 block">Copied!</span>
                   )}
                   <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-xs text-theme-fg opacity-70 font-medium mb-2">Individual scopes:</p>
+                    <p className="text-xs text-gray-600 font-medium mb-2">Individual scopes:</p>
                     <ul className="space-y-1">
                       {scopes.split(' ').map((scope, idx) => (
-                        <li key={idx} className="text-xs text-theme-fg opacity-70 flex items-start">
+                        <li key={idx} className="text-xs text-gray-600 flex items-start">
                           <span className="mr-2">•</span>
                           <code className="break-all">{scope}</code>
                         </li>
@@ -154,7 +154,7 @@ export function OAuthDiagnostics() {
                     </ul>
                   </div>
                   <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-xs text-theme-fg opacity-60 italic">
+                    <p className="text-xs text-gray-500 italic">
                       Note: These scopes are automatically included in the OAuth request.
                       You don't need to configure them separately in Google Cloud Console.
                     </p>
@@ -198,8 +198,8 @@ export function OAuthDiagnostics() {
                   <ul className="list-disc list-inside text-sm text-purple-800 space-y-1">
                     <li>Go to APIs & Services → Credentials</li>
                     <li>Select your OAuth 2.0 Client ID (or create one)</li>
-                    <li>Add Authorized JavaScript origins: <code className="bg-theme-surface px-1">{redirectUrl}</code></li>
-                    <li>Add Authorized redirect URI: <code className="bg-theme-surface px-1">{callbackUrl}</code></li>
+                    <li>Add Authorized JavaScript origins: <code className="bg-white px-1">{redirectUrl}</code></li>
+                    <li>Add Authorized redirect URI: <code className="bg-white px-1">{callbackUrl}</code></li>
                     <li>Enable Google Calendar API in your project</li>
                     <li>Configure OAuth consent screen</li>
                   </ul>
@@ -241,7 +241,7 @@ export function OAuthDiagnostics() {
                   <div>
                     <h4 className="font-semibold text-red-900 text-sm mb-2">Step 2: Verify Redirect URI Matches Exactly</h4>
                     <p className="text-sm text-red-800 mb-2">In Google Cloud Console, the redirect URI must be EXACTLY:</p>
-                    <div className="bg-theme-surface p-2 rounded border border-red-300 mb-2">
+                    <div className="bg-white p-2 rounded border border-red-300 mb-2">
                       <code className="text-xs text-red-900 break-all">{callbackUrl}</code>
                       <button
                         onClick={() => copyToClipboard(callbackUrl, 'Redirect URI')}
@@ -314,7 +314,7 @@ export function OAuthDiagnostics() {
         <div className="text-center">
           <a
             href="/"
-            className="text-theme-primary hover:underline"
+            className="text-blue-600 hover:underline"
           >
             Back to App
           </a>

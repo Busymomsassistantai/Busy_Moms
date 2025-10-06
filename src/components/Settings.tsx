@@ -9,7 +9,6 @@ import { ErrorDashboard } from './errors/ErrorDashboard';
 import { AffirmationSettings } from './AffirmationSettings';
 import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
 import { SyncSettings } from './SyncSettings';
-import { ThemeSwitcher } from './ThemeSwitcher';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService } from '../services/googleCalendar';
@@ -343,7 +342,7 @@ export function Settings() {
       {/* Header */}
       <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-orange-300 text-white p-4 sm:p-6">
         <div className="flex items-center space-x-4 mb-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-theme-surface bg-opacity-20 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <User className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
@@ -352,20 +351,20 @@ export function Settings() {
           </div>
           <button
             onClick={() => setShowProfileForm(true)}
-            className="w-8 h-8 sm:w-10 sm:h-10 bg-theme-surface bg-opacity-20 rounded-full flex items-center justify-center hover:bg-theme-surface hover:bg-opacity-30 transition-colors"
+            className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-30 transition-colors"
             title="Edit Profile"
           >
             <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
         
-        <div className="bg-theme-surface bg-opacity-10 rounded-xl p-3 sm:p-4">
+        <div className="bg-white bg-opacity-10 rounded-xl p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold mb-1 text-sm sm:text-base">Premium Plan</h3>
               <p className="text-xs sm:text-sm text-rose-100">All features unlocked</p>
             </div>
-            <div className="px-2 sm:px-3 py-1 bg-theme-surface bg-opacity-20 rounded-full">
+            <div className="px-2 sm:px-3 py-1 bg-white bg-opacity-20 rounded-full">
               <span className="text-xs sm:text-sm font-medium">Active</span>
             </div>
           </div>
@@ -375,7 +374,7 @@ export function Settings() {
       <div className="p-4 sm:p-6">
         {/* AI Personality Setting */}
         <div className="mb-4 sm:mb-6 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 sm:p-4">
-          <h3 className="font-semibold text-theme-fg mb-3 text-sm sm:text-base">AI Assistant Personality</h3>
+          <h3 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">AI Assistant Personality</h3>
           <div className="grid grid-cols-3 gap-1 sm:gap-2">
             {['Friendly', 'Professional', 'Humorous'].map((personality) => (
               <button
@@ -383,7 +382,7 @@ export function Settings() {
                 className={`py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                   personality === (currentProfile?.ai_personality || 'Friendly')
                     ? 'bg-rose-500 text-white'
-                    : 'bg-theme-surface text-theme-fg opacity-70 hover:bg-rose-100'
+                    : 'bg-white text-gray-600 hover:bg-rose-100'
                 }`}
                 onClick={() => setShowProfileForm(true)}
               >
@@ -393,26 +392,21 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Theme Switcher */}
-        <div className="mb-4 sm:mb-6 bg-theme-surface border border-theme-border rounded-xl p-3 sm:p-4">
-          <ThemeSwitcher />
-        </div>
-
         {/* Settings Sections */}
         <div className="space-y-6">
           {settingSections.map((section, sectionIndex) => (
             <div key={sectionIndex}>
-              <h2 className="text-base sm:text-lg font-semibold text-theme-fg mb-3 sm:mb-4">{section.title}</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">{section.title}</h2>
               <div className="space-y-2">
                 {section.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="bg-theme-surface border border-theme-border rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
+                  <div key={itemIndex} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 sm:space-x-3">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-rose-100 rounded-full flex items-center justify-center">
                           <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-theme-fg text-sm sm:text-base">{item.title}</h3>
+                          <h3 className="font-medium text-gray-900 text-sm sm:text-base">{item.title}</h3>
                           <p className="text-xs sm:text-sm text-gray-600">{item.description}</p>
                         </div>
                       </div>
@@ -432,7 +426,7 @@ export function Settings() {
                             item.enabled ? 'bg-rose-500' : 'bg-gray-300'
                           }`}
                         >
-                          <div className={`w-4 h-4 sm:w-5 sm:h-5 bg-theme-surface rounded-full absolute top-0.5 transition-all shadow ${
+                          <div className={`w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full absolute top-0.5 transition-all shadow ${
                             item.enabled ? 'right-0.5' : 'left-0.5'
                           }`}></div>
                         </button>
@@ -445,7 +439,7 @@ export function Settings() {
                               item.onClick();
                             }
                           }}
-                          className="px-2 sm:px-3 py-1 bg-theme-secondary text-theme-fg opacity-70 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors"
+                          className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors"
                         >
                           {item.action}
                         </button>
@@ -469,8 +463,8 @@ export function Settings() {
 
         {/* Google Calendar Detailed Section */}
         <div className="mt-6" data-google-calendar-section>
-          <h2 className="text-lg font-semibold text-theme-fg mb-4">Google Calendar Sync</h2>
-          <div className="bg-theme-surface border border-theme-border rounded-xl p-4">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Google Calendar Sync</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -496,7 +490,7 @@ export function Settings() {
                 <button
                   onClick={syncWithGoogleCalendar}
                   disabled={syncingGoogle}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-theme-primary text-white rounded-lg hover:bg-theme-primary transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`w-4 h-4 ${syncingGoogle ? 'animate-spin' : ''}`} />
                   <span>{syncingGoogle ? 'Syncing...' : 'Sync with Google Calendar'}</span>
@@ -504,7 +498,7 @@ export function Settings() {
 
                 <button
                   onClick={() => setShowSyncSettings(true)}
-                  className="w-full px-4 py-2 bg-theme-secondary text-theme-fg opacity-90 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-900 opacity-90 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                 >
                   Sync Settings
                 </button>
@@ -560,7 +554,7 @@ export function Settings() {
           ) : familyMembers.length > 0 ? (
             <div className="space-y-3">
               {familyMembers.map((member) => (
-                <div key={member.id} className="bg-theme-surface border border-theme-border rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
+                <div key={member.id} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
@@ -570,7 +564,7 @@ export function Settings() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 sm:space-x-3 mb-1 flex-wrap">
-                          <h3 className="font-semibold text-theme-fg text-sm sm:text-base">{member.name}</h3>
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{member.name}</h3>
                           {member.age && (
                             <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-rose-100 text-rose-700 rounded-full text-xs sm:text-sm font-medium">
                               Age {member.age}
@@ -583,7 +577,7 @@ export function Settings() {
                           )}
                         </div>
                         
-                        <div className="text-xs sm:text-sm text-theme-fg opacity-70 space-y-1">
+                        <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                           {member.school && (
                             <p>
                               <span className="font-medium">School:</span> {member.school}
@@ -610,7 +604,7 @@ export function Settings() {
                           setEditingMember(member);
                           setShowFamilyForm(true);
                         }}
-                        className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-blue-100 text-theme-primary rounded-lg text-xs sm:text-sm hover:bg-blue-200 transition-colors"
+                        className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-xs sm:text-sm hover:bg-blue-200 transition-colors"
                       >
                         <Edit className="w-2 h-2 sm:w-3 sm:h-3" />
                         <span>Edit</span>
@@ -627,10 +621,10 @@ export function Settings() {
               ))}
             </div>
           ) : (
-            <div className="bg-theme-bg border-2 border-dashed border-theme-border rounded-xl p-8 text-center">
+            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
               <User className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-base sm:text-lg font-medium text-theme-fg mb-2">No family members yet</h3>
-              <p className="text-sm sm:text-base text-theme-fg opacity-70 mb-4">Add your children and family members to get started</p>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No family members yet</h3>
+              <p className="text-sm sm:text-base text-gray-600 mb-4">Add your children and family members to get started</p>
               <button
                 onClick={() => setShowFamilyForm(true)}
                 className="px-4 sm:px-6 py-2 sm:py-3 bg-rose-500 text-white rounded-xl font-medium hover:bg-rose-600 transition-colors text-sm sm:text-base"
@@ -643,11 +637,11 @@ export function Settings() {
 
         {/* Background Check History */}
         <div className="mt-4 sm:mt-6">
-          <h2 className="text-base sm:text-lg font-semibold text-theme-fg mb-3 sm:mb-4">Background Check History</h2>
-          <div className="bg-theme-surface border border-theme-border rounded-xl p-3 sm:p-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Background Check History</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-medium text-theme-fg text-sm sm:text-base">Maria Rodriguez</h3>
+                <h3 className="font-medium text-gray-900 text-sm sm:text-base">Maria Rodriguez</h3>
                 <p className="text-xs sm:text-sm text-gray-600">Completed March 10, 2025</p>
               </div>
               <div className="flex items-center space-x-2">
@@ -707,7 +701,7 @@ export function Settings() {
             <h2 className="text-xl font-bold">Error Dashboard</h2>
             <button
               onClick={() => setShowErrorDashboard(false)}
-              className="px-4 py-2 bg-gray-200 text-theme-fg opacity-90 rounded-lg hover:bg-gray-300 transition-colors"
+              className="px-4 py-2 bg-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-300 transition-colors"
             >
               Close
             </button>

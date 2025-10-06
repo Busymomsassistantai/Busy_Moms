@@ -116,7 +116,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-theme-surface rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">
@@ -124,7 +124,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
             </h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
@@ -138,7 +138,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
             )}
             
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Name *
               </label>
@@ -147,14 +147,14 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Child's name"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   Age
                 </label>
                 <input
@@ -163,18 +163,18 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                   max="25"
                   value={formData.age}
                   onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Age"
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   Gender
                 </label>
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="Boy">Boy</option>
                   <option value="Girl">Girl</option>
@@ -185,7 +185,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   <School className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   School
                 </label>
@@ -193,26 +193,26 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                   type="text"
                   value={formData.school}
                   onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="School name"
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   Grade
                 </label>
                 <input
                   type="text"
                   value={formData.grade}
                   onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="e.g., 2nd Grade, K"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 <Heart className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Allergies
               </label>
@@ -220,19 +220,19 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
                 type="text"
                 value={formData.allergies}
                 onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Peanuts, Dairy, etc. (comma separated)"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 Medical Notes
               </label>
               <textarea
                 value={formData.medical_notes}
                 onChange={(e) => setFormData({ ...formData, medical_notes: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Important medical information, medications, etc."
               />
@@ -242,7 +242,7 @@ export function FamilyMemberForm({ isOpen, onClose, onMemberCreated, editMember 
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-3 py-2 sm:px-4 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors text-sm sm:text-base"
+                className="flex-1 px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>

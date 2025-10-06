@@ -154,7 +154,7 @@ export function Tasks() {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-theme-secondary text-theme-fg border-gray-200';
+      default: return 'bg-gray-100 text-gray-900 border-gray-200';
     }
   };
 
@@ -163,7 +163,7 @@ export function Tasks() {
       case 'high': return 'bg-red-100 text-red-700';
       case 'medium': return 'bg-yellow-100 text-yellow-700';
       case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-theme-secondary text-gray-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -188,7 +188,7 @@ export function Tasks() {
   return (
     <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
       {/* Header */}
-      <div className="bg-theme-surface p-4 sm:p-6 border-b border-gray-200">
+      <div className="bg-white p-4 sm:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Tasks</h1>
@@ -221,7 +221,7 @@ export function Tasks() {
         {/* Filters */}
         <div className="space-y-3">
           {/* Status Tabs */}
-          <div className="flex space-x-0.5 sm:space-x-1 bg-theme-secondary rounded-lg p-1">
+          <div className="flex space-x-0.5 sm:space-x-1 bg-gray-100 rounded-lg p-1">
             {[
               { id: 'all', label: 'All Tasks', icon: CheckSquare },
               { id: 'pending', label: 'Pending', icon: Clock },
@@ -233,8 +233,8 @@ export function Tasks() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 py-1.5 sm:py-2 px-1 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-theme-surface text-purple-600 shadow-sm'
-                    : 'text-theme-fg opacity-70 hover:text-gray-800'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
                 <tab.icon className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -250,7 +250,7 @@ export function Tasks() {
             <select
               value={selectedMember}
               onChange={(e) => setSelectedMember(e.target.value)}
-              className="px-2 sm:px-3 py-1 border border-theme-border rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-2 sm:px-3 py-1 border border-gray-200 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Family Members</option>
               <option value="">Unassigned</option>
@@ -277,10 +277,10 @@ export function Tasks() {
                 key={task.id}
                 className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${
                   task.status === 'completed'
-                    ? 'bg-theme-bg border-theme-border opacity-75'
+                    ? 'bg-gray-50 border-gray-200 opacity-75'
                     : task.priority === 'high'
                     ? 'bg-red-50 border-red-200'
-                    : 'bg-theme-surface border-theme-border hover:border-purple-300'
+                    : 'bg-white border-gray-200 hover:border-purple-300'
                 }`}
               >
                 <div className="flex items-start space-x-2 sm:space-x-3">
@@ -292,7 +292,7 @@ export function Tasks() {
                     className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                       task.status === 'completed'
                         ? 'bg-green-500 border-green-500'
-                        : 'border-theme-border hover:border-purple-500'
+                        : 'border-gray-200 hover:border-purple-500'
                     }`}
                   >
                     {task.status === 'completed' && (
@@ -347,7 +347,7 @@ export function Tasks() {
                     </div>
 
                     {task.notes && (
-                      <p className="text-xs sm:text-sm text-theme-fg opacity-60 mt-2 italic">
+                      <p className="text-xs sm:text-sm text-gray-500 mt-2 italic">
                         {task.notes}
                       </p>
                     )}
@@ -358,7 +358,7 @@ export function Tasks() {
                       <select
                         value={task.status}
                         onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-theme-border rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 border border-gray-200 rounded text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
                         <option value="pending">Pending</option>
                         <option value="in_progress">In Progress</option>
@@ -388,10 +388,10 @@ export function Tasks() {
             {filteredTasks.length === 0 && !loading && (
               <div className="text-center py-12">
                 <CheckSquare className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-base sm:text-lg font-medium text-theme-fg mb-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                   {activeTab === 'all' ? 'No tasks yet' : `No ${activeTab} tasks`}
                 </h3>
-                <p className="text-sm sm:text-base text-theme-fg opacity-70 mb-4">
+                <p className="text-sm sm:text-base text-gray-600 mb-4">
                   {activeTab === 'all' 
                     ? 'Create your first task to get started' 
                     : `No tasks with ${activeTab} status`}

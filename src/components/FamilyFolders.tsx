@@ -162,7 +162,7 @@ export function FamilyFolders() {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'in_progress': return 'bg-blue-100 text-blue-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-theme-secondary text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -171,7 +171,7 @@ export function FamilyFolders() {
       case 'high': return 'bg-red-100 text-red-700';
       case 'medium': return 'bg-yellow-100 text-yellow-700';
       case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-theme-secondary text-gray-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -189,7 +189,7 @@ export function FamilyFolders() {
   return (
     <div className="h-screen overflow-y-auto pb-20 sm:pb-24">
       {/* Header */}
-      <div className="bg-theme-surface p-4 sm:p-6 border-b border-gray-200">
+      <div className="bg-white p-4 sm:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Family Folders</h1>
@@ -205,8 +205,8 @@ export function FamilyFolders() {
         {familyData.length === 0 ? (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-theme-fg mb-2">No family members yet</h3>
-            <p className="text-theme-fg opacity-70 mb-4">Add family members in Settings to organize their activities</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No family members yet</h3>
+            <p className="text-gray-600 mb-4">Add family members in Settings to organize their activities</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -215,11 +215,11 @@ export function FamilyFolders() {
               const itemCount = getItemCount(data);
 
               return (
-                <div key={data.member.id} className="bg-theme-surface border border-theme-border rounded-xl overflow-hidden">
+                <div key={data.member.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                   {/* Family Member Header */}
                   <button
                     onClick={() => toggleMemberExpansion(data.member.id)}
-                    className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-theme-secondary transition-colors"
+                    className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center flex-shrink-0">
@@ -256,12 +256,12 @@ export function FamilyFolders() {
 
                   {/* Expanded Content */}
                   {isExpanded && (
-                    <div className="border-t border-theme-border p-4 sm:p-6 space-y-6">
+                    <div className="border-t border-gray-200 p-4 sm:p-6 space-y-6">
                       {/* Quick Actions */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                         <button
                           onClick={() => openModal('event', data.member)}
-                          className="flex items-center space-x-2 p-2 sm:p-3 bg-blue-50 text-theme-primary rounded-lg hover:bg-blue-100 transition-colors"
+                          className="flex items-center space-x-2 p-2 sm:p-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                         >
                           <Calendar className="w-4 h-4" />
                           <span className="text-xs sm:text-sm font-medium">Add Event</span>
@@ -292,7 +292,7 @@ export function FamilyFolders() {
                       {/* Events Section */}
                       {data.events.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-theme-fg mb-3 flex items-center space-x-2">
+                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
                             <Calendar className="w-4 h-4 text-blue-500" />
                             <span>Events ({data.events.length})</span>
                           </h4>
@@ -301,8 +301,8 @@ export function FamilyFolders() {
                               <div key={event.id} className="p-3 bg-blue-50 rounded-lg">
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
-                                    <h5 className="font-medium text-theme-fg text-sm">{event.title}</h5>
-                                    <div className="flex items-center space-x-3 text-xs text-theme-fg opacity-70 mt-1">
+                                    <h5 className="font-medium text-gray-900 text-sm">{event.title}</h5>
+                                    <div className="flex items-center space-x-3 text-xs text-gray-600 mt-1">
                                       <span>{formatDate(event.event_date)}</span>
                                       {event.start_time && <span>{event.start_time.slice(0, 5)}</span>}
                                       {event.location && <span>{event.location}</span>}
@@ -311,7 +311,7 @@ export function FamilyFolders() {
                                   <div className="flex space-x-1">
                                     <button
                                       onClick={() => openModal('event', data.member, event)}
-                                      className="p-1 text-theme-primary hover:bg-blue-100 rounded"
+                                      className="p-1 text-blue-600 hover:bg-blue-100 rounded"
                                     >
                                       <Edit className="w-3 h-3" />
                                     </button>
@@ -326,7 +326,7 @@ export function FamilyFolders() {
                               </div>
                             ))}
                             {data.events.length > 3 && (
-                              <p className="text-xs text-theme-fg opacity-60 text-center">
+                              <p className="text-xs text-gray-500 text-center">
                                 ... and {data.events.length - 3} more events
                               </p>
                             )}
@@ -337,7 +337,7 @@ export function FamilyFolders() {
                       {/* Tasks Section */}
                       {data.tasks.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-theme-fg mb-3 flex items-center space-x-2">
+                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
                             <CheckSquare className="w-4 h-4 text-purple-500" />
                             <span>Tasks ({data.tasks.length})</span>
                           </h4>
@@ -381,7 +381,7 @@ export function FamilyFolders() {
                               </div>
                             ))}
                             {data.tasks.length > 3 && (
-                              <p className="text-xs text-theme-fg opacity-60 text-center">
+                              <p className="text-xs text-gray-500 text-center">
                                 ... and {data.tasks.length - 3} more tasks
                               </p>
                             )}
@@ -392,7 +392,7 @@ export function FamilyFolders() {
                       {/* Reminders Section */}
                       {data.reminders.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-theme-fg mb-3 flex items-center space-x-2">
+                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
                             <Bell className="w-4 h-4 text-orange-500" />
                             <span>Reminders ({data.reminders.length})</span>
                           </h4>
@@ -401,8 +401,8 @@ export function FamilyFolders() {
                               <div key={reminder.id} className="p-3 bg-orange-50 rounded-lg">
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
-                                    <h5 className="font-medium text-theme-fg text-sm">{reminder.title}</h5>
-                                    <div className="flex items-center space-x-2 text-xs text-theme-fg opacity-70 mt-1">
+                                    <h5 className="font-medium text-gray-900 text-sm">{reminder.title}</h5>
+                                    <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
                                       <span>{formatDate(reminder.reminder_date)}</span>
                                       {reminder.reminder_time && <span>{reminder.reminder_time.slice(0, 5)}</span>}
                                       {reminder.priority && (
@@ -430,7 +430,7 @@ export function FamilyFolders() {
                               </div>
                             ))}
                             {data.reminders.length > 3 && (
-                              <p className="text-xs text-theme-fg opacity-60 text-center">
+                              <p className="text-xs text-gray-500 text-center">
                                 ... and {data.reminders.length - 3} more reminders
                               </p>
                             )}
@@ -441,7 +441,7 @@ export function FamilyFolders() {
                       {/* Shopping Items Section */}
                       {data.shoppingItems.length > 0 && (
                         <div>
-                          <h4 className="font-semibold text-theme-fg mb-3 flex items-center space-x-2">
+                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
                             <ShoppingBag className="w-4 h-4 text-green-500" />
                             <span>Shopping Items ({data.shoppingItems.length})</span>
                           </h4>
@@ -453,7 +453,7 @@ export function FamilyFolders() {
                                     <h5 className={`font-medium text-sm ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                                       {item.item}
                                     </h5>
-                                    <div className="flex items-center space-x-2 text-xs text-theme-fg opacity-70 mt-1">
+                                    <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
                                       <span className="capitalize">{item.category}</span>
                                       {item.quantity && item.quantity > 1 && <span>Qty: {item.quantity}</span>}
                                       {item.urgent && (
@@ -481,7 +481,7 @@ export function FamilyFolders() {
                               </div>
                             ))}
                             {data.shoppingItems.length > 3 && (
-                              <p className="text-xs text-theme-fg opacity-60 text-center">
+                              <p className="text-xs text-gray-500 text-center">
                                 ... and {data.shoppingItems.length - 3} more items
                               </p>
                             )}
@@ -493,7 +493,7 @@ export function FamilyFolders() {
                       {itemCount === 0 && (
                         <div className="text-center py-8">
                           <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                          <p className="text-theme-fg opacity-60 text-sm">No activities yet for {data.member.name}</p>
+                          <p className="text-gray-500 text-sm">No activities yet for {data.member.name}</p>
                           <p className="text-gray-400 text-xs">Use the buttons above to add events, tasks, reminders, or shopping items</p>
                         </div>
                       )}
@@ -509,13 +509,13 @@ export function FamilyFolders() {
       {/* Modals */}
       {activeModal === 'event' && selectedMember && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-theme-surface rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-gray-900">
                   {editingItem ? 'Edit Event' : `Add Event for ${selectedMember.name}`}
                 </h3>
-                <button onClick={closeModal} className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <button onClick={closeModal} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
                   <X className="w-4 h-4 text-gray-600" />
                 </button>
               </div>

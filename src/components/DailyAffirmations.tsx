@@ -85,17 +85,17 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-theme-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-6 text-white relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 bg-theme-surface bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-theme-surface bg-opacity-20 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
@@ -109,8 +109,8 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
               onClick={() => setActiveTab('today')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'today'
-                  ? 'bg-theme-surface text-purple-600'
-                  : 'bg-theme-surface bg-opacity-20 text-white hover:bg-opacity-30'
+                  ? 'bg-white text-purple-600'
+                  : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
               }`}
             >
               Today
@@ -119,8 +119,8 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
               onClick={() => setActiveTab('history')}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'history'
-                  ? 'bg-theme-surface text-purple-600'
-                  : 'bg-theme-surface bg-opacity-20 text-white hover:bg-opacity-30'
+                  ? 'bg-white text-purple-600'
+                  : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
               }`}
             >
               History
@@ -140,7 +140,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6 relative">
                     <button
                       onClick={() => handleToggleFavorite(todayAffirmation)}
-                      className="absolute top-4 right-4 w-10 h-10 bg-theme-surface rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                      className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     >
                       {todayAffirmation.favorited ? (
                         <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
@@ -161,7 +161,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                       </span>
                     </div>
 
-                    <p className="text-lg text-theme-fg leading-relaxed mb-4">
+                    <p className="text-lg text-gray-900 leading-relaxed mb-4">
                       {todayAffirmation.affirmation_text}
                     </p>
 
@@ -216,7 +216,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                   </div>
                   {generating ? (
                     <>
-                      <h3 className="text-xl font-semibold text-theme-fg mb-2">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
                         Generating Your Affirmation
                       </h3>
                       <p className="text-gray-600">
@@ -225,7 +225,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                     </>
                   ) : (
                     <>
-                      <h3 className="text-xl font-semibold text-theme-fg mb-2">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
                         Preparing Your Affirmation
                       </h3>
                       <p className="text-gray-600">
@@ -242,7 +242,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                 affirmations.map((affirmation) => (
                   <div
                     key={affirmation.id}
-                    className="bg-theme-surface border border-theme-border rounded-xl p-4 hover:shadow-md transition-all relative"
+                    className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all relative"
                   >
                     <button
                       onClick={() => handleToggleFavorite(affirmation)}
@@ -271,7 +271,7 @@ export function DailyAffirmations({ isOpen, onClose }: DailyAffirmationsProps) {
                       )}
                     </div>
 
-                    <p className="text-theme-fg leading-relaxed pr-8">
+                    <p className="text-gray-900 leading-relaxed pr-8">
                       {affirmation.affirmation_text}
                     </p>
                   </div>

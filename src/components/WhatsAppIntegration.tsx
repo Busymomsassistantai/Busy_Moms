@@ -125,7 +125,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-theme-surface rounded-xl sm:rounded-2xl w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
@@ -139,7 +139,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
             </div>
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
@@ -148,14 +148,14 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
           {/* Input Methods */}
           <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 Paste WhatsApp Message
               </label>
               <form onSubmit={handleMessageSubmit}>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-theme-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                   rows={3}
                   placeholder="Paste your WhatsApp message here..."
                 />
@@ -170,7 +170,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
                   >
                     <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span>Upload File</span>
@@ -189,7 +189,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
 
           {/* Sample Messages */}
           <div className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-2 sm:mb-3">Try these sample messages:</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-2 sm:mb-3">Try these sample messages:</h3>
             <div className="space-y-1 sm:space-y-2">
               {sampleMessages.map((sample, index) => (
                 <button
@@ -198,7 +198,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                     setMessage(sample);
                     parseWhatsAppMessage(sample);
                   }}
-                  className="w-full text-left p-2 sm:p-3 bg-theme-bg rounded-lg hover:bg-theme-border transition-colors text-xs sm:text-sm"
+                  className="w-full text-left p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-xs sm:text-sm"
                 >
                   "{sample}"
                 </button>
@@ -226,7 +226,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
               
               <div className="space-y-2 sm:space-y-3">
                 <div>
-                  <h4 className="font-semibold text-theme-fg text-sm sm:text-lg">{parsedEvent.title}</h4>
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-lg">{parsedEvent.title}</h4>
                   <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
                     {parsedEvent.event_type}
                   </span>
@@ -261,8 +261,8 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                 </div>
 
                 <div className="pt-2 sm:pt-3 border-t border-green-200">
-                  <p className="text-xs sm:text-sm text-theme-fg opacity-70 mb-2 sm:mb-3">Original message:</p>
-                  <p className="text-xs sm:text-sm bg-theme-surface p-2 sm:p-3 rounded border italic">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">Original message:</p>
+                  <p className="text-xs sm:text-sm bg-white p-2 sm:p-3 rounded border italic">
                     "{parsedEvent.description}"
                   </p>
                 </div>
@@ -277,7 +277,7 @@ export function WhatsAppIntegration({ isOpen, onClose, onEventCreated }: WhatsAp
                   </button>
                   <button
                     onClick={() => setParsedEvent(null)}
-                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors text-sm sm:text-base"
+                    className="w-full sm:w-auto px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
                   >
                     Cancel
                   </button>

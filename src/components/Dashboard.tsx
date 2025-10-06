@@ -155,7 +155,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   return (
     <div className="h-screen overflow-y-auto pb-20">
       {/* Header */}
-      <div className="bg-theme-primary text-theme-primary-fg p-4 pb-6">
+      <div className="bg-blue-600 text-white p-4 pb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">Good Morning, {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}!</h1>
@@ -163,37 +163,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           <div className="flex items-center space-x-3">
             <button
               onClick={handleSignOut}
-              className="w-8 h-8 sm:w-10 sm:h-10 bg-theme-primary-fg bg-opacity-20 rounded-full flex items-center justify-center hover:bg-theme-primary-fg hover:bg-opacity-30 transition-colors"
+              className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-white hover:bg-opacity-30 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-theme-primary-fg bg-opacity-20 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <Heart className="w-4 h-4 sm:w-6 sm:h-6" />
             </div>
           </div>
         </div>
         
         {/* Daily Summary */}
-        <div className="bg-theme-primary-fg bg-opacity-10 rounded-xl p-3">
+        <div className="bg-white bg-opacity-10 rounded-xl p-3">
           <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
             <button
               onClick={() => setShowEventsPopup(true)}
-              className="flex items-center space-x-1 hover:bg-theme-primary-fg hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
+              className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
             >
               <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>{events.length} events</span>
             </button>
             <button
               onClick={() => setShowTasksPopup(true)}
-              className="flex items-center space-x-1 hover:bg-theme-primary-fg hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
+              className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
             >
               <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>{tasks.length} shopping list</span>
             </button>
             <button
               onClick={() => setShowRemindersPopup(true)}
-              className="flex items-center space-x-1 hover:bg-theme-primary-fg hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
+              className="flex items-center space-x-1 hover:bg-white hover:bg-opacity-20 px-1.5 py-1 rounded transition-colors"
             >
               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>{reminders.length} reminders</span>
@@ -207,7 +207,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         {todayAffirmation && (
           <div
             onClick={() => setShowAffirmations(true)}
-            className="bg-theme-accent p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
+            className="bg-orange-400 p-6 rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-all relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-theme-accent-fg opacity-10 rounded-full -mr-16 -mt-16"></div>
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-theme-accent-fg opacity-10 rounded-full -ml-12 -mb-12"></div>
@@ -215,10 +215,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             <div className="relative z-10">
               <div className="flex items-center space-x-2 mb-3">
                 <Sparkles className="w-5 h-5 text-theme-accent-fg" />
-                <span className="text-theme-accent-fg font-semibold text-sm">Today's Affirmation</span>
+                <span className="text-white font-semibold text-sm">Today's Affirmation</span>
               </div>
 
-              <p className="text-theme-accent-fg text-lg leading-relaxed mb-4">
+              <p className="text-white text-lg leading-relaxed mb-4">
                 {todayAffirmation.affirmation_text}
               </p>
 
@@ -227,7 +227,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   e.stopPropagation();
                   setShowAffirmations(true);
                 }}
-                className="text-theme-accent-fg text-sm font-medium hover:underline flex items-center space-x-1"
+                className="text-white text-sm font-medium hover:underline flex items-center space-x-1"
               >
                 <span>View all affirmations</span>
                 <span>→</span>
@@ -237,14 +237,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         )}
 
         {!todayAffirmation && (
-          <div className="bg-theme-secondary border-2 border-theme-border p-6 rounded-2xl">
+          <div className="bg-gray-100 border-2 border-gray-200 p-6 rounded-2xl">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-theme-accent rounded-full flex items-center justify-center animate-pulse">
+              <div className="w-10 h-10 bg-orange-400 rounded-full flex items-center justify-center animate-pulse">
                 <Sparkles className="w-5 h-5 text-theme-accent-fg" />
               </div>
               <div>
                 <h3 className="font-semibold text-theme-fg">Generating Your Daily Affirmation</h3>
-                <p className="text-sm text-theme-fg opacity-70">Creating personalized encouragement based on your schedule...</p>
+                <p className="text-sm text-gray-900 opacity-70">Creating personalized encouragement based on your schedule...</p>
               </div>
             </div>
           </div>
@@ -252,7 +252,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         {/* Quick Actions */}
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-theme-fg mb-3 sm:mb-4">Quick Actions</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {quickActions.map((action, index) => (
               <div
@@ -268,8 +268,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <div className={`bg-gradient-to-br ${action.color} p-2 sm:p-3 rounded-xl mb-2 sm:mb-3 inline-block`}>
                   <action.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-theme-fg mb-1 text-sm sm:text-base">{action.title}</h3>
-                <p className="text-xs sm:text-sm text-theme-fg opacity-70">{action.desc}</p>
+                <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{action.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-900 opacity-70">{action.desc}</p>
               </div>
             ))}
           </div>
@@ -277,20 +277,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         {/* Today's Schedule */}
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-theme-fg mb-3 sm:mb-4">Today's Schedule</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Today's Schedule</h2>
           <div className="space-y-3">
             {todayEvents.map((event, index) => (
-              <div key={index} className="bg-theme-surface p-3 sm:p-4 rounded-xl border border-theme-border shadow-sm">
+              <div key={index} className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-theme-secondary rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-theme-primary" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-theme-fg text-sm sm:text-base">{event.title}</h3>
-                      <span className="text-xs sm:text-sm text-theme-primary font-medium">{event.time}</span>
+                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{event.title}</h3>
+                      <span className="text-xs sm:text-sm text-blue-600 font-medium">{event.time}</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-theme-fg opacity-70">{event.location}</p>
+                    <p className="text-xs sm:text-sm text-gray-900 opacity-70">{event.location}</p>
                   </div>
                 </div>
               </div>
@@ -300,14 +300,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         {/* Smart Reminders */}
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-theme-fg mb-3 sm:mb-4">Smart Reminders</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Smart Reminders</h2>
           <div className="space-y-2">
             {reminders.length > 0 ? reminders.map((reminder) => (
-              <div key={reminder.id} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-theme-secondary rounded-lg border border-theme-border">
-                <div className="w-2 h-2 bg-theme-accent rounded-full"></div>
+              <div key={reminder.id} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-100 rounded-lg border border-theme-border">
+                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                 <div className="flex-1">
                   <span className="text-theme-fg">{reminder.title}</span>
-                  <div className="text-xs sm:text-sm text-theme-fg opacity-70 mt-1">
+                  <div className="text-xs sm:text-sm text-gray-600 mt-1">
                     {new Date(reminder.reminder_date).toLocaleDateString('en-US', { 
                       weekday: 'short',
                       month: 'short', 
@@ -323,8 +323,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 )}
               </div>
             )) : sampleReminders.map((reminder, index) => (
-              <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-theme-secondary rounded-lg border border-theme-border">
-                <div className="w-2 h-2 bg-theme-accent rounded-full"></div>
+              <div key={index} className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-100 rounded-lg border border-theme-border">
+                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                 <span className="text-sm sm:text-base text-theme-fg">{reminder}</span>
               </div>
             ))}
@@ -333,27 +333,27 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         {/* AI Assistant */}
         <div
-          className="bg-theme-secondary p-4 sm:p-6 rounded-xl border border-theme-border cursor-pointer hover:shadow-md transition-all"
+          className="bg-gray-100 p-4 sm:p-6 rounded-xl border border-gray-200 cursor-pointer hover:shadow-md transition-all"
           onClick={() => setIsChatOpen(true)}
         >
           <div className="flex items-center space-x-3 mb-3 sm:mb-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-theme-accent rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-400 rounded-full flex items-center justify-center">
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-theme-accent-fg" />
             </div>
             <div>
-              <h3 className="font-semibold text-theme-fg text-sm sm:text-base">Your AI Assistant</h3>
-              <p className="text-xs sm:text-sm text-theme-fg opacity-70">Ask me anything!</p>
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Your AI Assistant</h3>
+              <p className="text-xs sm:text-sm text-gray-900 opacity-70">Ask me anything!</p>
             </div>
           </div>
-          <div className="bg-theme-surface p-3 sm:p-4 rounded-lg shadow-sm">
-            <p className="text-sm sm:text-base text-theme-fg opacity-90 mb-2 sm:mb-3">"What can I help you with today?"</p>
+          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+            <p className="text-sm sm:text-base text-gray-900 opacity-90 mb-2 sm:mb-3">"What can I help you with today?"</p>
             <div className="flex flex-wrap gap-1 sm:gap-2">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-theme-secondary text-theme-primary rounded-full text-xs sm:text-sm hover:bg-theme-accent hover:text-theme-accent-fg transition-colors"
+                className="px-2 py-1 sm:px-3 bg-gray-100 text-blue-600 rounded-full text-xs sm:text-sm hover:bg-orange-400 hover:text-white transition-colors"
               >
                 Add reminder for tomorrow
               </button>
@@ -362,7 +362,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-theme-secondary text-theme-primary rounded-full text-xs sm:text-sm hover:bg-theme-accent hover:text-theme-accent-fg transition-colors"
+                className="px-2 py-1 sm:px-3 bg-gray-100 text-blue-600 rounded-full text-xs sm:text-sm hover:bg-orange-400 hover:text-white transition-colors"
               >
                 Schedule dentist appointment
               </button>
@@ -371,7 +371,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   e.stopPropagation();
                   setIsChatOpen(true);
                 }}
-                className="px-2 py-1 sm:px-3 bg-theme-secondary text-theme-primary rounded-full text-xs sm:text-sm hover:bg-theme-accent hover:text-theme-accent-fg transition-colors"
+                className="px-2 py-1 sm:px-3 bg-gray-100 text-blue-600 rounded-full text-xs sm:text-sm hover:bg-orange-400 hover:text-white transition-colors"
               >
                 Add milk to shopping list
               </button>
@@ -392,13 +392,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {/* Events Popup */}
       {showEventsPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-theme-surface rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-theme-fg">Upcoming Events</h2>
                 <button
                   onClick={() => setShowEventsPopup(false)}
-                  className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-theme-border transition-colors"
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
                 >
                   ✕
                 </button>
@@ -411,20 +411,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               ) : events.length > 0 ? (
                 <div className="space-y-3">
                   {events.map((event) => (
-                    <div key={event.id} className="p-2 sm:p-3 bg-theme-bg rounded-lg">
-                      <h3 className="font-medium text-theme-fg text-sm sm:text-base">{event.title}</h3>
-                      <p className="text-xs sm:text-sm text-theme-fg opacity-70">
+                    <div key={event.id} className="p-2 sm:p-3 bg-gray-50 rounded-lg">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base">{event.title}</h3>
+                      <p className="text-xs sm:text-sm text-gray-900 opacity-70">
                         {new Date(event.event_date).toLocaleDateString()} 
                         {event.start_time && ` at ${event.start_time}`}
                       </p>
                       {event.location && (
-                        <p className="text-xs sm:text-sm text-theme-fg opacity-60">{event.location}</p>
+                        <p className="text-xs sm:text-sm text-gray-900 opacity-60">{event.location}</p>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-theme-fg opacity-60 text-center py-8">No upcoming events</p>
+                <p className="text-gray-500 text-center py-8">No upcoming events</p>
               )}
             </div>
           </div>
@@ -434,13 +434,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {/* Tasks Popup */}
       {showTasksPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-theme-surface rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-theme-fg">Shopping List</h2>
                 <button
                   onClick={() => setShowTasksPopup(false)}
-                  className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-theme-border transition-colors"
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
                 >
                   ✕
                 </button>
@@ -453,16 +453,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               ) : tasks.length > 0 ? (
                 <div className="space-y-3">
                   {tasks.map((task) => (
-                    <div key={task.id} className="p-2 sm:p-3 bg-theme-bg rounded-lg">
+                    <div key={task.id} className="p-2 sm:p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-theme-fg text-sm sm:text-base">{task.item}</h3>
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base">{task.item}</h3>
                         {task.urgent && (
                           <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-100 text-red-700 rounded-full text-xs">
                             Urgent
                           </span>
                         )}
                       </div>
-                      <div className="text-xs sm:text-sm text-theme-fg opacity-70">
+                      <div className="text-xs sm:text-sm text-gray-900 opacity-70">
                         <p className="capitalize">{task.category}</p>
                         {(task as any).assigned_family_member && (
                           <div className="flex items-center space-x-1 mt-1">
@@ -474,13 +474,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                         )}
                       </div>
                       {task.quantity && task.quantity > 1 && (
-                        <p className="text-xs sm:text-sm text-theme-fg opacity-60">Quantity: {task.quantity}</p>
+                        <p className="text-xs sm:text-sm text-gray-900 opacity-60">Quantity: {task.quantity}</p>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-theme-fg opacity-60 text-center py-8">No pending items</p>
+                <p className="text-gray-500 text-center py-8">No pending items</p>
               )}
             </div>
           </div>
@@ -490,13 +490,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {/* Reminders Popup */}
       {showRemindersPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-theme-surface rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg sm:text-xl font-bold text-theme-fg">Upcoming Reminders</h2>
                 <button
                   onClick={() => setShowRemindersPopup(false)}
-                  className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-theme-border transition-colors"
+                  className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
                 >
                   ✕
                 </button>
@@ -509,27 +509,27 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               ) : reminders.length > 0 ? (
                 <div className="space-y-3">
                   {reminders.map((reminder) => (
-                    <div key={reminder.id} className="p-2 sm:p-3 bg-theme-bg rounded-lg">
+                    <div key={reminder.id} className="p-2 sm:p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-theme-fg text-sm sm:text-base">{reminder.title}</h3>
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base">{reminder.title}</h3>
                         {reminder.priority === 'high' && (
                           <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-100 text-red-700 rounded-full text-xs">
                             High Priority
                           </span>
                         )}
                       </div>
-                      <p className="text-xs sm:text-sm text-theme-fg opacity-70">
+                      <p className="text-xs sm:text-sm text-gray-900 opacity-70">
                         {new Date(reminder.reminder_date).toLocaleDateString()}
                         {reminder.reminder_time && ` at ${reminder.reminder_time}`}
                       </p>
                       {reminder.description && (
-                        <p className="text-xs sm:text-sm text-theme-fg opacity-60">{reminder.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-900 opacity-60">{reminder.description}</p>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-theme-fg opacity-60 text-center py-8">No upcoming reminders</p>
+                <p className="text-gray-500 text-center py-8">No upcoming reminders</p>
               )}
             </div>
           </div>

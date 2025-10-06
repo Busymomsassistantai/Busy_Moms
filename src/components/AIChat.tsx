@@ -161,7 +161,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center sm:justify-center p-0 sm:p-4">
-      <div className="w-full sm:max-w-md mx-auto bg-theme-surface rounded-t-2xl sm:rounded-2xl h-[85vh] sm:h-[80vh] flex flex-col">
+      <div className="w-full sm:max-w-md mx-auto bg-white rounded-t-2xl sm:rounded-2xl h-[85vh] sm:h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -169,13 +169,13 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-theme-fg text-sm sm:text-base">AI Assistant</h3>
+              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">AI Assistant</h3>
               <p className="text-xs text-gray-500">Always here to help</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 sm:w-8 sm:h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+            className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
             <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
           </button>
@@ -192,7 +192,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
                 className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-xl sm:rounded-2xl ${
                   message.role === 'user'
                     ? 'bg-purple-500 text-white'
-                    : 'bg-theme-secondary text-gray-900'
+                    : 'bg-gray-100 text-gray-900'
                 }`}
               >
                 <p className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</p>
@@ -202,7 +202,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-theme-secondary p-2 sm:p-3 rounded-xl sm:rounded-2xl">
+              <div className="bg-gray-100 p-2 sm:p-3 rounded-xl sm:rounded-2xl">
                 <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-gray-600" />
               </div>
             </div>
@@ -214,7 +214,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         {/* Quick Actions */}
         {messages.length === 1 && (
           <div className="px-3 sm:px-4 pb-2">
-            <p className="text-xs text-theme-fg opacity-60 mb-2">Quick actions:</p>
+            <p className="text-xs text-gray-500 mb-2">Quick actions:</p>
             <div className="flex flex-wrap gap-1 sm:gap-2">
               {quickActions.map((action) => (
                 <button
@@ -238,7 +238,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
                 isListening
                   ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-theme-secondary text-theme-fg opacity-70 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
               title={isListening ? 'Stop listening' : 'Start voice input'}
             >
@@ -254,7 +254,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={isListening ? "Listening..." : "Ask me anything..."}
-              className="flex-1 px-3 py-2 sm:px-4 border border-theme-border rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+              className="flex-1 px-3 py-2 sm:px-4 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
               disabled={isLoading || isListening}
             />
             <button

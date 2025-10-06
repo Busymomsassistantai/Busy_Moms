@@ -27,7 +27,7 @@ export function LoadingErrorState({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-theme-primary animate-spin mb-3" />
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
         <p className="text-gray-600">{loadingMessage}</p>
       </div>
     );
@@ -39,16 +39,16 @@ export function LoadingErrorState({
         <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
           <AlertCircle className="w-6 h-6 text-red-600" />
         </div>
-        <h3 className="text-lg font-semibold text-theme-fg mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Unable to Load Data
         </h3>
-        <p className="text-theme-fg opacity-70 text-center mb-4 max-w-md">
+        <p className="text-gray-600 text-center mb-4 max-w-md">
           {errorMessage || error.message || 'An error occurred while loading the data.'}
         </p>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="flex items-center space-x-2 px-4 py-2 bg-theme-primary text-white rounded-lg hover:opacity-90 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Try Again</span>
@@ -61,13 +61,13 @@ export function LoadingErrorState({
   if (!hasData) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="w-12 h-12 bg-theme-secondary rounded-full flex items-center justify-center mb-4">
+        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
           {emptyIcon || <Inbox className="w-6 h-6 text-gray-400" />}
         </div>
-        <h3 className="text-lg font-semibold text-theme-fg mb-2">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
           No Data Yet
         </h3>
-        <p className="text-theme-fg opacity-70 text-center max-w-md">
+        <p className="text-gray-600 text-center max-w-md">
           {emptyMessage}
         </p>
       </div>
@@ -137,16 +137,16 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       {icon && (
-        <div className="w-16 h-16 bg-theme-secondary rounded-full flex items-center justify-center mb-4">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
           {icon}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-theme-fg mb-2">{title}</h3>
-      <p className="text-theme-fg opacity-70 max-w-md mb-6">{description}</p>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-gray-600 max-w-md mb-6">{description}</p>
       {action && (
         <button
           onClick={action.onClick}
-          className="px-6 py-3 bg-theme-primary text-white rounded-lg hover:opacity-90 transition-colors font-medium"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           {action.label}
         </button>

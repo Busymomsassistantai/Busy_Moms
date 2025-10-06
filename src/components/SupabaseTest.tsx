@@ -173,7 +173,7 @@ export function SupabaseTest() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <div className="bg-theme-surface rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center space-x-3 mb-6">
           <Database className="w-8 h-8 text-blue-500" />
           <div>
@@ -205,23 +205,23 @@ export function SupabaseTest() {
 
         {/* Detailed Test Results */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-theme-bg rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <span className="font-medium">Basic Connection</span>
             <StatusIcon status={testResults.connection} />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-theme-bg rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <span className="font-medium">Authentication System</span>
             <StatusIcon status={testResults.auth} />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-theme-bg rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <span className="font-medium">Database Access</span>
             <StatusIcon status={testResults.database} />
           </div>
 
           {testResults.tables.length > 0 && (
-            <div className="p-3 bg-theme-bg rounded-lg">
+            <div className="p-3 bg-gray-50 rounded-lg">
               <span className="font-medium block mb-2">Available Tables:</span>
               <div className="flex flex-wrap gap-2">
                 {testResults.tables.map((table) => (
@@ -257,7 +257,7 @@ export function SupabaseTest() {
         <div className="flex space-x-3 mt-6">
           <button
             onClick={testSupabaseConnection}
-            className="px-4 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             Retry Connection Test
           </button>
@@ -273,8 +273,8 @@ export function SupabaseTest() {
         </div>
 
         {/* User Info */}
-        <div className="mt-6 p-4 bg-theme-bg rounded-lg">
-          <h3 className="font-medium text-theme-fg mb-2">Current User</h3>
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-medium text-gray-900 mb-2">Current User</h3>
           {user ? (
             <div className="text-sm text-gray-600">
               <p>ID: {user.id}</p>

@@ -54,7 +54,7 @@ export function ErrorModal({
       onClick={onClose}
     >
       <div
-        className="bg-theme-surface rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -64,29 +64,29 @@ export function ErrorModal({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-theme-fg opacity-70 transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <h2 className="text-xl font-bold text-theme-fg mb-2">{title}</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
 
-          <p className="text-theme-fg opacity-70 mb-4">{message}</p>
+          <p className="text-gray-600 mb-4">{message}</p>
 
           {details && (
             <div className="mb-4">
               <button
                 onClick={() => setDetailsVisible(!detailsVisible)}
-                className="text-sm text-theme-primary hover:text-blue-700 font-medium underline"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium underline"
               >
                 {detailsVisible ? 'Hide' : 'Show'} Technical Details
               </button>
 
               {detailsVisible && (
-                <div className="mt-2 p-3 bg-theme-bg rounded-lg border border-gray-200">
-                  <p className="text-xs font-mono text-theme-fg opacity-90 break-all">
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-mono text-gray-900 opacity-90 break-all">
                     {details}
                   </p>
                 </div>
@@ -98,7 +98,7 @@ export function ErrorModal({
             {secondaryAction && (
               <button
                 onClick={secondaryAction.onClick}
-                className="flex-1 px-4 py-2 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors font-medium"
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors font-medium"
               >
                 {secondaryAction.label}
               </button>
@@ -107,14 +107,14 @@ export function ErrorModal({
             {primaryAction ? (
               <button
                 onClick={primaryAction.onClick}
-                className="flex-1 px-4 py-2 bg-theme-primary text-white rounded-lg hover:opacity-90 transition-colors font-medium"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 {primaryAction.label}
               </button>
             ) : (
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 bg-theme-primary text-white rounded-lg hover:opacity-90 transition-colors font-medium"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 Close
               </button>

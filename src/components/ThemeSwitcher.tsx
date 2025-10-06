@@ -12,18 +12,18 @@ export function ThemeSwitcher() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-theme-secondary text-theme-secondary-fg">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 text-gray-900">
             <Palette className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-theme-fg">Theme</h3>
-            <p className="text-sm text-theme-fg opacity-70">Choose your color scheme</p>
+            <h3 className="font-semibold text-gray-900">Theme</h3>
+            <p className="text-sm text-gray-900 opacity-70">Choose your color scheme</p>
           </div>
         </div>
 
         <button
           onClick={toggleDarkMode}
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors hover:opacity-80 bg-theme-secondary text-theme-secondary-fg"
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors hover:opacity-80 bg-gray-100 text-gray-900"
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {isDark ? (
@@ -40,18 +40,18 @@ export function ThemeSwitcher() {
         </button>
       </div>
 
-      <div className="p-4 rounded-xl border-2 bg-theme-bg border-theme-border">
-        <p className="text-xs font-medium mb-3 text-theme-fg opacity-70">
+      <div className="p-4 rounded-xl border-2 bg-gray-50 border-gray-200">
+        <p className="text-xs font-medium mb-3 text-gray-900 opacity-70">
           Preview
         </p>
         <div className="flex items-center space-x-2 flex-wrap gap-2">
-          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-theme-primary text-theme-primary-fg">
+          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-blue-600 text-white">
             Primary
           </button>
-          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-theme-secondary text-theme-secondary-fg">
+          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-gray-100 text-gray-900">
             Secondary
           </button>
-          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-theme-accent text-theme-accent-fg">
+          <button className="px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-orange-400 text-white">
             Accent
           </button>
         </div>
@@ -66,7 +66,7 @@ export function ThemeSwitcher() {
           return (
             <div
               key={themeId}
-              className="p-3 rounded-xl border-2 transition-all bg-theme-surface"
+              className="p-3 rounded-xl border-2 transition-colors bg-theme-surface"
               style={{
                 borderColor: isActive ? 'var(--color-primary)' : 'var(--color-border)',
                 backgroundColor: isActive ? 'var(--color-secondary)' : 'var(--color-surface)'
@@ -99,22 +99,22 @@ export function ThemeSwitcher() {
                   </div>
 
                   <div className="text-left flex-1">
-                    <h4 className="font-medium text-sm text-theme-fg">
+                    <h4 className="font-medium text-sm text-gray-900">
                       {theme.name}
                     </h4>
-                    <p className="text-xs text-theme-fg opacity-70">{theme.description}</p>
+                    <p className="text-xs text-gray-900 opacity-70">{theme.description}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   {isActive && (
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-theme-primary text-theme-primary-fg">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-blue-600 text-white">
                       <Check className="w-4 h-4" />
                     </div>
                   )}
                   <button
                     onClick={() => changeTheme(themeId)}
-                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all"
+                    className="px-4 py-2 rounded-lg font-medium text-sm transition-colors"
                     style={{
                       backgroundColor: colors.primary,
                       color: colors.primaryFg

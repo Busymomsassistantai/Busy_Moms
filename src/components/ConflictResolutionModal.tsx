@@ -56,7 +56,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-theme-surface rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-2">
@@ -73,7 +73,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-4 h-4 text-gray-600" />
             </button>
@@ -93,7 +93,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
             {/* Local Version */}
             <div className="border-2 border-blue-200 rounded-xl p-4 bg-blue-50">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-theme-primary rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-white" />
                 </div>
                 <div>
@@ -242,12 +242,12 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-theme-border bg-gray-50">
+        <div className="p-6 border-t border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               onClick={() => handleResolve('keep_local')}
               disabled={resolving}
-              className="flex-1 px-4 py-3 bg-theme-primary text-white rounded-lg hover:bg-theme-primary transition-colors disabled:opacity-50 font-medium"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 font-medium"
             >
               Keep Local Version
             </button>
@@ -264,7 +264,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
               <button
                 onClick={() => setSelectedConflictIndex(selectedConflictIndex + 1)}
                 disabled={resolving}
-                className="px-4 py-3 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-border transition-colors disabled:opacity-50 flex items-center space-x-2"
+                className="px-4 py-3 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center space-x-2"
               >
                 <span>Skip</span>
                 <ChevronRight className="w-4 h-4" />
@@ -273,7 +273,7 @@ export function ConflictResolutionModal({ conflicts, onResolve, onClose }: Confl
           </div>
 
           {resolving && (
-            <p className="text-center text-sm text-theme-fg opacity-60 mt-3">
+            <p className="text-center text-sm text-gray-500 mt-3">
               Resolving conflict...
             </p>
           )}

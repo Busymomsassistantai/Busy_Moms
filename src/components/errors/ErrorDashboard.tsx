@@ -94,7 +94,7 @@ export function ErrorDashboard() {
   const filteredErrorCount = errors.length;
 
   return (
-    <div className="min-h-screen bg-theme-bg p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -106,7 +106,7 @@ export function ErrorDashboard() {
               loadErrors();
               loadStats();
             }}
-            className="flex items-center space-x-2 px-4 py-2 bg-theme-primary text-white rounded-lg hover:opacity-90 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -115,22 +115,22 @@ export function ErrorDashboard() {
 
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-theme-surface rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-theme-fg opacity-70 mb-1">Total Errors</p>
+                  <p className="text-sm text-gray-600 mb-1">Total Errors</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
                 </div>
-                <div className="w-12 h-12 bg-theme-secondary rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6 text-gray-600" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-theme-surface rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-theme-fg opacity-70 mb-1">Unresolved</p>
+                  <p className="text-sm text-gray-600 mb-1">Unresolved</p>
                   <p className="text-3xl font-bold text-red-600">{stats.unresolved}</p>
                 </div>
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
@@ -139,10 +139,10 @@ export function ErrorDashboard() {
               </div>
             </div>
 
-            <div className="bg-theme-surface rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-theme-fg opacity-70 mb-1">Critical</p>
+                  <p className="text-sm text-gray-600 mb-1">Critical</p>
                   <p className="text-3xl font-bold text-red-600">
                     {stats.bySeverity[ErrorSeverity.CRITICAL] || 0}
                   </p>
@@ -153,10 +153,10 @@ export function ErrorDashboard() {
               </div>
             </div>
 
-            <div className="bg-theme-surface rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-theme-fg opacity-70 mb-1">Resolved</p>
+                  <p className="text-sm text-gray-600 mb-1">Resolved</p>
                   <p className="text-3xl font-bold text-green-600">
                     {stats.total - stats.unresolved}
                   </p>
@@ -169,7 +169,7 @@ export function ErrorDashboard() {
           </div>
         )}
 
-        <div className="bg-theme-surface rounded-xl shadow-sm border border-theme-border p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -179,7 +179,7 @@ export function ErrorDashboard() {
                   placeholder="Search errors..."
                   value={filters.searchQuery}
                   onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -187,7 +187,7 @@ export function ErrorDashboard() {
             <select
               value={filters.errorType}
               onChange={(e) => setFilters({ ...filters, errorType: e.target.value as ErrorType | '' })}
-              className="px-4 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Types</option>
               {Object.values(ErrorType).map((type) => (
@@ -200,7 +200,7 @@ export function ErrorDashboard() {
             <select
               value={filters.severity}
               onChange={(e) => setFilters({ ...filters, severity: e.target.value as ErrorSeverity | '' })}
-              className="px-4 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Severities</option>
               {Object.values(ErrorSeverity).map((severity) => (
@@ -213,7 +213,7 @@ export function ErrorDashboard() {
             <select
               value={filters.resolved}
               onChange={(e) => setFilters({ ...filters, resolved: e.target.value })}
-              className="px-4 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Status</option>
               <option value="false">Unresolved</option>
@@ -234,7 +234,7 @@ export function ErrorDashboard() {
               <div
                 key={err.id}
                 onClick={() => setSelectedError(err)}
-                className="bg-theme-surface rounded-xl p-4 shadow-sm border border-theme-border hover:border-blue-300 cursor-pointer transition-all"
+                className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:border-blue-300 cursor-pointer transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -256,7 +256,7 @@ export function ErrorDashboard() {
                       )}
                     </div>
 
-                    <p className="text-theme-fg font-medium mb-2">{err.message}</p>
+                    <p className="text-gray-900 font-medium mb-2">{err.message}</p>
 
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                       {err.component && (
@@ -310,14 +310,14 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
       onClick={onClose}
     >
       <div
-        className="bg-theme-surface rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">Error Details</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-theme-fg opacity-70 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -335,34 +335,34 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
                 {error.severity}
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-theme-fg mb-2">{error.message}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{error.message}</h3>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 p-4 bg-theme-bg rounded-lg">
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
-              <p className="text-sm text-theme-fg opacity-70 mb-1">Error Type</p>
+              <p className="text-sm text-gray-600 mb-1">Error Type</p>
               <p className="font-medium text-gray-900">{error.error_type}</p>
             </div>
             <div>
-              <p className="text-sm text-theme-fg opacity-70 mb-1">Component</p>
+              <p className="text-sm text-gray-600 mb-1">Component</p>
               <p className="font-medium text-gray-900">{error.component || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-theme-fg opacity-70 mb-1">Created At</p>
+              <p className="text-sm text-gray-600 mb-1">Created At</p>
               <p className="font-medium text-gray-900">
                 {new Date(error.created_at!).toLocaleString()}
               </p>
             </div>
             <div>
-              <p className="text-sm text-theme-fg opacity-70 mb-1">Occurrences</p>
+              <p className="text-sm text-gray-600 mb-1">Occurrences</p>
               <p className="font-medium text-gray-900">{error.count || 1}</p>
             </div>
           </div>
 
           {error.url && (
             <div>
-              <p className="text-sm text-theme-fg opacity-70 mb-1">URL</p>
-              <p className="text-sm font-mono text-theme-fg break-all bg-theme-bg p-2 rounded">
+              <p className="text-sm text-gray-600 mb-1">URL</p>
+              <p className="text-sm font-mono text-gray-900 break-all bg-gray-50 p-2 rounded">
                 {error.url}
               </p>
             </div>
@@ -372,12 +372,12 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
             <div>
               <button
                 onClick={() => setShowStackTrace(!showStackTrace)}
-                className="text-sm text-theme-primary hover:text-blue-700 font-medium underline mb-2"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium underline mb-2"
               >
                 {showStackTrace ? 'Hide' : 'Show'} Stack Trace
               </button>
               {showStackTrace && (
-                <pre className="text-xs font-mono text-theme-fg opacity-90 bg-theme-bg p-4 rounded-lg overflow-x-auto border border-gray-200">
+                <pre className="text-xs font-mono text-gray-900 opacity-90 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200">
                   {error.stack_trace}
                 </pre>
               )}
@@ -386,8 +386,8 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
 
           {error.context && (
             <div>
-              <p className="text-sm text-theme-fg opacity-70 mb-2">Context</p>
-              <pre className="text-xs font-mono text-theme-fg opacity-90 bg-theme-bg p-4 rounded-lg overflow-x-auto border border-gray-200">
+              <p className="text-sm text-gray-600 mb-2">Context</p>
+              <pre className="text-xs font-mono text-gray-900 opacity-90 bg-gray-50 p-4 rounded-lg overflow-x-auto border border-gray-200">
                 {JSON.stringify(error.context, null, 2)}
               </pre>
             </div>
@@ -395,14 +395,14 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
 
           {!error.resolved && (
             <div>
-              <label className="block text-sm font-medium text-theme-fg opacity-90 mb-2">
+              <label className="block text-sm font-medium text-gray-900 opacity-90 mb-2">
                 Resolution Notes (Optional)
               </label>
               <textarea
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
                 placeholder="Describe how this error was resolved..."
-                className="w-full px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
               />
             </div>
@@ -429,7 +429,7 @@ function ErrorDetailModal({ error, onClose, onResolve }: ErrorDetailModalProps) 
         <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors"
+            className="px-4 py-2 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors"
           >
             Close
           </button>

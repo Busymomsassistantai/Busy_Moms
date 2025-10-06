@@ -98,7 +98,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-theme-surface rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900">
@@ -106,7 +106,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
             </h2>
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
             </button>
@@ -114,7 +114,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
 
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Name *
               </label>
@@ -123,14 +123,14 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 placeholder="Contact name"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   Role *
                 </label>
                 <input
@@ -138,18 +138,18 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   required
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="e.g., Babysitter"
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   Category
                 </label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="babysitter">Babysitter</option>
                   <option value="coach">Coach</option>
@@ -163,7 +163,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   Phone
                 </label>
@@ -171,12 +171,12 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="(555) 123-4567"
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                   <Mail className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                   Email
                 </label>
@@ -184,14 +184,14 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="email@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 <Star className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                 Rating (0-5)
               </label>
@@ -202,18 +202,18 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                 step="0.1"
                 value={formData.rating}
                 onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-theme-fg opacity-90 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-900 opacity-90 mb-1 sm:mb-2">
                 Notes
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2 sm:px-4 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                className="w-full px-3 py-2 sm:px-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 rows={2}
                 placeholder="Additional notes about this contact"
               />
@@ -225,7 +225,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="checkbox"
                   checked={formData.verified}
                   onChange={(e) => setFormData({ ...formData, verified: e.target.checked })}
-                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-theme-border rounded focus:ring-purple-500"
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-gray-200 rounded focus:ring-purple-500"
                 />
                 <span className="ml-2 text-xs sm:text-sm text-gray-700">Verified</span>
               </label>
@@ -235,7 +235,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
                   type="checkbox"
                   checked={formData.available}
                   onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
-                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-theme-border rounded focus:ring-purple-500"
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 border-gray-200 rounded focus:ring-purple-500"
                 />
                 <span className="ml-2 text-xs sm:text-sm text-gray-700">Available</span>
               </label>
@@ -245,7 +245,7 @@ export function ContactForm({ isOpen, onClose, onContactCreated, editContact }: 
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-3 py-2 sm:px-4 border border-theme-border text-theme-fg opacity-90 rounded-lg hover:bg-theme-secondary transition-colors text-sm sm:text-base"
+                className="flex-1 px-3 py-2 sm:px-4 border border-gray-200 text-gray-900 opacity-90 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>

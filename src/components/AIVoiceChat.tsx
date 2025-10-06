@@ -223,7 +223,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-      <div className="bg-theme-surface rounded-lg shadow-xl max-w-md w-full h-[600px] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full h-[600px] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -237,7 +237,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 bg-theme-secondary rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+            className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
             <X className="w-4 h-4 text-gray-600" />
           </button>
@@ -259,7 +259,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
                     <X className="w-6 h-6 text-white" />
                   </div>
                   <p className="text-lg text-red-600 mb-2">Connection Error</p>
-                  <p className="text-sm text-theme-fg opacity-70 mb-4 whitespace-pre-wrap">{error}</p>
+                  <p className="text-sm text-gray-600 mb-4 whitespace-pre-wrap">{error}</p>
                   <button
                     onClick={() => {
                       setError(null);
@@ -298,8 +298,8 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
               <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Mic className="w-8 h-8 text-white" />
               </div>
-              <p className="text-lg text-theme-fg opacity-90 mb-2">Listening for wake word</p>
-              <p className="text-sm text-theme-fg opacity-60 mb-4">Say <strong>"Hey, Sarah"</strong> to start a conversation</p>
+              <p className="text-lg text-gray-900 opacity-90 mb-2">Listening for wake word</p>
+              <p className="text-sm text-gray-500 mb-4">Say <strong>"Hey, Sarah"</strong> to start a conversation</p>
               <div className="bg-purple-50 p-3 rounded-lg">
                 <p className="text-sm text-purple-800">
                   💡 The AI is waiting for you to say the wake word before it starts listening to your requests
@@ -314,7 +314,7 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-white" />
               </div>
-              <p className="text-lg text-theme-fg opacity-90 mb-2">Conversation Active</p>
+              <p className="text-lg text-gray-900 opacity-90 mb-2">Conversation Active</p>
               <p className="text-sm text-gray-500">I'm listening and ready to help!</p>
             </div>
           )}
@@ -338,13 +338,13 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
               )}
 
               {/* Quick Text Input */}
-              <div className="bg-theme-bg p-4 rounded-lg">
-                <p className="text-sm text-theme-fg opacity-70 mb-3">Or type a message:</p>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-3">Or type a message:</p>
                 <div className="flex space-x-2">
                   <input
                     type="text"
                     placeholder="Type your message..."
-                    className="flex-1 px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const input = e.target as HTMLInputElement;
@@ -376,14 +376,14 @@ export function AIVoiceChat({ isOpen, onClose }: AIVoiceChatProps) {
         </div>
 
         {/* Controls */}
-        <div className="p-4 bg-theme-bg flex items-center justify-center space-x-4">
+        <div className="p-4 bg-gray-50 flex items-center justify-center space-x-4">
           <button
             onClick={toggleMute}
             disabled={!isConnected}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
               isMuted
                 ? 'bg-red-500 text-white hover:bg-red-600'
-                : 'bg-gray-200 text-theme-fg opacity-90 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-900 opacity-90 hover:bg-gray-300'
             } disabled:opacity-50`}
             title={isMuted ? 'Unmute microphone' : 'Mute microphone'}
           >
