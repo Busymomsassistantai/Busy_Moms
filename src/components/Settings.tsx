@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw, ClipboardList } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
@@ -9,6 +9,7 @@ import { ErrorDashboard } from './errors/ErrorDashboard';
 import { AffirmationSettings } from './AffirmationSettings';
 import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
 import { SyncSettings } from './SyncSettings';
+import { OnboardingSettings } from './OnboardingSettings';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService } from '../services/googleCalendar';
@@ -21,6 +22,7 @@ export function Settings() {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [showAffirmationSettings, setShowAffirmationSettings] = useState(false);
   const [showSyncSettings, setShowSyncSettings] = useState(false);
+  const [showOnboardingSettings, setShowOnboardingSettings] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
@@ -321,6 +323,13 @@ export function Settings() {
     {
       title: 'Account',
       items: [
+        {
+          icon: ClipboardList,
+          title: 'Onboarding Settings',
+          description: 'Review and update your initial setup',
+          action: 'Review',
+          onClick: () => setShowOnboardingSettings(true)
+        },
         {
           icon: CreditCard,
           title: 'Subscription',
@@ -724,6 +733,11 @@ export function Settings() {
       <SyncSettings
         isOpen={showSyncSettings}
         onClose={() => setShowSyncSettings(false)}
+      />
+
+      <OnboardingSettings
+        isOpen={showOnboardingSettings}
+        onClose={() => setShowOnboardingSettings(false)}
       />
     </div>
   );
