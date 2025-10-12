@@ -199,6 +199,7 @@ export class RecipeService {
     const ingredients = themealdbRecipe.ingredients.map((ing, index) => ({
       recipe_id: recipe.id,
       name: ing.name,
+      display_text: `${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim(),
       quantity: ing.quantity,
       unit: ing.unit,
       category: ing.category,

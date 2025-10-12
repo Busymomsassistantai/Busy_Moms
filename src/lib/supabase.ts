@@ -159,12 +159,15 @@ author?: string | null
 description?: string | null
 image_url?: string | null
 servings?: number | null
+prep_time_minutes?: number | null
 cooking_time_minutes?: number | null
 instructions?: string[] | null
 source_url?: string | null
 instacart_recipe_url?: string | null
 url_expires_at?: string | null
 instacart_metadata?: Record<string, any> | null
+external_id?: string | null
+external_source?: string | null
 created_at?: string
 updated_at?: string
 }
