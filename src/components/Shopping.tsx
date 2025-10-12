@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
-import { ShoppingItem, FamilyMember, supabase } from '../lib/supabase';
+import { ShoppingItem, FamilyMember, Recipe, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { RecipeBrowser } from './RecipeBrowser';
+import { RecipeDetailModal } from './RecipeDetailModal';
 
 export function Shopping() {
   const { user } = useAuth();
@@ -11,6 +13,7 @@ export function Shopping() {
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -112,6 +115,7 @@ export function Shopping() {
         <div className="flex space-x-0.5 sm:space-x-1 bg-gray-100 rounded-lg p-1">
           {[
             { id: 'list', label: 'Shopping List', icon: ShoppingCart },
+            { id: 'recipes', label: 'Recipes', icon: ChefHat },
             { id: 'gifts', label: 'Gift Ideas', icon: Gift },
             { id: 'auto', label: 'Auto-Reorder', icon: Repeat }
           ].map((tab) => (
@@ -207,6 +211,11 @@ export function Shopping() {
           </div>
         )}
 
+        {/* Recipes Tab */}
+        {activeTab === 'recipes' && (
+          <RecipeBrowser onRecipeSelect={(recipe) => setSelectedRecipe(recipe)} />
+        )}
+
         {/* Gift Ideas Tab */}
         {activeTab === 'gifts' && (
           <div className="space-y-6">
@@ -300,6 +309,17 @@ export function Shopping() {
         onClose={() => setShowShoppingForm(false)}
         onItemCreated={handleItemCreated}
       />
+
+      {selectedRecipe && (
+        <RecipeDetailModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+          onIngredientsAdded={() => {
+            fetchShoppingList();
+            setSelectedRecipe(null);
+          }}
+        />
+      )}
     </div>
   );
 }

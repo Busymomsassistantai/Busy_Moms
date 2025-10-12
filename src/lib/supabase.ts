@@ -129,8 +129,83 @@ category?:
 notes?: string | null
 completed?: boolean | null
 assigned_to?: UUID | null
+recipe_id?: UUID | null
 created_at?: string
 updated_at?: string
+}
+
+export interface Recipe {
+id: UUID
+user_id: UUID
+title: string
+author?: string | null
+description?: string | null
+image_url?: string | null
+servings?: number | null
+cooking_time_minutes?: number | null
+instructions?: string[] | null
+source_url?: string | null
+instacart_recipe_url?: string | null
+url_expires_at?: string | null
+instacart_metadata?: Record<string, any> | null
+created_at?: string
+updated_at?: string
+}
+
+export interface RecipeIngredient {
+id: UUID
+recipe_id: UUID
+name: string
+display_text: string
+quantity?: number | null
+unit?: string | null
+category?: string | null
+display_order?: number | null
+brand_filters?: string[] | null
+health_filters?: string[] | null
+is_pantry_item?: boolean | null
+created_at?: string
+}
+
+export interface UserSavedRecipe {
+id: UUID
+user_id: UUID
+recipe_id: UUID
+saved_at?: string
+}
+
+export interface InstacartIngredient {
+name: string
+display_text?: string
+quantity?: number
+unit?: string
+brand_filters?: string[]
+health_filters?: string[]
+}
+
+export interface InstacartRecipeRequest {
+title: string
+author?: string
+image_url?: string
+servings?: number
+cooking_time?: number
+instructions?: string[]
+ingredients: InstacartIngredient[]
+partner_linkback_url?: string
+enable_pantry_items?: boolean
+expires_in?: number
+}
+
+export interface InstacartRecipeResponse {
+products_link_url: string
+}
+
+export interface RecipeFilter {
+search?: string
+author?: string
+maxCookingTime?: number
+minServings?: number
+maxServings?: number
 }
 
 export interface Affirmation {
