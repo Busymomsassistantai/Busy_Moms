@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
     const { action, ...payload } = await req.json();
 
-    const instacartBaseUrl = "https://connect.instacart.com";
+    const instacartBaseUrl = "https://connect.dev.instacart.tools";
 
     switch (action) {
       case "create_shopping_list": {

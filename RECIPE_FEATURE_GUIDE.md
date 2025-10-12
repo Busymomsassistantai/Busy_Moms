@@ -14,10 +14,13 @@ Your app now includes a complete recipe browsing and shopping list integration p
   - `shopping_lists.recipe_id` - New column linking shopping items back to source recipes
 
 ### 2. Instacart API Integration
-- **Edge Function:** `instacart-recipes` deployed to Supabase
+- **Edge Functions:**
+  - `instacart-recipes` - Creates shoppable recipe pages
+  - `instacart-shopping-list` - Creates shopping lists from items
 - **API Configuration:**
-  - Development server: `https://connect.dev.instacart.tools`
-  - Production server: `https://connect.instacart.com` (when ready)
+  - Current environment: DEVELOPMENT
+  - Endpoint: `https://connect.dev.instacart.tools`
+  - Production server: `https://connect.instacart.com` (NOT ready yet)
   - API Key stored securely in environment variables
   - Follows all Instacart Developer Platform guidelines
 
@@ -144,17 +147,24 @@ The API key is automatically available in the Supabase Edge Function environment
 
 ## Going to Production
 
+**IMPORTANT: Currently configured for DEVELOPMENT only!**
+
+Both edge functions are using the development endpoint: `https://connect.dev.instacart.tools`
+
 Before launching to production users:
 
 1. **Test thoroughly** in development environment
 2. **Review Instacart's pre-launch checklist**
 3. **Request production API key** from Instacart
-4. **Update Edge Function** to use production server:
+4. **Update BOTH Edge Functions** to use production server:
+   - Update `instacart-recipes/index.ts`
+   - Update `instacart-shopping-list/index.ts`
    ```typescript
    const instacartBaseUrl = "https://connect.instacart.com"
    ```
-5. **Submit for Instacart approval** per their guidelines
-6. **Update API key** in environment variables
+5. **Redeploy both functions** after updating
+6. **Submit for Instacart approval** per their guidelines
+7. **Update API key** in environment variables
 
 ## Architecture
 
