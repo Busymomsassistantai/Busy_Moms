@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat, Send, Check, Clock, XCircle, Package, Filter, Store } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat, Send, Package, Filter, Store } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
-import { ShoppingItem, FamilyMember, Recipe, supabase, ProviderName, PurchaseStatus } from '../lib/supabase';
+import { ShoppingItem, FamilyMember, Recipe, supabase, ProviderName, UserPreferredRetailer } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { RecipeBrowser } from './RecipeBrowser';
 import { RecipeDetailModal } from './RecipeDetailModal';
@@ -22,11 +22,13 @@ export function Shopping() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendProvider, setSendProvider] = useState<ProviderName>(null);
   const [sendingToProvider, setSendingToProvider] = useState(false);
+  const [preferredRetailer, setPreferredRetailer] = useState<UserPreferredRetailer | null>(null);
 
   useEffect(() => {
     if (user?.id) {
       fetchShoppingList();
       fetchFamilyMembers();
+      fetchPreferredRetailer();
     } else {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ export function Shopping() {
 
   const fetchFamilyMembers = async () => {
     if (!user?.id) return;
-    
+
     try {
       const { data: members, error } = await supabase
         .from('family_members')
@@ -67,6 +69,17 @@ export function Shopping() {
       }
     } catch (error) {
       console.error('Error loading family members:', error);
+    }
+  };
+
+  const fetchPreferredRetailer = async () => {
+    if (!user?.id) return;
+
+    try {
+      const retailer = await instacartShoppingService.getPrimaryRetailer(user.id);
+      setPreferredRetailer(retailer);
+    } catch (error) {
+      console.error('Error loading preferred retailer:', error);
     }
   };
 
@@ -167,27 +180,15 @@ export function Shopping() {
     };
   };
 
-  const getStatusBadge = (status: PurchaseStatus) => {
-    switch (status) {
-      case 'in_cart':
-        return { text: 'In Cart', color: 'bg-blue-100 text-blue-700', icon: ShoppingCart };
-      case 'purchased':
-        return { text: 'Purchased', color: 'bg-green-100 text-green-700', icon: Check };
-      case 'failed':
-        return { text: 'Failed', color: 'bg-red-100 text-red-700', icon: XCircle };
-      default:
-        return { text: 'Not Sent', color: 'bg-gray-100 text-gray-700', icon: Clock };
-    }
-  };
 
   const getProviderBadge = (provider: ProviderName) => {
     switch (provider) {
       case 'instacart':
-        return { text: 'Instacart', color: 'bg-green-500', textColor: 'text-green-600' };
+        return { type: 'logo', logo: '/Instacart_Carrot.png', color: 'bg-green-500', textColor: 'text-green-600' };
       case 'amazon':
-        return { text: 'Amazon', color: 'bg-orange-500', textColor: 'text-orange-600' };
+        return { type: 'text', text: 'Amazon', color: 'bg-orange-500', textColor: 'text-orange-600' };
       case 'manual':
-        return { text: 'Manual', color: 'bg-gray-500', textColor: 'text-gray-600' };
+        return { type: 'text', text: 'Manual', color: 'bg-gray-500', textColor: 'text-gray-600' };
       default:
         return null;
     }
@@ -338,9 +339,7 @@ export function Shopping() {
             ) : (
               <div className="space-y-3">
                 {getFilteredItems().map((item) => {
-                  const statusBadge = getStatusBadge(item.purchase_status || 'not_sent');
                   const providerBadge = item.provider_name ? getProviderBadge(item.provider_name) : null;
-                  const StatusIcon = statusBadge.icon;
 
                   return (
                     <div
@@ -381,20 +380,35 @@ export function Shopping() {
                           <div className="flex flex-wrap gap-2 mt-2">
                             {providerBadge && (
                               <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${providerBadge.color} bg-opacity-10 ${providerBadge.textColor}`}>
-                                <Package className="w-3 h-3" />
-                                <span>{providerBadge.text}</span>
+                                {providerBadge.type === 'logo' ? (
+                                  <img
+                                    src={providerBadge.logo}
+                                    alt="Instacart"
+                                    className="h-4 w-auto object-contain"
+                                  />
+                                ) : (
+                                  <>
+                                    <Package className="w-3 h-3" />
+                                    <span>{providerBadge.text}</span>
+                                  </>
+                                )}
                               </div>
                             )}
                             {item.provider_metadata?.retailer_name && (
-                              <div className="inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                              <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                preferredRetailer?.retailer_key === item.provider_metadata?.retailer_key
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
                                 <Store className="w-3 h-3" />
-                                <span>{item.provider_metadata.retailer_name}</span>
+                                <span>
+                                  {item.provider_metadata.retailer_name}
+                                  {preferredRetailer?.retailer_key === item.provider_metadata?.retailer_key && (
+                                    <span className="ml-1 font-semibold">(Preferred Retailer)</span>
+                                  )}
+                                </span>
                               </div>
                             )}
-                            <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                              <StatusIcon className="w-3 h-3" />
-                              <span>{statusBadge.text}</span>
-                            </div>
                             {item.urgent && (
                               <div className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
                                 Urgent
