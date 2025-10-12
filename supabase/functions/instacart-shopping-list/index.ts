@@ -16,6 +16,7 @@ interface InstacartShoppingListItem {
 interface CreateShoppingListRequest {
   items: InstacartShoppingListItem[];
   title?: string;
+  retailer_key?: string;
 }
 
 interface InstacartShoppingListResponse {
@@ -92,6 +93,10 @@ Deno.serve(async (req: Request) => {
           title: listRequest.title || "Shopping List",
           line_items: formattedItems,
         };
+
+        if (listRequest.retailer_key) {
+          instacartPayload.retailer_key = listRequest.retailer_key;
+        }
 
         console.log("Calling Instacart API:", `${instacartBaseUrl}/idp/v1/products/products_link`);
         console.log("Payload:", JSON.stringify(instacartPayload, null, 2));

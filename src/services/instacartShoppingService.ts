@@ -19,7 +19,7 @@ export class InstacartShoppingService {
     this.edgeFunctionUrl = `${supabaseUrl}/functions/v1/instacart-shopping-list`
   }
 
-  async sendToInstacart(items: ShoppingItem[]): Promise<InstacartShoppingListResponse> {
+  async sendToInstacart(items: ShoppingItem[], retailerKey?: string): Promise<InstacartShoppingListResponse> {
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session?.access_token) {
@@ -28,17 +28,23 @@ export class InstacartShoppingService {
 
     const formattedItems = this.formatItemsForInstacart(items)
 
+    const requestBody: any = {
+      action: 'create_shopping_list',
+      items: formattedItems,
+      title: 'My Shopping List',
+    }
+
+    if (retailerKey) {
+      requestBody.retailer_key = retailerKey
+    }
+
     const response = await fetch(this.edgeFunctionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({
-        action: 'create_shopping_list',
-        items: formattedItems,
-        title: 'My Shopping List',
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     let data: any;
@@ -69,29 +75,42 @@ export class InstacartShoppingService {
       }
       throw error;
     }
-    await this.updateItemsProviderStatus(items, data)
+
+    let retailerName: string | undefined
+    if (retailerKey) {
+      const retailers = await this.getPreferredRetailers(items[0]?.user_id)
+      const matchingRetailer = retailers.find(r => r.retailer_key === retailerKey)
+      retailerName = matchingRetailer?.retailer_name
+    }
+
+    await this.updateItemsProviderStatus(
+      items,
+      data,
+      retailerKey,
+      retailerName
+    )
 
     return data as InstacartShoppingListResponse
   }
 
-  async sendAllToInstacart(userId: string): Promise<InstacartShoppingListResponse> {
+  async sendAllToInstacart(userId: string, retailerKey?: string): Promise<InstacartShoppingListResponse> {
     const items = await this.getItemsNotSent(userId)
 
     if (items.length === 0) {
       throw new Error('No items available to send to Instacart')
     }
 
-    return this.sendToInstacart(items)
+    return this.sendToInstacart(items, retailerKey)
   }
 
-  async sendSelectedToInstacart(itemIds: string[]): Promise<InstacartShoppingListResponse> {
+  async sendSelectedToInstacart(itemIds: string[], retailerKey?: string): Promise<InstacartShoppingListResponse> {
     const items = await this.getItemsByIds(itemIds)
 
     if (items.length === 0) {
       throw new Error('No valid items found to send to Instacart')
     }
 
-    return this.sendToInstacart(items)
+    return this.sendToInstacart(items, retailerKey)
   }
 
   private formatItemsForInstacart(items: ShoppingItem[]) {
@@ -123,11 +142,20 @@ export class InstacartShoppingService {
 
   private async updateItemsProviderStatus(
     items: ShoppingItem[],
-    response: InstacartShoppingListResponse
+    response: InstacartShoppingListResponse,
+    retailerKey?: string,
+    retailerName?: string
   ): Promise<void> {
     const metadata: ProviderMetadata = {
       cart_url: response.products_link_url,
       timestamp: new Date().toISOString(),
+    }
+
+    if (retailerKey) {
+      metadata.retailer_key = retailerKey
+    }
+    if (retailerName) {
+      metadata.retailer_name = retailerName
     }
 
     const updates = items.map(item => ({

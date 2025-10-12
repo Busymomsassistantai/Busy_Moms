@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat, Send, Check, Clock, XCircle, Package, Filter } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat, Send, Check, Clock, XCircle, Package, Filter, Store } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
 import { ShoppingItem, FamilyMember, Recipe, supabase, ProviderName, PurchaseStatus } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -125,13 +125,13 @@ export function Shopping() {
     setShowSendModal(true);
   };
 
-  const handleConfirmSend = async (items: ShoppingItem[]) => {
+  const handleConfirmSend = async (items: ShoppingItem[], retailerKey?: string) => {
     if (!sendProvider) return;
 
     setSendingToProvider(true);
     try {
       if (sendProvider === 'instacart') {
-        await instacartShoppingService.sendToInstacart(items);
+        await instacartShoppingService.sendToInstacart(items, retailerKey);
       }
       await fetchShoppingList();
       clearSelection();
@@ -382,6 +382,12 @@ export function Shopping() {
                                 <span>{providerBadge.text}</span>
                               </div>
                             )}
+                            {item.provider_metadata?.retailer_name && (
+                              <div className="inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                <Store className="w-3 h-3" />
+                                <span>{item.provider_metadata.retailer_name}</span>
+                              </div>
+                            )}
                             <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
                               <StatusIcon className="w-3 h-3" />
                               <span>{statusBadge.text}</span>
@@ -552,6 +558,7 @@ export function Shopping() {
         items={getItemsToSend()}
         provider={sendProvider}
         onConfirm={handleConfirmSend}
+        userId={user.id}
       />
     </div>
   );

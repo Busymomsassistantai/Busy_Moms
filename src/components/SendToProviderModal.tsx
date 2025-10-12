@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { X, ShoppingCart, ExternalLink, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import type { ShoppingItem, ProviderName } from '../lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { X, ShoppingCart, ExternalLink, AlertCircle, CheckCircle, Loader2, Store, MapPin } from 'lucide-react';
+import type { ShoppingItem, ProviderName, UserPreferredRetailer } from '../lib/supabase';
+import { instacartShoppingService } from '../services/instacartShoppingService';
+import { RetailerSelectionModal } from './RetailerSelectionModal';
 
 interface SendToProviderModalProps {
   isOpen: boolean;
   onClose: () => void;
   items: ShoppingItem[];
   provider: ProviderName;
-  onConfirm: (items: ShoppingItem[]) => Promise<void>;
+  onConfirm: (items: ShoppingItem[], retailerKey?: string) => Promise<void>;
+  userId: string;
 }
 
 export function SendToProviderModal({
@@ -16,11 +19,16 @@ export function SendToProviderModal({
   items,
   provider,
   onConfirm,
+  userId,
 }: SendToProviderModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [cartUrl, setCartUrl] = useState<string | null>(null);
+  const [primaryRetailer, setPrimaryRetailer] = useState<UserPreferredRetailer | null>(null);
+  const [selectedRetailer, setSelectedRetailer] = useState<UserPreferredRetailer | null>(null);
+  const [showRetailerModal, setShowRetailerModal] = useState(false);
+  const [loadingRetailer, setLoadingRetailer] = useState(false);
 
   const providerDisplay = {
     instacart: { name: 'Instacart', color: 'bg-green-500', textColor: 'text-green-600' },
@@ -34,12 +42,32 @@ export function SendToProviderModal({
     item => item.provider_name === provider && item.purchase_status === 'in_cart'
   );
 
+  useEffect(() => {
+    if (isOpen && provider === 'instacart' && userId) {
+      loadPrimaryRetailer();
+    }
+  }, [isOpen, provider, userId]);
+
+  const loadPrimaryRetailer = async () => {
+    setLoadingRetailer(true);
+    try {
+      const retailer = await instacartShoppingService.getPrimaryRetailer(userId);
+      setPrimaryRetailer(retailer);
+      setSelectedRetailer(retailer);
+    } catch (err) {
+      console.error('Failed to load primary retailer:', err);
+    } finally {
+      setLoadingRetailer(false);
+    }
+  };
+
   const handleConfirm = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      await onConfirm(items);
+      const retailerKey = provider === 'instacart' ? selectedRetailer?.retailer_key : undefined;
+      await onConfirm(items, retailerKey);
       setSuccess(true);
 
       if (items.length > 0 && items[0].provider_metadata?.cart_url) {
@@ -56,7 +84,15 @@ export function SendToProviderModal({
     setError(null);
     setSuccess(false);
     setCartUrl(null);
+    setPrimaryRetailer(null);
+    setSelectedRetailer(null);
+    setShowRetailerModal(false);
     onClose();
+  };
+
+  const handleRetailerSelected = (retailer: UserPreferredRetailer | null) => {
+    setSelectedRetailer(retailer);
+    setShowRetailerModal(false);
   };
 
   const handleViewCart = () => {
@@ -104,6 +140,61 @@ export function SendToProviderModal({
                     <p className="text-sm text-red-800 font-medium">Error</p>
                     <p className="text-sm text-red-700">{error}</p>
                   </div>
+                </div>
+              )}
+
+              {provider === 'instacart' && !loadingRetailer && (
+                <div className="mb-4">
+                  {selectedRetailer ? (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          {selectedRetailer.retailer_logo_url && (
+                            <img
+                              src={selectedRetailer.retailer_logo_url}
+                              alt={selectedRetailer.retailer_name}
+                              className="w-10 h-10 object-contain"
+                            />
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-green-900">
+                              {selectedRetailer.retailer_name}
+                            </p>
+                            <p className="text-xs text-green-700">
+                              {selectedRetailer.is_primary ? 'Your primary retailer' : 'Selected retailer'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setShowRetailerModal(true)}
+                          className="text-sm text-green-700 hover:text-green-800 font-medium"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <Store className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm text-blue-800 font-medium">
+                            No retailer selected
+                          </p>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Choose a retailer to get the best shopping experience.
+                          </p>
+                          <button
+                            onClick={() => setShowRetailerModal(true)}
+                            className="mt-2 text-sm text-blue-700 hover:text-blue-800 font-medium flex items-center gap-1"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            Select a retailer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -203,6 +294,14 @@ export function SendToProviderModal({
           )}
         </div>
       </div>
+
+      <RetailerSelectionModal
+        isOpen={showRetailerModal}
+        onClose={() => setShowRetailerModal(false)}
+        userId={userId}
+        onRetailerSelected={handleRetailerSelected}
+        currentRetailer={primaryRetailer}
+      />
     </div>
   );
 }
