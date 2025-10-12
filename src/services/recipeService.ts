@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import type { Recipe, RecipeIngredient, UserSavedRecipe, RecipeFilter } from '../lib/supabase'
+import type { SimplifiedRecipe } from './themealdb'
 
 export class RecipeService {
   async createRecipe(recipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>): Promise<Recipe> {
@@ -178,6 +179,36 @@ export class RecipeService {
     const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
     return expiresAt <= oneDayFromNow
+  }
+
+  async importFromTheMealDB(userId: string, themealdbRecipe: SimplifiedRecipe): Promise<Recipe> {
+    const recipe = await this.createRecipe({
+      user_id: userId,
+      title: themealdbRecipe.title,
+      author: `TheMealDB - ${themealdbRecipe.cuisine}`,
+      description: themealdbRecipe.description,
+      prep_time_minutes: themealdbRecipe.prepTime,
+      cooking_time_minutes: themealdbRecipe.cookTime,
+      servings: themealdbRecipe.servings,
+      image_url: themealdbRecipe.imageUrl,
+      instructions: themealdbRecipe.instructions,
+      external_id: themealdbRecipe.id,
+      external_source: 'themealdb'
+    })
+
+    const ingredients = themealdbRecipe.ingredients.map((ing, index) => ({
+      recipe_id: recipe.id,
+      name: ing.name,
+      quantity: ing.quantity,
+      unit: ing.unit,
+      category: ing.category,
+      display_order: index,
+      is_pantry_item: ing.category === 'pantry'
+    }))
+
+    await this.addIngredients(ingredients)
+
+    return recipe
   }
 }
 
