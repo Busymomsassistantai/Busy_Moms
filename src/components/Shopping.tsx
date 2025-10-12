@@ -23,13 +23,17 @@ export function Shopping() {
   const [sendingToProvider, setSendingToProvider] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       fetchShoppingList();
       fetchFamilyMembers();
+    } else {
+      setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const fetchShoppingList = async () => {
+    if (!user?.id) return;
+
     try {
       setLoading(true);
       const { data: shoppingData, error: shoppingError } = await supabase
@@ -552,14 +556,16 @@ export function Shopping() {
         />
       )}
 
-      <SendToProviderModal
-        isOpen={showSendModal}
-        onClose={() => setShowSendModal(false)}
-        items={getItemsToSend()}
-        provider={sendProvider}
-        onConfirm={handleConfirmSend}
-        userId={user.id}
-      />
+      {user?.id && (
+        <SendToProviderModal
+          isOpen={showSendModal}
+          onClose={() => setShowSendModal(false)}
+          items={getItemsToSend()}
+          provider={sendProvider}
+          onConfirm={handleConfirmSend}
+          userId={user.id}
+        />
+      )}
     </div>
   );
 }
