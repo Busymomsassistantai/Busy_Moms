@@ -112,11 +112,14 @@ export function SendToProviderModal({
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
               {provider === 'instacart' ? (
-                <img
-                  src="/Instacart_Logo_Kale.svg"
-                  alt="Instacart"
-                  className="h-8 w-auto"
-                />
+                <div className="flex items-center space-x-2">
+                  <img
+                    src="/Instacart_Carrot.png"
+                    alt="Instacart"
+                    className="h-8 w-auto object-contain"
+                  />
+                  <span className="text-lg font-semibold text-instacart-kale">Instacart</span>
+                </div>
               ) : (
                 <div className={`w-10 h-10 ${currentProvider.color} rounded-full flex items-center justify-center`}>
                   <ShoppingCart className="w-5 h-5 text-white" />

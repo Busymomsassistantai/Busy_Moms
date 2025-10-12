@@ -37,21 +37,21 @@ export function InstacartButton({
           bg: 'bg-instacart-kale',
           text: 'text-instacart-cashew',
           hover: 'hover:bg-[#002d21]',
-          logo: '/Instacart_Logo_Cashew.svg',
+          carrotLogo: '/Instacart_Carrot.png',
         };
       case 'light':
         return {
           bg: 'bg-instacart-cashew',
           text: 'text-instacart-kale',
           hover: 'hover:bg-[#f5e8d4]',
-          logo: '/Instacart_Logo_Kale.svg',
+          carrotLogo: '/Instacart_Carrot.png',
         };
       case 'white':
         return {
           bg: 'bg-white border-2 border-instacart-kale',
           text: 'text-instacart-kale',
           hover: 'hover:bg-gray-50',
-          logo: '/Instacart_Logo_Kale.svg',
+          carrotLogo: '/Instacart_Carrot.png',
         };
     }
   };
@@ -92,9 +92,9 @@ export function InstacartButton({
       ) : (
         <>
           <img
-            src={styles.logo}
+            src={styles.carrotLogo}
             alt="Instacart"
-            className="h-5.5 w-auto"
+            className="h-5.5 w-auto object-contain"
             style={{ height: '22px' }}
           />
           <span className="whitespace-nowrap">
