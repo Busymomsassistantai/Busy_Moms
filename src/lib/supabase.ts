@@ -302,3 +302,32 @@ include_shopping?: boolean | null
 created_at?: string
 updated_at?: string
 }
+
+export type AddressType = 'home' | 'work' | 'other'
+
+export interface Address {
+id: UUID
+user_id: UUID
+address_type: AddressType
+display_name: string
+street_address: string
+apartment_unit?: string | null
+city: string
+state_province: string
+postal_code: string
+country: string
+is_default?: boolean | null
+validated?: boolean | null
+validation_metadata?: Record<string, any> | null
+created_at?: string
+updated_at?: string
+}
+
+export interface AddressValidationResult {
+valid: boolean
+formatted_address?: string
+suggestions?: string[]
+latitude?: number
+longitude?: number
+error_message?: string
+}

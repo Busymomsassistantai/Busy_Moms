@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
-import { Search, MapPin, Star, Trash2, Check, Loader2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Search, MapPin, Star, Trash2, Check, Loader2, Home } from 'lucide-react'
 import { instacartShoppingService } from '../services/instacartShoppingService'
-import type { Retailer, UserPreferredRetailer } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
+import type { Retailer, UserPreferredRetailer, Address } from '../lib/supabase'
 
 interface RetailerSearchProps {
   userId: string
@@ -13,8 +14,11 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
   const [countryCode, setCountryCode] = useState<'US' | 'CA'>('US')
   const [searchResults, setSearchResults] = useState<Retailer[]>([])
   const [preferredRetailers, setPreferredRetailers] = useState<UserPreferredRetailer[]>([])
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [loadingPreferred, setLoadingPreferred] = useState(true)
+  const [loadingAddresses, setLoadingAddresses] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -135,12 +139,52 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
     }
   }
 
+  const loadSavedAddresses = async () => {
+    if (!userId) {
+      setLoadingAddresses(false)
+      return
+    }
+
+    try {
+      setLoadingAddresses(true)
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', userId)
+        .order('is_default', { ascending: false })
+
+      if (error) throw error
+      setSavedAddresses(data || [])
+
+      const defaultAddress = data?.find(addr => addr.is_default)
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id)
+        setPostalCode(defaultAddress.postal_code)
+        setCountryCode(defaultAddress.country as 'US' | 'CA')
+      }
+    } catch (err) {
+      console.error('Failed to load saved addresses:', err)
+    } finally {
+      setLoadingAddresses(false)
+    }
+  }
+
+  const handleAddressSelect = (addressId: string) => {
+    const address = savedAddresses.find(a => a.id === addressId)
+    if (address) {
+      setSelectedAddressId(addressId)
+      setPostalCode(address.postal_code)
+      setCountryCode(address.country as 'US' | 'CA')
+    }
+  }
+
   const isRetailerSaved = (retailerKey: string) => {
     return preferredRetailers.some(r => r.retailer_key === retailerKey)
   }
 
   React.useEffect(() => {
     loadPreferredRetailers()
+    loadSavedAddresses()
   }, [userId])
 
   return (
@@ -152,6 +196,36 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
         </h3>
 
         <div className="space-y-4">
+          {savedAddresses.length > 0 && (
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Home className="w-4 h-4 text-blue-600" />
+                Use Saved Address
+              </label>
+              <select
+                value={selectedAddressId}
+                onChange={(e) => handleAddressSelect(e.target.value)}
+                className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                <option value="">Choose an address or enter manually below</option>
+                {savedAddresses.map((address) => (
+                  <option key={address.id} value={address.id}>
+                    {address.display_name} - {address.city}, {address.state_province} {address.postal_code}
+                    {address.is_default ? ' (Default)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {savedAddresses.length === 0 && !loadingAddresses && (
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-sm text-orange-800">
+                <strong>Note:</strong> Add a saved address in Settings to quickly search retailers near you.
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <div className="flex-1">
               <input
