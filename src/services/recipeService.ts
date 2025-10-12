@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 import type { Recipe, RecipeIngredient, UserSavedRecipe, RecipeFilter } from '../lib/supabase'
 import type { SimplifiedRecipe } from './themealdb'
+import { IngredientParser } from '../utils/ingredientParser'
 
 export class RecipeService {
   async createRecipe(recipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at'>): Promise<Recipe> {
@@ -196,20 +197,49 @@ export class RecipeService {
       external_source: 'themealdb'
     })
 
-    const ingredients = themealdbRecipe.ingredients.map((ing, index) => ({
-      recipe_id: recipe.id,
-      name: ing.name,
-      display_text: `${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim(),
-      quantity: ing.quantity,
-      unit: ing.unit,
-      category: ing.category,
-      display_order: index,
-      is_pantry_item: ing.category === 'pantry'
-    }))
+    const ingredients = themealdbRecipe.ingredients.map((ing, index) => {
+      let quantity = ing.quantity
+      let unit = ing.unit
+
+      if (!quantity || !unit) {
+        const displayText = `${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim()
+        const parsed = IngredientParser.parse(displayText)
+        if (parsed.quantity && parsed.unit) {
+          quantity = parsed.quantity
+          unit = parsed.unit
+        } else if (!unit) {
+          unit = IngredientParser.smartDetectUnit(ing.name, ing.category)
+        }
+      }
+
+      return {
+        recipe_id: recipe.id,
+        name: ing.name,
+        display_text: `${quantity || ''} ${unit || ''} ${ing.name}`.trim(),
+        quantity: quantity,
+        unit: unit,
+        category: ing.category,
+        display_order: index,
+        is_pantry_item: ing.category === 'pantry'
+      }
+    })
 
     await this.addIngredients(ingredients)
 
     return recipe
+  }
+
+  parseIngredientText(text: string): {
+    quantity: number | null
+    unit: string | null
+    name: string
+  } {
+    const parsed = IngredientParser.parse(text)
+    return {
+      quantity: parsed.quantity,
+      unit: parsed.unit,
+      name: parsed.ingredient,
+    }
   }
 }
 

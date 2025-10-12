@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw, Store, MapPin } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw, Store, MapPin, Ruler } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
@@ -15,6 +15,8 @@ import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService } from '../services/googleCalendar';
 import { useCalendarSync } from '../hooks/useCalendarSync';
+import { measurementPreferencesService } from '../services/measurementPreferencesService';
+import type { UserMeasurementPreferences } from '../lib/supabase';
 
 export function Settings() {
   const { user, signOut } = useAuth();
@@ -35,6 +37,7 @@ export function Settings() {
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [syncingGoogle, setSyncingGoogle] = useState(false);
+  const [measurementPrefs, setMeasurementPrefs] = useState<UserMeasurementPreferences | null>(null);
   const [notifications, setNotifications] = useState({
     events: true,
     shopping: true,
@@ -103,6 +106,40 @@ export function Settings() {
     }
   }, [user]);
 
+  const loadMeasurementPreferences = React.useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const prefs = await measurementPreferencesService.getPreferences(user.id);
+      setMeasurementPrefs(prefs);
+    } catch (error) {
+      console.error('Error loading measurement preferences:', error);
+    }
+  }, [user]);
+
+  const toggleMeasurementSystem = async () => {
+    if (!user || !measurementPrefs) return;
+
+    try {
+      const newSystem = measurementPrefs.preferred_system === 'metric' ? 'imperial' : 'metric';
+      await measurementPreferencesService.setPreferredSystem(user.id, newSystem);
+      await loadMeasurementPreferences();
+    } catch (error) {
+      console.error('Error toggling measurement system:', error);
+    }
+  };
+
+  const toggleAutoConvert = async () => {
+    if (!user) return;
+
+    try {
+      await measurementPreferencesService.toggleAutoConvert(user.id);
+      await loadMeasurementPreferences();
+    } catch (error) {
+      console.error('Error toggling auto-convert:', error);
+    }
+  };
+
   // Load data on component mount and when user changes
   React.useEffect(() => {
     let mounted = true;
@@ -113,7 +150,8 @@ export function Settings() {
       await Promise.all([
         loadFamilyMembers(),
         loadCurrentProfile(),
-        checkGoogleConnection()
+        checkGoogleConnection(),
+        loadMeasurementPreferences()
       ]);
     };
 
@@ -122,7 +160,7 @@ export function Settings() {
     return () => {
       mounted = false;
     };
-  }, [user, loadFamilyMembers, loadCurrentProfile, checkGoogleConnection]);
+  }, [user, loadFamilyMembers, loadCurrentProfile, checkGoogleConnection, loadMeasurementPreferences]);
 
   // Listen for auth state changes to detect when Google Calendar is connected
   React.useEffect(() => {
@@ -286,6 +324,27 @@ export function Settings() {
           description: 'Manage your home, work, and other locations',
           action: 'Manage',
           onClick: () => setShowAddressManager(true)
+        }
+      ]
+    },
+    {
+      title: 'Measurement Preferences',
+      items: [
+        {
+          icon: Ruler,
+          title: 'Measurement System',
+          description: measurementPrefs ? `Using ${measurementPrefs.preferred_system === 'metric' ? 'Metric (g, ml, kg)' : 'Imperial (cups, lbs, oz)'}` : 'Loading...',
+          toggle: true,
+          enabled: measurementPrefs?.preferred_system === 'metric',
+          onClick: toggleMeasurementSystem
+        },
+        {
+          icon: RefreshCw,
+          title: 'Auto-Convert Units',
+          description: 'Automatically convert measurements to your preferred system',
+          toggle: true,
+          enabled: measurementPrefs?.auto_convert ?? true,
+          onClick: toggleAutoConvert
         }
       ]
     },

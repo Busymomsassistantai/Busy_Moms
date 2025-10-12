@@ -10,6 +10,7 @@ import type {
   UserPreferredRetailer,
   Retailer
 } from '../lib/supabase'
+import { InstacartUnitMapper } from '../utils/instacartUnitMapper'
 
 export class InstacartShoppingService {
   private edgeFunctionUrl: string
@@ -114,30 +115,20 @@ export class InstacartShoppingService {
   }
 
   private formatItemsForInstacart(items: ShoppingItem[]) {
-    return items.map(item => ({
-      name: item.item,
-      quantity: item.quantity || 1,
-      unit: this.mapCategoryToUnit(item.category),
-      category: item.category || 'other',
-    }))
-  }
+    return items.map(item => {
+      const formatted = InstacartUnitMapper.formatForInstacart(
+        item.quantity,
+        item.unit,
+        item.category || undefined
+      )
 
-  private mapCategoryToUnit(category?: string | null): string {
-    const unitMap: Record<string, string> = {
-      dairy: 'item',
-      produce: 'item',
-      meat: 'pound',
-      bakery: 'item',
-      baby: 'item',
-      beverages: 'item',
-      frozen: 'item',
-      household: 'item',
-      snacks: 'item',
-      health: 'item',
-      pantry: 'item',
-      other: 'item',
-    }
-    return unitMap[category || 'other'] || 'item'
+      return {
+        name: item.item,
+        quantity: formatted.quantity,
+        unit: formatted.unit,
+        category: item.category || 'other',
+      }
+    })
   }
 
   private async updateItemsProviderStatus(

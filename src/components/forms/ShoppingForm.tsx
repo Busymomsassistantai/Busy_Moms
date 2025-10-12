@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { X, ShoppingBag, Hash, Package } from 'lucide-react'
 import { supabase, ShoppingItem, ProviderName } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { MeasurementInput } from '../MeasurementInput'
+import { InstacartUnitMapper } from '../../utils/instacartUnitMapper'
 
 interface ShoppingFormProps {
   isOpen: boolean
@@ -17,6 +19,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
     item: editItem?.item || '',
     category: editItem?.category || 'other',
     quantity: editItem?.quantity || 1,
+    unit: editItem?.unit || null,
     urgent: editItem?.urgent || false,
     notes: editItem?.notes || '',
     provider_name: editItem?.provider_name || null
@@ -61,6 +64,7 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
         item: '',
         category: 'other',
         quantity: 1,
+        unit: null,
         urgent: false,
         notes: '',
         provider_name: null
@@ -107,39 +111,40 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Category
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-                >
-                  <option value="dairy">Dairy</option>
-                  <option value="produce">Produce</option>
-                  <option value="meat">Meat</option>
-                  <option value="bakery">Bakery</option>
-                  <option value="baby">Baby</option>
-                  <option value="household">Household</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  <Hash className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
-                />
-              </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                Category
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                className="w-full px-3 py-2 sm:px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+              >
+                <option value="dairy">Dairy</option>
+                <option value="produce">Produce</option>
+                <option value="meat">Meat</option>
+                <option value="bakery">Bakery</option>
+                <option value="baby">Baby</option>
+                <option value="beverages">Beverages</option>
+                <option value="frozen">Frozen</option>
+                <option value="household">Household</option>
+                <option value="snacks">Snacks</option>
+                <option value="health">Health</option>
+                <option value="pantry">Pantry</option>
+                <option value="other">Other</option>
+              </select>
             </div>
+
+            <MeasurementInput
+              quantity={formData.quantity}
+              unit={formData.unit}
+              ingredientName={formData.item}
+              category={formData.category}
+              onQuantityChange={(q) => setFormData({ ...formData, quantity: q || 1 })}
+              onUnitChange={(u) => setFormData({ ...formData, unit: u })}
+              showConverter={true}
+              className=""
+            />
 
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">

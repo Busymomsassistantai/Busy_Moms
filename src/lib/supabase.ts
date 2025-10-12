@@ -133,6 +133,8 @@ id: UUID
 user_id: UUID
 item: string
 quantity?: number | null
+unit?: string | null
+original_unit?: string | null
 category?:
 | 'dairy' | 'produce' | 'meat' | 'bakery' | 'baby' | 'beverages'
 | 'frozen' | 'household' | 'snacks' | 'health' | 'pantry' | 'other'
@@ -333,4 +335,29 @@ suggestions?: string[]
 latitude?: number
 longitude?: number
 error_message?: string
+}
+
+export interface UserMeasurementPreferences {
+id: UUID
+user_id: UUID
+preferred_system: 'metric' | 'imperial'
+default_volume_unit?: string | null
+default_weight_unit?: string | null
+auto_convert?: boolean | null
+created_at?: string
+updated_at?: string
+}
+
+export interface MeasurementOverride {
+id: UUID
+user_id: UUID
+recipe_ingredient_id?: UUID | null
+shopping_list_id?: UUID | null
+original_quantity?: number | null
+original_unit?: string | null
+override_quantity: number
+override_unit: string
+reason?: string | null
+created_at?: string
+updated_at?: string
 }
