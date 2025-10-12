@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Clock, Users, ChefHat, Heart, Loader2 } from 'lucide-react'
+import { Search, Clock, Users, ChefHat, Heart, Loader2, Plus } from 'lucide-react'
 import { Recipe } from '../lib/supabase'
 import { recipeService } from '../services/recipeService'
 import { useAuth } from '../hooks/useAuth'
+import { createAllSampleRecipes } from '../utils/sampleRecipes'
 
 interface RecipeBrowserProps {
   onRecipeSelect: (recipe: Recipe) => void
@@ -17,6 +18,7 @@ export function RecipeBrowser({ onRecipeSelect }: RecipeBrowserProps) {
   const [activeView, setActiveView] = useState<'browse' | 'saved'>('browse')
   const [maxCookingTime, setMaxCookingTime] = useState<number | undefined>()
   const [minServings, setMinServings] = useState<number | undefined>()
+  const [addingSamples, setAddingSamples] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -82,6 +84,22 @@ export function RecipeBrowser({ onRecipeSelect }: RecipeBrowserProps) {
       }
     } catch (error) {
       console.error('Error toggling recipe save:', error)
+    }
+  }
+
+  const handleAddSampleRecipes = async () => {
+    if (!user) return
+
+    try {
+      setAddingSamples(true)
+      await createAllSampleRecipes(user.id)
+      await loadRecipes()
+      alert('Sample recipes added successfully!')
+    } catch (error) {
+      console.error('Error adding sample recipes:', error)
+      alert('Failed to add sample recipes')
+    } finally {
+      setAddingSamples(false)
     }
   }
 
@@ -178,11 +196,30 @@ export function RecipeBrowser({ onRecipeSelect }: RecipeBrowserProps) {
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {activeView === 'saved' ? 'No saved recipes yet' : 'No recipes found'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-6">
             {activeView === 'saved'
               ? 'Start browsing to save your favorite recipes'
-              : 'Try adjusting your search or filters'}
+              : 'Try adjusting your search or filters, or add sample recipes to get started'}
           </p>
+          {activeView === 'browse' && (
+            <button
+              onClick={handleAddSampleRecipes}
+              disabled={addingSamples}
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {addingSamples ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Adding Recipes...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5" />
+                  <span>Add Sample Recipes</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
