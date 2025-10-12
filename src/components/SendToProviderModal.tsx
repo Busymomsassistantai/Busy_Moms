@@ -3,6 +3,7 @@ import { X, ShoppingCart, ExternalLink, AlertCircle, CheckCircle, Loader2, Store
 import type { ShoppingItem, ProviderName, UserPreferredRetailer } from '../lib/supabase';
 import { instacartShoppingService } from '../services/instacartShoppingService';
 import { RetailerSelectionModal } from './RetailerSelectionModal';
+import { InstacartButton } from './InstacartButton';
 
 interface SendToProviderModalProps {
   isOpen: boolean;
@@ -110,9 +111,17 @@ export function SendToProviderModal({
         <div className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className={`w-10 h-10 ${currentProvider.color} rounded-full flex items-center justify-center`}>
-                <ShoppingCart className="w-5 h-5 text-white" />
-              </div>
+              {provider === 'instacart' ? (
+                <img
+                  src="/Instacart_Logo_Kale.svg"
+                  alt="Instacart"
+                  className="h-8 w-auto"
+                />
+              ) : (
+                <div className={`w-10 h-10 ${currentProvider.color} rounded-full flex items-center justify-center`}>
+                  <ShoppingCart className="w-5 h-5 text-white" />
+                </div>
+              )}
               <div>
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                   {success ? 'Items Sent!' : `Send to ${currentProvider.name}`}
@@ -246,20 +255,31 @@ export function SendToProviderModal({
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={loading}
-                  className={`flex-1 px-4 py-2 ${currentProvider.color} text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm sm:text-base flex items-center justify-center space-x-2`}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Sending...</span>
-                    </>
-                  ) : (
-                    <span>Confirm Send</span>
-                  )}
-                </button>
+                {provider === 'instacart' ? (
+                  <InstacartButton
+                    variant="dark"
+                    text="Order with Instacart"
+                    onClick={handleConfirm}
+                    disabled={loading}
+                    loading={loading}
+                    fullWidth
+                  />
+                ) : (
+                  <button
+                    onClick={handleConfirm}
+                    disabled={loading}
+                    className={`flex-1 px-4 py-2 ${currentProvider.color} text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm sm:text-base flex items-center justify-center space-x-2`}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <span>Confirm Send</span>
+                    )}
+                  </button>
+                )}
               </div>
             </>
           ) : (
@@ -280,7 +300,15 @@ export function SendToProviderModal({
                 >
                   Close
                 </button>
-                {cartUrl && (
+                {cartUrl && provider === 'instacart' && (
+                  <InstacartButton
+                    variant="dark"
+                    text="Shop with Instacart"
+                    onClick={handleViewCart}
+                    fullWidth
+                  />
+                )}
+                {cartUrl && provider !== 'instacart' && (
                   <button
                     onClick={handleViewCart}
                     className={`flex-1 px-4 py-2 ${currentProvider.color} text-white rounded-lg hover:opacity-90 transition-opacity text-sm sm:text-base flex items-center justify-center space-x-2`}

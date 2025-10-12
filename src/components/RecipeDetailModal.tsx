@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { X, Clock, Users, ExternalLink, ShoppingCart, Loader2, Heart, Plus, Minus } from 'lucide-react'
+import { X, Clock, Users, ShoppingCart, Loader2, Heart, Plus, Minus } from 'lucide-react'
 import { Recipe, RecipeIngredient, ShoppingItem } from '../lib/supabase'
 import { recipeService } from '../services/recipeService'
 import { instacartService } from '../services/instacartService'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { InstacartButton } from './InstacartButton'
 
 interface RecipeDetailModalProps {
   recipe: Recipe
@@ -342,7 +343,7 @@ export function RecipeDetailModal({ recipe, onClose, onIngredientsAdded }: Recip
             </div>
           )}
 
-          <div className="flex space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
             <button
               onClick={addSelectedToShoppingList}
               disabled={addingToList || selectedIngredients.size === 0}
@@ -358,18 +359,14 @@ export function RecipeDetailModal({ recipe, onClose, onIngredientsAdded }: Recip
               </span>
             </button>
 
-            <button
+            <InstacartButton
+              variant="dark"
+              text="Get Recipe Ingredients"
               onClick={openInstacartRecipe}
               disabled={generatingUrl}
-              className="flex items-center justify-center space-x-2 px-4 py-3 border-2 border-green-500 text-green-600 rounded-lg hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {generatingUrl ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <ExternalLink className="w-5 h-5" />
-              )}
-              <span>View on Instacart</span>
-            </button>
+              loading={generatingUrl}
+              className="flex-1"
+            />
           </div>
         </div>
       </div>

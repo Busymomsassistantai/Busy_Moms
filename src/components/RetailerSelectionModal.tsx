@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, MapPin, Search, Loader2, Store, Star, Check } from 'lucide-react';
 import { instacartShoppingService } from '../services/instacartShoppingService';
 import type { Retailer, UserPreferredRetailer } from '../lib/supabase';
+import { InstacartButton } from './InstacartButton';
 
 interface RetailerSelectionModalProps {
   isOpen: boolean;
@@ -149,9 +150,11 @@ export function RetailerSelectionModal({
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
-              </div>
+              <img
+                src="/Instacart_Logo_Kale.svg"
+                alt="Instacart"
+                className="h-8 w-auto"
+              />
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Select a Retailer</h2>
                 <p className="text-sm text-gray-600">Choose where to shop for your items</p>
@@ -216,7 +219,7 @@ export function RetailerSelectionModal({
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                className="px-6 py-2 bg-instacart-kale text-instacart-cashew rounded-lg hover:bg-[#002d21] disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
               >
                 {loading ? (
                   <>
@@ -258,8 +261,8 @@ export function RetailerSelectionModal({
                     onClick={() => handleSelectRetailer(retailer)}
                     className={`w-full flex items-center gap-4 p-4 border-2 rounded-lg transition-all text-left ${
                       selectedRetailer?.retailer_key === retailer.retailer_key
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-green-300'
+                        ? 'border-instacart-green bg-green-50'
+                        : 'border-gray-200 hover:border-instacart-green hover:border-opacity-50'
                     }`}
                   >
                     {retailer.retailer_logo_url && (
@@ -274,7 +277,7 @@ export function RetailerSelectionModal({
                       <p className="text-sm text-gray-500 truncate">{retailer.retailer_key}</p>
                     </div>
                     {selectedRetailer?.retailer_key === retailer.retailer_key && (
-                      <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                      <div className="flex-shrink-0 w-6 h-6 bg-instacart-green rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -320,7 +323,7 @@ export function RetailerSelectionModal({
                 <button
                   onClick={handleSetAsPrimary}
                   disabled={saving}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-instacart-kale text-instacart-cashew rounded-lg hover:bg-[#002d21] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {saving ? (
                     <>
