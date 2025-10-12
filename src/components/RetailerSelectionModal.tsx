@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, MapPin, Search, Loader2, Store, Star } from 'lucide-react';
+import { X, MapPin, Search, Loader2, Store, Star, Check } from 'lucide-react';
 import { instacartShoppingService } from '../services/instacartShoppingService';
 import type { Retailer, UserPreferredRetailer } from '../lib/supabase';
 
@@ -25,6 +25,7 @@ export function RetailerSelectionModal({
   const [error, setError] = useState<string | null>(null);
   const [selectedRetailer, setSelectedRetailer] = useState<Retailer | null>(null);
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!postalCode.trim()) {
@@ -58,17 +59,34 @@ export function RetailerSelectionModal({
 
     setSaving(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
-      const savedRetailer = await instacartShoppingService.savePreferredRetailer(
-        userId,
-        selectedRetailer,
-        false
-      );
-      onRetailerSelected(savedRetailer);
-      onClose();
+      const exists = await instacartShoppingService.checkRetailerExists(userId, selectedRetailer.retailer_key);
+
+      let savedRetailer;
+      if (exists) {
+        const retailers = await instacartShoppingService.getPreferredRetailers(userId);
+        savedRetailer = retailers.find(r => r.retailer_key === selectedRetailer.retailer_key);
+        if (savedRetailer) {
+          setSuccessMessage(`Using ${selectedRetailer.name} from your saved retailers!`);
+        }
+      } else {
+        savedRetailer = await instacartShoppingService.savePreferredRetailer(
+          userId,
+          selectedRetailer,
+          false
+        );
+        setSuccessMessage(`${selectedRetailer.name} has been saved!`);
+      }
+
+      setTimeout(() => {
+        onRetailerSelected(savedRetailer || null);
+        onClose();
+      }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save retailer');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save retailer';
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -79,17 +97,35 @@ export function RetailerSelectionModal({
 
     setSaving(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
-      const savedRetailer = await instacartShoppingService.savePreferredRetailer(
-        userId,
-        selectedRetailer,
-        true
-      );
-      onRetailerSelected(savedRetailer);
-      onClose();
+      const exists = await instacartShoppingService.checkRetailerExists(userId, selectedRetailer.retailer_key);
+
+      let savedRetailer;
+      if (exists) {
+        const retailers = await instacartShoppingService.getPreferredRetailers(userId);
+        const existingRetailer = retailers.find(r => r.retailer_key === selectedRetailer.retailer_key);
+        if (existingRetailer) {
+          await instacartShoppingService.setPrimaryRetailer(userId, existingRetailer.id);
+          savedRetailer = { ...existingRetailer, is_primary: true };
+        }
+      } else {
+        savedRetailer = await instacartShoppingService.savePreferredRetailer(
+          userId,
+          selectedRetailer,
+          true
+        );
+      }
+
+      setSuccessMessage(`${selectedRetailer.name} is now your primary retailer!`);
+      setTimeout(() => {
+        onRetailerSelected(savedRetailer || null);
+        onClose();
+      }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save retailer');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save retailer';
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -200,6 +236,13 @@ export function RetailerSelectionModal({
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-center gap-2">
+              <Check className="w-4 h-4" />
+              {successMessage}
             </div>
           )}
 

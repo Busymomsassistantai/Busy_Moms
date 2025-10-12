@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Search, MapPin, Star, Trash2, Check } from 'lucide-react'
+import React, { useState } from 'react'
+import { Search, MapPin, Star, Trash2, Check, Loader2 } from 'lucide-react'
 import { instacartShoppingService } from '../services/instacartShoppingService'
 import type { Retailer, UserPreferredRetailer } from '../lib/supabase'
 
@@ -14,15 +14,25 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
   const [searchResults, setSearchResults] = useState<Retailer[]>([])
   const [preferredRetailers, setPreferredRetailers] = useState<UserPreferredRetailer[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingPreferred, setLoadingPreferred] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const loadPreferredRetailers = async () => {
+    if (!userId) {
+      setLoadingPreferred(false)
+      return
+    }
+
     try {
+      setLoadingPreferred(true)
       const retailers = await instacartShoppingService.getPreferredRetailers(userId)
       setPreferredRetailers(retailers)
     } catch (err) {
       console.error('Failed to load preferred retailers:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load your preferred retailers')
+    } finally {
+      setLoadingPreferred(false)
     }
   }
 
@@ -55,43 +65,83 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
 
     try {
       await instacartShoppingService.savePreferredRetailer(userId, retailer, isPrimary)
-      setSuccessMessage(`${retailer.name} added to your preferred retailers!`)
+      const message = isPrimary
+        ? `${retailer.name} is now your primary retailer!`
+        : `${retailer.name} added to your preferred retailers!`
+      setSuccessMessage(message)
       await loadPreferredRetailers()
       onRetailerSaved?.()
+
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
     } catch (err) {
-      if (err instanceof Error && err.message.includes('duplicate')) {
-        setError('This retailer is already in your preferred list')
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to save retailer')
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save retailer'
+      setError(errorMessage)
+
+      setTimeout(() => {
+        setError(null)
+      }, 5000)
     }
   }
 
   const handleSetPrimary = async (retailerId: string) => {
+    setError(null)
+    setSuccessMessage(null)
+
     try {
       await instacartShoppingService.setPrimaryRetailer(userId, retailerId)
       setSuccessMessage('Primary retailer updated!')
       await loadPreferredRetailers()
       onRetailerSaved?.()
+
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update primary retailer')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update primary retailer'
+      setError(errorMessage)
+
+      setTimeout(() => {
+        setError(null)
+      }, 5000)
     }
   }
 
   const handleRemoveRetailer = async (retailerId: string) => {
+    if (!window.confirm('Are you sure you want to remove this retailer from your preferences?')) {
+      return
+    }
+
+    setError(null)
+    setSuccessMessage(null)
+
     try {
       await instacartShoppingService.removePreferredRetailer(userId, retailerId)
       setSuccessMessage('Retailer removed from your preferences')
       await loadPreferredRetailers()
       onRetailerSaved?.()
+
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove retailer')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to remove retailer'
+      setError(errorMessage)
+
+      setTimeout(() => {
+        setError(null)
+      }, 5000)
     }
   }
 
   const isRetailerSaved = (retailerKey: string) => {
     return preferredRetailers.some(r => r.retailer_key === retailerKey)
   }
+
+  React.useEffect(() => {
+    loadPreferredRetailers()
+  }, [userId])
 
   return (
     <div className="space-y-6">
@@ -195,7 +245,14 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
         </div>
       )}
 
-      {preferredRetailers.length > 0 && (
+      {loadingPreferred ? (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading your preferred retailers...</span>
+          </div>
+        </div>
+      ) : preferredRetailers.length > 0 ? (
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h4 className="text-md font-semibold text-gray-900 mb-4">
             Your Preferred Retailers
@@ -251,7 +308,7 @@ export function RetailerSearch({ userId, onRetailerSaved }: RetailerSearchProps)
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

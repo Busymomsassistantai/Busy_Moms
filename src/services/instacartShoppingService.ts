@@ -323,79 +323,154 @@ export class InstacartShoppingService {
   }
 
   async getPreferredRetailers(userId: string): Promise<UserPreferredRetailer[]> {
-    const { data, error } = await supabase
-      .from('user_preferred_retailers')
-      .select('*')
-      .eq('user_id', userId)
-      .order('display_order', { ascending: true })
+    if (!userId) {
+      return []
+    }
 
-    if (error) throw error
-    return data || []
+    try {
+      const { data, error } = await supabase
+        .from('user_preferred_retailers')
+        .select('*')
+        .eq('user_id', userId)
+        .order('display_order', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching preferred retailers:', error)
+        throw new Error(`Failed to load preferred retailers: ${error.message}`)
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Error in getPreferredRetailers:', error)
+      throw error
+    }
   }
 
   async getPrimaryRetailer(userId: string): Promise<UserPreferredRetailer | null> {
-    const { data, error } = await supabase
-      .from('user_preferred_retailers')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_primary', true)
-      .maybeSingle()
+    if (!userId) {
+      return null
+    }
 
-    if (error) throw error
-    return data
+    try {
+      const { data, error } = await supabase
+        .from('user_preferred_retailers')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching primary retailer:', error)
+        throw new Error(`Failed to load primary retailer: ${error.message}`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error in getPrimaryRetailer:', error)
+      throw error
+    }
   }
 
   async savePreferredRetailer(userId: string, retailer: Retailer, isPrimary: boolean = false): Promise<UserPreferredRetailer> {
-    if (isPrimary) {
-      await supabase
-        .from('user_preferred_retailers')
-        .update({ is_primary: false })
-        .eq('user_id', userId)
+    if (!userId || !retailer?.retailer_key) {
+      throw new Error('User ID and retailer information are required')
     }
 
-    const existingRetailers = await this.getPreferredRetailers(userId)
-    const displayOrder = existingRetailers.length
+    try {
+      if (isPrimary) {
+        const { error: updateError } = await supabase
+          .from('user_preferred_retailers')
+          .update({ is_primary: false })
+          .eq('user_id', userId)
 
-    const { data, error } = await supabase
-      .from('user_preferred_retailers')
-      .insert({
-        user_id: userId,
-        retailer_key: retailer.retailer_key,
-        retailer_name: retailer.name,
-        retailer_logo_url: retailer.retailer_logo_url,
-        is_primary: isPrimary,
-        display_order: displayOrder,
-      })
-      .select()
-      .single()
+        if (updateError) {
+          console.error('Error clearing primary flags:', updateError)
+        }
+      }
 
-    if (error) throw error
-    return data
+      const existingRetailers = await this.getPreferredRetailers(userId)
+      const displayOrder = existingRetailers.length
+
+      const { data, error } = await supabase
+        .from('user_preferred_retailers')
+        .insert({
+          user_id: userId,
+          retailer_key: retailer.retailer_key,
+          retailer_name: retailer.name,
+          retailer_logo_url: retailer.retailer_logo_url,
+          is_primary: isPrimary,
+          display_order: displayOrder,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('This retailer is already in your preferred list')
+        }
+        throw new Error(`Failed to save retailer: ${error.message}`)
+      }
+
+      if (!data) {
+        throw new Error('Failed to save retailer: No data returned')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error in savePreferredRetailer:', error)
+      throw error
+    }
   }
 
   async setPrimaryRetailer(userId: string, retailerId: string): Promise<void> {
-    await supabase
-      .from('user_preferred_retailers')
-      .update({ is_primary: false })
-      .eq('user_id', userId)
+    if (!userId || !retailerId) {
+      throw new Error('User ID and retailer ID are required')
+    }
 
-    const { error } = await supabase
-      .from('user_preferred_retailers')
-      .update({ is_primary: true })
-      .eq('id', retailerId)
-      .eq('user_id', userId)
+    try {
+      const { error: clearError } = await supabase
+        .from('user_preferred_retailers')
+        .update({ is_primary: false })
+        .eq('user_id', userId)
 
-    if (error) throw error
+      if (clearError) {
+        throw new Error(`Failed to clear primary flags: ${clearError.message}`)
+      }
+
+      const { error: setPrimaryError } = await supabase
+        .from('user_preferred_retailers')
+        .update({ is_primary: true })
+        .eq('id', retailerId)
+        .eq('user_id', userId)
+
+      if (setPrimaryError) {
+        throw new Error(`Failed to set primary retailer: ${setPrimaryError.message}`)
+      }
+    } catch (error) {
+      console.error('Error in setPrimaryRetailer:', error)
+      throw error
+    }
   }
 
   async removePreferredRetailer(userId: string, retailerId: string): Promise<void> {
-    const { error } = await supabase
-      .from('user_preferred_retailers')
-      .delete()
-      .eq('id', retailerId)
-      .eq('user_id', userId)
+    if (!userId || !retailerId) {
+      throw new Error('User ID and retailer ID are required')
+    }
 
-    if (error) throw error
+    try {
+      const { error } = await supabase
+        .from('user_preferred_retailers')
+        .delete()
+        .eq('id', retailerId)
+        .eq('user_id', userId)
+
+      if (error) {
+        throw new Error(`Failed to remove retailer: ${error.message}`)
+      }
+    } catch (error) {
+      console.error('Error in removePreferredRetailer:', error)
+      throw error
+    }
   }
 
   async updateRetailerOrder(userId: string, retailerId: string, newOrder: number): Promise<void> {
@@ -406,6 +481,31 @@ export class InstacartShoppingService {
       .eq('user_id', userId)
 
     if (error) throw error
+  }
+
+  async checkRetailerExists(userId: string, retailerKey: string): Promise<boolean> {
+    if (!userId || !retailerKey) {
+      return false
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_preferred_retailers')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('retailer_key', retailerKey)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error checking retailer existence:', error)
+        return false
+      }
+
+      return data !== null
+    } catch (error) {
+      console.error('Error in checkRetailerExists:', error)
+      return false
+    }
   }
 }
 
