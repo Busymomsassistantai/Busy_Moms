@@ -33,19 +33,38 @@ export class InstacartShoppingService {
       body: JSON.stringify({
         action: 'create_shopping_list',
         items: formattedItems,
-        partner_linkback_url: this.buildPartnerLinkbackUrl(),
+        title: 'My Shopping List',
       }),
     })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(
-        errorData.error ||
-        `Failed to create Instacart shopping list: ${response.statusText}`
-      )
-    }
+    let data: any;
 
-    const data = await response.json()
+    try {
+      const responseText = await response.text();
+
+      if (!response.ok) {
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(responseText);
+        } catch {
+          errorData = { raw: responseText };
+        }
+
+        const errorMessage = errorData.error ||
+          errorData.details?.error ||
+          responseText ||
+          `Failed to create Instacart shopping list: ${response.statusText}`;
+
+        throw new Error(errorMessage);
+      }
+
+      data = JSON.parse(responseText);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Unexpected token')) {
+        throw new Error('Invalid response from Instacart API. Please check your API configuration.');
+      }
+      throw error;
+    }
     await this.updateItemsProviderStatus(items, data)
 
     return data as InstacartShoppingListResponse
@@ -105,14 +124,13 @@ export class InstacartShoppingService {
     const metadata: ProviderMetadata = {
       cart_url: response.products_link_url,
       timestamp: new Date().toISOString(),
-      list_id: response.list_id,
     }
 
     const updates = items.map(item => ({
       id: item.id,
       provider_name: 'instacart' as const,
       purchase_status: 'in_cart' as PurchaseStatus,
-      external_order_id: response.list_id || null,
+      external_order_id: null,
       provider_metadata: metadata,
       provider_synced_at: new Date().toISOString(),
     }))

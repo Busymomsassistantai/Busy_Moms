@@ -15,12 +15,11 @@ interface InstacartShoppingListItem {
 
 interface CreateShoppingListRequest {
   items: InstacartShoppingListItem[];
-  partner_linkback_url?: string;
+  title?: string;
 }
 
 interface InstacartShoppingListResponse {
   products_link_url: string;
-  list_id?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -39,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
     const { action, ...payload } = await req.json();
 
-    const instacartBaseUrl = "https://connect.dev.instacart.tools";
+    const instacartBaseUrl = "https://connect.instacart.com";
 
     switch (action) {
       case "create_shopping_list": {
@@ -75,14 +74,14 @@ Deno.serve(async (req: Request) => {
         });
 
         const instacartPayload: any = {
-          items: formattedItems,
+          title: listRequest.title || "Shopping List",
+          line_items: formattedItems,
         };
 
-        if (listRequest.partner_linkback_url) {
-          instacartPayload.partner_linkback_url = listRequest.partner_linkback_url;
-        }
+        console.log("Calling Instacart API:", `${instacartBaseUrl}/idp/v1/products/products_link`);
+        console.log("Payload:", JSON.stringify(instacartPayload, null, 2));
 
-        const response = await fetch(`${instacartBaseUrl}/idp/v1/products/shopping_list`, {
+        const response = await fetch(`${instacartBaseUrl}/idp/v1/products/products_link`, {
           method: "POST",
           headers: {
             "Accept": "application/json",
@@ -92,7 +91,25 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify(instacartPayload),
         });
 
-        const responseData = await response.json();
+        const contentType = response.headers.get("content-type");
+        let responseData: any;
+        let responseText: string;
+
+        try {
+          responseText = await response.text();
+          console.log("Raw response:", responseText);
+          console.log("Response status:", response.status);
+          console.log("Content-Type:", contentType);
+
+          if (contentType?.includes("application/json") && responseText) {
+            responseData = JSON.parse(responseText);
+          } else {
+            responseData = { raw: responseText };
+          }
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError);
+          responseData = { raw: responseText || "Empty response" };
+        }
 
         if (!response.ok) {
           console.error("Instacart API error:", responseData);
@@ -101,6 +118,7 @@ Deno.serve(async (req: Request) => {
               error: "Failed to create Instacart shopping list",
               details: responseData,
               status: response.status,
+              endpoint: `${instacartBaseUrl}/idp/v1/products/products_link`,
             }),
             {
               status: response.status,
@@ -108,6 +126,8 @@ Deno.serve(async (req: Request) => {
             }
           );
         }
+
+        console.log("Success! Response data:", responseData);
 
         return new Response(
           JSON.stringify(responseData),

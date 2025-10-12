@@ -226,12 +226,11 @@ category?: string
 
 export interface InstacartShoppingListRequest {
 items: InstacartShoppingListItem[]
-partner_linkback_url?: string
+title?: string
 }
 
 export interface InstacartShoppingListResponse {
 products_link_url: string
-list_id?: string
 }
 
 export interface RecipeFilter {
