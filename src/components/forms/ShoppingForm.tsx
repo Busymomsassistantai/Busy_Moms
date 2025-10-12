@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { X, ShoppingBag, Hash } from 'lucide-react'
-import { supabase, ShoppingItem, FamilyMember } from '../../lib/supabase'
+import { X, ShoppingBag, Hash, Package } from 'lucide-react'
+import { supabase, ShoppingItem, ProviderName } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 
 interface ShoppingFormProps {
@@ -18,7 +18,8 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
     category: editItem?.category || 'other',
     quantity: editItem?.quantity || 1,
     urgent: editItem?.urgent || false,
-    notes: editItem?.notes || ''
+    notes: editItem?.notes || '',
+    provider_name: editItem?.provider_name || null
   })
 
 
@@ -32,7 +33,8 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
         ...formData,
         user_id: user.id,
         completed: false,
-        assigned_to: null
+        assigned_to: null,
+        purchase_status: 'not_sent'
       }
 
       let result
@@ -60,7 +62,8 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
         category: 'other',
         quantity: 1,
         urgent: false,
-        notes: ''
+        notes: '',
+        provider_name: null
       })
     } catch (error) {
       console.error('Error saving shopping item:', error)
@@ -149,6 +152,62 @@ export function ShoppingForm({ isOpen, onClose, onItemCreated, editItem }: Shopp
                 rows={2}
                 placeholder="Brand preference, size, etc."
               />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                <Package className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
+                Shopping Provider Preference
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, provider_name: null })}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    formData.provider_name === null
+                      ? 'bg-gray-100 border-gray-400 text-gray-900'
+                      : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  No Preference
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, provider_name: 'instacart' })}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    formData.provider_name === 'instacart'
+                      ? 'bg-green-100 border-green-400 text-green-900'
+                      : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Instacart
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, provider_name: 'amazon' })}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    formData.provider_name === 'amazon'
+                      ? 'bg-orange-100 border-orange-400 text-orange-900'
+                      : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Amazon
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, provider_name: 'manual' })}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    formData.provider_name === 'manual'
+                      ? 'bg-gray-100 border-gray-400 text-gray-900'
+                      : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Manual
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Choose your preferred shopping method for this item
+              </p>
             </div>
 
             <div>

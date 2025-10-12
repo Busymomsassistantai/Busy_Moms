@@ -117,6 +117,17 @@ created_at?: string
 updated_at?: string
 }
 
+export type ProviderName = 'instacart' | 'amazon' | 'manual' | null
+
+export type PurchaseStatus = 'not_sent' | 'in_cart' | 'purchased' | 'failed'
+
+export interface ProviderMetadata {
+cart_url?: string
+timestamp?: string
+sync_info?: Record<string, any>
+[key: string]: any
+}
+
 export interface ShoppingItem {
 id: UUID
 user_id: UUID
@@ -130,6 +141,12 @@ notes?: string | null
 completed?: boolean | null
 assigned_to?: UUID | null
 recipe_id?: UUID | null
+provider_name?: ProviderName
+purchase_status?: PurchaseStatus
+external_order_id?: string | null
+provider_metadata?: ProviderMetadata | null
+provider_synced_at?: string | null
+urgent?: boolean | null
 created_at?: string
 updated_at?: string
 }
@@ -198,6 +215,23 @@ expires_in?: number
 
 export interface InstacartRecipeResponse {
 products_link_url: string
+}
+
+export interface InstacartShoppingListItem {
+name: string
+quantity?: number
+unit?: string
+category?: string
+}
+
+export interface InstacartShoppingListRequest {
+items: InstacartShoppingListItem[]
+partner_linkback_url?: string
+}
+
+export interface InstacartShoppingListResponse {
+products_link_url: string
+list_id?: string
 }
 
 export interface RecipeFilter {

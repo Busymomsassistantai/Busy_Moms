@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat } from 'lucide-react';
+import { Plus, ShoppingCart, Gift, Repeat, Star, ExternalLink, ChefHat, Send, Check, Clock, XCircle, Package, Filter } from 'lucide-react';
 import { ShoppingForm } from './forms/ShoppingForm';
-import { ShoppingItem, FamilyMember, Recipe, supabase } from '../lib/supabase';
+import { ShoppingItem, FamilyMember, Recipe, supabase, ProviderName, PurchaseStatus } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { RecipeBrowser } from './RecipeBrowser';
 import { RecipeDetailModal } from './RecipeDetailModal';
+import { SendToProviderModal } from './SendToProviderModal';
+import { instacartShoppingService } from '../services/instacartShoppingService';
 
 export function Shopping() {
   const { user } = useAuth();
@@ -14,6 +16,11 @@ export function Shopping() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [providerFilter, setProviderFilter] = useState<'all' | ProviderName>('all');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendProvider, setSendProvider] = useState<ProviderName>(null);
+  const [sendingToProvider, setSendingToProvider] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -63,14 +70,122 @@ export function Shopping() {
     fetchShoppingList();
   };
 
-  const toggleItemCompleted = (itemId: string) => {
-    setShoppingList(prev => 
-      prev.map(item => 
-        item.id === itemId 
-          ? { ...item, completed: !item.completed }
-          : item
-      )
+  const toggleItemCompleted = async (itemId: string) => {
+    const item = shoppingList.find(i => i.id === itemId);
+    if (!item) return;
+
+    const { error } = await supabase
+      .from('shopping_lists')
+      .update({ completed: !item.completed })
+      .eq('id', itemId);
+
+    if (!error) {
+      setShoppingList(prev =>
+        prev.map(i =>
+          i.id === itemId
+            ? { ...i, completed: !i.completed }
+            : i
+        )
+      );
+    }
+  };
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllItems = () => {
+    const filteredItems = getFilteredItems();
+    setSelectedItems(new Set(filteredItems.map(item => item.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedItems(new Set());
+  };
+
+  const getFilteredItems = () => {
+    if (providerFilter === 'all') {
+      return shoppingList.filter(item => !item.completed);
+    }
+    return shoppingList.filter(
+      item => !item.completed && item.provider_name === providerFilter
     );
+  };
+
+  const handleSendToProvider = (provider: ProviderName) => {
+    setSendProvider(provider);
+    setShowSendModal(true);
+  };
+
+  const handleConfirmSend = async (items: ShoppingItem[]) => {
+    if (!sendProvider) return;
+
+    setSendingToProvider(true);
+    try {
+      if (sendProvider === 'instacart') {
+        await instacartShoppingService.sendToInstacart(items);
+      }
+      await fetchShoppingList();
+      clearSelection();
+      setShowSendModal(false);
+    } catch (error) {
+      console.error('Error sending to provider:', error);
+      throw error;
+    } finally {
+      setSendingToProvider(false);
+    }
+  };
+
+  const getItemsToSend = (): ShoppingItem[] => {
+    if (selectedItems.size > 0) {
+      return shoppingList.filter(item => selectedItems.has(item.id));
+    }
+    return getFilteredItems();
+  };
+
+  const getProviderStats = () => {
+    const activeItems = shoppingList.filter(item => !item.completed);
+    return {
+      all: activeItems.length,
+      instacart: activeItems.filter(item => item.provider_name === 'instacart').length,
+      amazon: activeItems.filter(item => item.provider_name === 'amazon').length,
+      manual: activeItems.filter(item => item.provider_name === 'manual').length,
+      unassigned: activeItems.filter(item => !item.provider_name).length,
+    };
+  };
+
+  const getStatusBadge = (status: PurchaseStatus) => {
+    switch (status) {
+      case 'in_cart':
+        return { text: 'In Cart', color: 'bg-blue-100 text-blue-700', icon: ShoppingCart };
+      case 'purchased':
+        return { text: 'Purchased', color: 'bg-green-100 text-green-700', icon: Check };
+      case 'failed':
+        return { text: 'Failed', color: 'bg-red-100 text-red-700', icon: XCircle };
+      default:
+        return { text: 'Not Sent', color: 'bg-gray-100 text-gray-700', icon: Clock };
+    }
+  };
+
+  const getProviderBadge = (provider: ProviderName) => {
+    switch (provider) {
+      case 'instacart':
+        return { text: 'Instacart', color: 'bg-green-500', textColor: 'text-green-600' };
+      case 'amazon':
+        return { text: 'Amazon', color: 'bg-orange-500', textColor: 'text-orange-600' };
+      case 'manual':
+        return { text: 'Manual', color: 'bg-gray-500', textColor: 'text-gray-600' };
+      default:
+        return null;
+    }
   };
 
   const giftSuggestions = [
@@ -140,6 +255,78 @@ export function Shopping() {
         {/* Shopping List Tab */}
         {activeTab === 'list' && (
           <div className="space-y-4">
+            {/* Provider Filter Tabs */}
+            <div className="bg-white border border-gray-200 rounded-xl p-2">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'all' as const, label: 'All', count: getProviderStats().all },
+                  { id: 'instacart' as ProviderName, label: 'Instacart', count: getProviderStats().instacart },
+                  { id: 'amazon' as ProviderName, label: 'Amazon', count: getProviderStats().amazon },
+                  { id: null as ProviderName, label: 'Unassigned', count: getProviderStats().unassigned },
+                ].map((filter) => (
+                  <button
+                    key={filter.id || 'null'}
+                    onClick={() => setProviderFilter(filter.id)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      providerFilter === filter.id
+                        ? 'bg-green-500 text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Filter className="w-4 h-4" />
+                    <span>{filter.label}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      providerFilter === filter.id
+                        ? 'bg-white bg-opacity-20'
+                        : 'bg-gray-200'
+                    }`}>
+                      {filter.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {!loading && getFilteredItems().length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedItems.size > 0 && (
+                  <button
+                    onClick={clearSelection}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    Clear Selection ({selectedItems.size})
+                  </button>
+                )}
+                {selectedItems.size === 0 && getFilteredItems().length > 0 && (
+                  <button
+                    onClick={selectAllItems}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    Select All
+                  </button>
+                )}
+                <button
+                  onClick={() => handleSendToProvider('instacart')}
+                  disabled={getItemsToSend().length === 0}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Send to Instacart</span>
+                  {selectedItems.size > 0 && <span>({selectedItems.size})</span>}
+                </button>
+                <button
+                  onClick={() => handleSendToProvider('amazon')}
+                  disabled={getItemsToSend().length === 0}
+                  className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Send to Amazon</span>
+                  {selectedItems.size > 0 && <span>({selectedItems.size})</span>}
+                </button>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-green-500"></div>
@@ -147,47 +334,85 @@ export function Shopping() {
               </div>
             ) : (
               <div className="space-y-3">
-                {shoppingList.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${
-                      item.completed
-                        ? 'bg-gray-50 border-gray-200 opacity-75'
-                        : item.urgent
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-white border-gray-200 hover:border-green-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={item.completed || false}
-                        onChange={() => toggleItemCompleted(item.id)}
-                        className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 rounded focus:ring-green-500"
-                      />
-                      <div className="flex-1">
-                        <h3 className={`font-medium text-sm sm:text-base ${item.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                          {item.item}
-                        </h3>
-                        <div className={`text-xs sm:text-sm ${item.completed ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <p>
-                            {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
-                          </p>
+                {getFilteredItems().map((item) => {
+                  const statusBadge = getStatusBadge(item.purchase_status || 'not_sent');
+                  const providerBadge = item.provider_name ? getProviderBadge(item.provider_name) : null;
+                  const StatusIcon = statusBadge.icon;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-3 sm:p-4 rounded-xl border-2 transition-all ${
+                        selectedItems.has(item.id)
+                          ? 'border-green-400 bg-green-50'
+                          : item.urgent
+                          ? 'bg-red-50 border-red-200'
+                          : 'bg-white border-gray-200 hover:border-green-300'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-2 sm:space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.has(item.id)}
+                          onChange={() => toggleItemSelection(item.id)}
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 rounded focus:ring-green-500 mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-medium text-sm sm:text-base text-gray-900 break-words">
+                              {item.item}
+                            </h3>
+                            <input
+                              type="checkbox"
+                              checked={item.completed || false}
+                              onChange={() => toggleItemCompleted(item.id)}
+                              className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 rounded focus:ring-green-500 flex-shrink-0"
+                              title="Mark as completed"
+                            />
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                            <p>
+                              {item.category} {item.quantity && item.quantity > 1 ? `(${item.quantity})` : ''}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {providerBadge && (
+                              <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${providerBadge.color} bg-opacity-10 ${providerBadge.textColor}`}>
+                                <Package className="w-3 h-3" />
+                                <span>{providerBadge.text}</span>
+                              </div>
+                            )}
+                            <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
+                              <StatusIcon className="w-3 h-3" />
+                              <span>{statusBadge.text}</span>
+                            </div>
+                            {item.urgent && (
+                              <div className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                Urgent
+                              </div>
+                            )}
+                            {item.provider_metadata?.cart_url && (
+                              <a
+                                href={item.provider_metadata.cart_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>View Cart</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      {item.urgent && !item.completed && (
-                        <div className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                          Urgent
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             {!loading && (
-              <button 
+              <button
                 onClick={() => setShowShoppingForm(true)}
                 className="w-full py-3 sm:py-4 border-2 border-dashed border-gray-300 rounded-xl text-sm sm:text-base text-gray-600 hover:border-green-400 hover:text-green-600 transition-all"
               >
@@ -195,7 +420,7 @@ export function Shopping() {
               </button>
             )}
 
-            {!loading && shoppingList.length === 0 && (
+            {!loading && shoppingList.filter(item => !item.completed).length === 0 && (
               <div className="text-center py-12">
                 <ShoppingCart className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Your shopping list is empty</h3>
@@ -320,6 +545,14 @@ export function Shopping() {
           }}
         />
       )}
+
+      <SendToProviderModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+        items={getItemsToSend()}
+        provider={sendProvider}
+        onConfirm={handleConfirmSend}
+      />
     </div>
   );
 }
