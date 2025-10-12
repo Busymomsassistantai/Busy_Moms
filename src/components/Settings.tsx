@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw } from 'lucide-react';
+import { User, Bell, Shield, Smartphone, MessageCircle, CreditCard, HelpCircle, LogOut, Database, CheckCircle, XCircle, Loader2, Plus, CreditCard as Edit, Volume2, Calendar, AlertTriangle, Sparkles, RefreshCw, Store } from 'lucide-react';
 import { FamilyMemberForm } from './forms/FamilyMemberForm';
 import { ProfileForm } from './forms/ProfileForm';
 import { ConnectionTest } from './ConnectionTest';
@@ -9,6 +9,7 @@ import { ErrorDashboard } from './errors/ErrorDashboard';
 import { AffirmationSettings } from './AffirmationSettings';
 import { ConnectGoogleCalendarButton } from './ConnectGoogleCalendarButton';
 import { SyncSettings } from './SyncSettings';
+import { RetailerSearch } from './RetailerSearch';
 import { FamilyMember, Profile, supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { googleCalendarService } from '../services/googleCalendar';
@@ -21,6 +22,7 @@ export function Settings() {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [showAffirmationSettings, setShowAffirmationSettings] = useState(false);
   const [showSyncSettings, setShowSyncSettings] = useState(false);
+  const [showRetailerSearch, setShowRetailerSearch] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [showAuthTest, setShowAuthTest] = useState(false);
@@ -276,6 +278,13 @@ export function Settings() {
     {
       title: 'Integrations',
       items: [
+        {
+          icon: Store,
+          title: 'Instacart Retailers',
+          description: 'Search and manage your preferred retailers',
+          action: 'Manage',
+          onClick: () => setShowRetailerSearch(true)
+        },
         {
           icon: MessageCircle,
           title: 'WhatsApp Integration',
@@ -725,6 +734,25 @@ export function Settings() {
         isOpen={showSyncSettings}
         onClose={() => setShowSyncSettings(false)}
       />
+
+      {showRetailerSearch && user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Manage Retailers</h2>
+              <button
+                onClick={() => setShowRetailerSearch(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <RetailerSearch userId={user.id} onRetailerSaved={() => {}} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -248,6 +248,18 @@ export interface GetNearbyRetailersResponse {
 retailers: Retailer[]
 }
 
+export interface UserPreferredRetailer {
+id: UUID
+user_id: UUID
+retailer_key: string
+retailer_name: string
+retailer_logo_url?: string | null
+is_primary?: boolean | null
+display_order?: number | null
+created_at?: string
+updated_at?: string
+}
+
 export interface RecipeFilter {
 search?: string
 author?: string

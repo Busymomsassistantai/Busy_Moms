@@ -6,7 +6,9 @@ import type {
   PurchaseStatus,
   ProviderMetadata,
   GetNearbyRetailersRequest,
-  GetNearbyRetailersResponse
+  GetNearbyRetailersResponse,
+  UserPreferredRetailer,
+  Retailer
 } from '../lib/supabase'
 
 export class InstacartShoppingService {
@@ -290,6 +292,92 @@ export class InstacartShoppingService {
 
     const data = await response.json()
     return data as GetNearbyRetailersResponse
+  }
+
+  async getPreferredRetailers(userId: string): Promise<UserPreferredRetailer[]> {
+    const { data, error } = await supabase
+      .from('user_preferred_retailers')
+      .select('*')
+      .eq('user_id', userId)
+      .order('display_order', { ascending: true })
+
+    if (error) throw error
+    return data || []
+  }
+
+  async getPrimaryRetailer(userId: string): Promise<UserPreferredRetailer | null> {
+    const { data, error } = await supabase
+      .from('user_preferred_retailers')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_primary', true)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  }
+
+  async savePreferredRetailer(userId: string, retailer: Retailer, isPrimary: boolean = false): Promise<UserPreferredRetailer> {
+    if (isPrimary) {
+      await supabase
+        .from('user_preferred_retailers')
+        .update({ is_primary: false })
+        .eq('user_id', userId)
+    }
+
+    const existingRetailers = await this.getPreferredRetailers(userId)
+    const displayOrder = existingRetailers.length
+
+    const { data, error } = await supabase
+      .from('user_preferred_retailers')
+      .insert({
+        user_id: userId,
+        retailer_key: retailer.retailer_key,
+        retailer_name: retailer.name,
+        retailer_logo_url: retailer.retailer_logo_url,
+        is_primary: isPrimary,
+        display_order: displayOrder,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  async setPrimaryRetailer(userId: string, retailerId: string): Promise<void> {
+    await supabase
+      .from('user_preferred_retailers')
+      .update({ is_primary: false })
+      .eq('user_id', userId)
+
+    const { error } = await supabase
+      .from('user_preferred_retailers')
+      .update({ is_primary: true })
+      .eq('id', retailerId)
+      .eq('user_id', userId)
+
+    if (error) throw error
+  }
+
+  async removePreferredRetailer(userId: string, retailerId: string): Promise<void> {
+    const { error } = await supabase
+      .from('user_preferred_retailers')
+      .delete()
+      .eq('id', retailerId)
+      .eq('user_id', userId)
+
+    if (error) throw error
+  }
+
+  async updateRetailerOrder(userId: string, retailerId: string, newOrder: number): Promise<void> {
+    const { error } = await supabase
+      .from('user_preferred_retailers')
+      .update({ display_order: newOrder })
+      .eq('id', retailerId)
+      .eq('user_id', userId)
+
+    if (error) throw error
   }
 }
 
