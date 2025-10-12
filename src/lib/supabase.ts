@@ -233,6 +233,21 @@ export interface InstacartShoppingListResponse {
 products_link_url: string
 }
 
+export interface Retailer {
+retailer_key: string
+name: string
+retailer_logo_url: string
+}
+
+export interface GetNearbyRetailersRequest {
+postal_code: string
+country_code: 'US' | 'CA'
+}
+
+export interface GetNearbyRetailersResponse {
+retailers: Retailer[]
+}
+
 export interface RecipeFilter {
 search?: string
 author?: string

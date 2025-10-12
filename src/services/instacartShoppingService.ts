@@ -4,7 +4,9 @@ import type {
   InstacartShoppingListRequest,
   InstacartShoppingListResponse,
   PurchaseStatus,
-  ProviderMetadata
+  ProviderMetadata,
+  GetNearbyRetailersRequest,
+  GetNearbyRetailersResponse
 } from '../lib/supabase'
 
 export class InstacartShoppingService {
@@ -256,6 +258,38 @@ export class InstacartShoppingService {
     })
 
     return stats
+  }
+
+  async getNearbyRetailers(postalCode: string, countryCode: 'US' | 'CA' = 'US'): Promise<GetNearbyRetailersResponse> {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session?.access_token) {
+      throw new Error('User must be authenticated to get nearby retailers')
+    }
+
+    const response = await fetch(this.edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        action: 'get_nearby_retailers',
+        postal_code: postalCode,
+        country_code: countryCode,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(
+        errorData.error ||
+        `Failed to get nearby retailers: ${response.statusText}`
+      )
+    }
+
+    const data = await response.json()
+    return data as GetNearbyRetailersResponse
   }
 }
 

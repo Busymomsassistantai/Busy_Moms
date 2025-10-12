@@ -22,6 +22,21 @@ interface InstacartShoppingListResponse {
   products_link_url: string;
 }
 
+interface GetNearbyRetailersRequest {
+  postal_code: string;
+  country_code: string;
+}
+
+interface Retailer {
+  retailer_key: string;
+  name: string;
+  retailer_logo_url: string;
+}
+
+interface GetNearbyRetailersResponse {
+  retailers: Retailer[];
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -138,9 +153,95 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      case "get_nearby_retailers": {
+        const retailerRequest: GetNearbyRetailersRequest = payload;
+
+        if (!retailerRequest.postal_code || !retailerRequest.country_code) {
+          return new Response(
+            JSON.stringify({ error: "postal_code and country_code are required" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (!['US', 'CA'].includes(retailerRequest.country_code.toUpperCase())) {
+          return new Response(
+            JSON.stringify({ error: "country_code must be 'US' or 'CA'" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        const params = new URLSearchParams({
+          postal_code: retailerRequest.postal_code,
+          country_code: retailerRequest.country_code.toUpperCase(),
+        });
+
+        const apiUrl = `${instacartBaseUrl}/idp/v1/retailers?${params.toString()}`;
+        console.log("Calling Instacart API:", apiUrl);
+
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `Bearer ${instacartApiKey}`,
+          },
+        });
+
+        const contentType = response.headers.get("content-type");
+        let responseData: any;
+        let responseText: string;
+
+        try {
+          responseText = await response.text();
+          console.log("Raw response:", responseText);
+          console.log("Response status:", response.status);
+          console.log("Content-Type:", contentType);
+
+          if (contentType?.includes("application/json") && responseText) {
+            responseData = JSON.parse(responseText);
+          } else {
+            responseData = { raw: responseText };
+          }
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError);
+          responseData = { raw: responseText || "Empty response" };
+        }
+
+        if (!response.ok) {
+          console.error("Instacart API error:", responseData);
+          return new Response(
+            JSON.stringify({
+              error: "Failed to get nearby retailers",
+              details: responseData,
+              status: response.status,
+              endpoint: apiUrl,
+            }),
+            {
+              status: response.status,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        console.log("Success! Response data:", responseData);
+
+        return new Response(
+          JSON.stringify(responseData),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
       default:
         return new Response(
-          JSON.stringify({ error: "Invalid action. Supported actions: create_shopping_list" }),
+          JSON.stringify({ error: "Invalid action. Supported actions: create_shopping_list, get_nearby_retailers" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
