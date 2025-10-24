@@ -1,23 +1,34 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { getConfig, logConfigStatus } from './config'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+let supabaseInstance: SupabaseClient | null = null
 
-if (!url || !anonKey) {
-throw new Error(
-'[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. ' +
-'Ensure your environment variables are set. Refusing to fall back to a hardcoded project.'
-)
+function createSupabaseClient(): SupabaseClient {
+  try {
+    const config = getConfig()
+
+    logConfigStatus()
+
+    return createClient(config.supabaseUrl, config.supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+      db: { schema: 'public' },
+    })
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
 }
 
-export const supabase: SupabaseClient = createClient(url, anonKey, {
-auth: {
-persistSession: true,
-autoRefreshToken: true,
-detectSessionInUrl: true,
-},
-db: { schema: 'public' },
-})
+export const supabase: SupabaseClient = (() => {
+  if (!supabaseInstance) {
+    supabaseInstance = createSupabaseClient()
+  }
+  return supabaseInstance
+})()
 
 // ---- Shared App Types (used only for TypeScript hints) ----------------------
 
