@@ -6,6 +6,7 @@ import './index.css';
 
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { supabase } from './lib/supabase';
+import { ConfigurationError } from './components/ConfigurationError';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <App />
       </SessionContextProvider>
     ) : (
-      <App />
+      <ConfigurationError error={new Error('VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are not configured.')} />
     )}
   </StrictMode>
 );
